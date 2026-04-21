@@ -1,0 +1,47 @@
+name: amarakosha
+description: Amarakosha Practice App — Sanskrit recitation studio.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Audio playback
+  just_audio: ^0.9.40
+  just_audio_web: ^0.4.14
+
+  # Audio recording
+  record: ^5.1.2
+
+  # Storage
+  shared_preferences: ^2.2.3
+  path_provider: ^2.1.3
+
+  # Fonts (EB Garamond loaded at runtime via google_fonts)
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/data/
+
+  fonts:
+    # Tiro Devanagari Sanskrit — bundled for reliable Devanagari rendering
+    - family: TiroDevanagarSanskrit
+      fonts:
+        - asset: assets/fonts/TiroDevanagariSanskrit-Regular.ttf
+        - asset: assets/fonts/TiroDevanagariSanskrit-Italic.ttf
+          style: italic
