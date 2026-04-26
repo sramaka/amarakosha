@@ -16,7 +16,7 @@ class AC {
   static const surfaceDim   = Color(0xFFE4CFA0); // Dimmed surfaces
   static const text         = Color(0xFF1E1208); // Primary text
   static const textSec      = Color(0xFF6A4618); // Secondary text
-  static const textMuted    = Color(0xFF9C7848); // Muted/placeholder text
+  static const textMuted    = Color(0xFF7A5428); // Muted/placeholder text
   static const accent       = Color(0xFF7A3A10); // Accent — links, active states
   static const accentBright = Color(0xFF9A5020); // Hover accent
   static const border       = Color(0xFFC4A060); // Standard borders
@@ -34,6 +34,14 @@ class AC {
   static const lineBorder   = Color(0xFFC89840); // Active pāda border
   static const dangerBg     = Color(0xFFF8EDE0); // Danger background
   static const recRed       = Color(0xFFC03020); // Recording red
+
+  // Sidebar / tree pane — dark warm wood
+  static const sidebar      = Color(0xFF2C1A0A); // sidebar background
+  static const sidebarHdr   = Color(0xFF1E1208); // sidebar header strip
+  static const sidebarText  = Color(0xFFF0E4C8); // primary text on dark bg
+  static const sidebarMuted = Color(0xFFBB9060); // secondary text on dark bg
+  static const sidebarSel   = Color(0xFFE8A840); // amber — selected item
+  static const sidebarBorder= Color(0xFF503A20); // dividers within sidebar
 
   // Gender badge colours
   static const genderMasc   = Color(0xFF7A3A10);
@@ -82,6 +90,21 @@ class AT {
     fontFamily: 'TiroDevanagarSanskrit', fontSize: 18,
     color: AC.text,
   );
+
+  // Devanagari — selectable font family, for Sanskrit text
+  static TextStyle devanagari(double size, {
+    Color  color  = AC.text,
+    double height = 1.8,
+    String family = 'TiroDevanagarSanskrit',
+  }) {
+    if (family == 'NotoSerifDevanagari') {
+      return GoogleFonts.notoSerifDevanagari(
+          fontSize: size, color: color, height: height);
+    }
+    return TextStyle(
+        fontFamily: 'TiroDevanagarSanskrit',
+        fontSize: size, color: color, height: height);
+  }
 
   // EB Garamond — for all UI text
   static TextStyle garamond(double size, {

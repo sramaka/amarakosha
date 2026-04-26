@@ -37,6 +37,7 @@ flutter:
 
   assets:
     - assets/data/
+    - assets/audio/
 
   fonts:
     # Tiro Devanagari Sanskrit — bundled for reliable Devanagari rendering

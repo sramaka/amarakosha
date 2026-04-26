@@ -473,3 +473,82 @@ class _ModeBtn extends StatelessWidget {
     );
   }
 }
+
+// ─── Audio Set Manager Sheet (stub — no riverpod dependency) ────────────────
+// A simple bottom sheet that just offers to go to the Recording Studio.
+
+class AudioSetManagerSheet extends StatelessWidget {
+  final VoidCallback onGoRecord;
+
+  const AudioSetManagerSheet({super.key, required this.onGoRecord});
+
+  static Future<void> show(BuildContext context,
+      {required VoidCallback onGoRecord}) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AC.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => AudioSetManagerSheet(onGoRecord: onGoRecord),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.35,
+      minChildSize: 0.2,
+      maxChildSize: 0.5,
+      expand: false,
+      builder: (_, __) => Column(children: [
+        const SheetHandle(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+          child: Text('Audio', style: AT.garamond(18, color: AC.text,
+              weight: FontWeight.w600)),
+        ),
+        const Divider(height: 0),
+        const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pop(context);
+              onGoRecord();
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: AC.btnBg,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(
+                    color: AC.trackFill.withOpacity(0.25),
+                    blurRadius: 12, offset: const Offset(0, 3))],
+              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.mic_outlined, color: AC.btnText, size: 18),
+                const SizedBox(width: 8),
+                Text('Open Recording Studio',
+                    style: AT.garamond(16, color: AC.btnText)),
+              ]),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            'Record your own voice for any pāda. '
+            'Recordings are saved locally in this browser session.',
+            style: AT.garamond(12, color: AC.textMuted, italic: true,
+                height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ]),
+    );
+  }
+}

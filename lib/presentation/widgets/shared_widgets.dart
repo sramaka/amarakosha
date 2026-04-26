@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/settings/app_settings.dart';
 
 // ─── Section label (10px uppercase muted) ────────────────────────────────────
 class SectionLabel extends StatelessWidget {
@@ -14,8 +15,8 @@ class SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: padding,
     child: Text(text.toUpperCase(),
-        style: AT.garamond(10,
-            color: AC.textMuted, letterSpacing: 1.0)),
+        style: AT.garamond(11,
+            color: AC.textSec, weight: FontWeight.w600, letterSpacing: 1.0)),
   );
 }
 
@@ -233,7 +234,7 @@ class ANavBar extends StatelessWidget {
               if (subtitle != null)
                 Text(subtitle!.toUpperCase(),
                     style: AT.garamond(10,
-                        color: AC.textMuted, letterSpacing: 0.8)),
+                        color: AC.textSec, letterSpacing: 0.8)),
             ],
           ),
         ),
@@ -256,7 +257,7 @@ class _ChevLeft extends StatelessWidget {
 
 class AChevRight extends StatelessWidget {
   final Color color;
-  const AChevRight({super.key, this.color = AC.textMuted});
+  const AChevRight({super.key, this.color = AC.textSec});
   @override
   Widget build(BuildContext context) => CustomPaint(
     size: const Size(7, 13),
@@ -313,14 +314,45 @@ class SheetHandle extends StatelessWidget {
 // ─── Breadcrumb (काण्ड X · वर्ग Y) ──────────────────────────────────────────
 class ABreadcrumb extends StatelessWidget {
   final int kandaNum;
-  final int vargaNum;
-  const ABreadcrumb({super.key, required this.kandaNum, required this.vargaNum});
+  final int vargaSeq;
+  const ABreadcrumb({super.key, required this.kandaNum, required this.vargaSeq});
 
   @override
   Widget build(BuildContext context) => Text(
-    'काण्ड $kandaNum · वर्ग $vargaNum',
-    style: AT.garamond(10, color: AC.textMuted, letterSpacing: 0.8),
+    'काण्ड $kandaNum · वर्ग $vargaSeq',
+    style: AT.garamond(11, color: AC.textSec, letterSpacing: 0.5),
   );
+}
+
+// ─── Selectable setting chip ──────────────────────────────────────────────────
+class ASettingChip extends StatelessWidget {
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const ASettingChip({
+    super.key,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? AC.accent.withOpacity(0.10) : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: active ? AC.accent : AC.border),
+        ),
+        child: Text(label,
+            style: AT.garamond(13, color: active ? AC.accent : AC.textSec)),
+      ),
+    );
+  }
 }
 
 // ─── Row setting item (label + optional sub + trailing widget) ────────────────
@@ -358,6 +390,102 @@ class SettingRow extends StatelessWidget {
         ),
         trailing,
       ],
+    ),
+  );
+}
+
+// ─── Display settings sheet ───────────────────────────────────────────────────
+void showDisplaySettingsSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AC.surface,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+    builder: (_) => ListenableBuilder(
+      listenable: AppSettings.instance,
+      builder: (ctx, __) {
+        final s = AppSettings.instance;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const SheetHandle(),
+            Text('Display Settings',
+                style: AT.garamond(16, weight: FontWeight.w600)),
+            const SizedBox(height: 20),
+            SettingRow(
+              label: 'Sanskrit text size',
+              sub: 'Shloka body text',
+              trailing: AStepperWidget(
+                  value: s.devFontSize, min: 14, max: 72,
+                  onChanged: s.setDevFontSize),
+            ),
+            SettingRow(
+              label: 'UI text size',
+              sub: 'Labels and annotations',
+              trailing: AStepperWidget(
+                  value: s.uiFontSize, min: 11, max: 22,
+                  onChanged: s.setUiFontSize),
+            ),
+            SettingRow(
+              label: 'Navigation text size',
+              sub: 'Tree pane labels',
+              trailing: AStepperWidget(
+                  value: s.treeFontSize, min: 10, max: 20,
+                  onChanged: s.setTreeFontSize),
+            ),
+            SettingRow(
+              label: 'Context lines before',
+              sub: 'Pādas shown above the active pada',
+              trailing: AStepperWidget(
+                  value: s.contextBefore, min: 0, max: 5,
+                  onChanged: s.setContextBefore),
+            ),
+            SettingRow(
+              label: 'Context lines after',
+              sub: 'Pādas shown below the active pada',
+              last: true,
+              trailing: AStepperWidget(
+                  value: s.contextAfter, min: 0, max: 5,
+                  onChanged: s.setContextAfter),
+            ),
+            const Divider(height: 24),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Text weight', style: AT.garamond(14, color: AC.text)),
+              Text('UI label weight',
+                  style: AT.garamond(12, color: AC.textMuted, italic: true)),
+              const SizedBox(height: 10),
+              Row(children: [
+                ASettingChip(label: 'Normal', active: s.uiFontWeight == 400,
+                    onTap: () => s.setUiFontWeight(400)),
+                const SizedBox(width: 6),
+                ASettingChip(label: 'Medium', active: s.uiFontWeight == 500,
+                    onTap: () => s.setUiFontWeight(500)),
+                const SizedBox(width: 6),
+                ASettingChip(label: 'Bold', active: s.uiFontWeight == 600,
+                    onTap: () => s.setUiFontWeight(600)),
+                const SizedBox(width: 6),
+                ASettingChip(label: 'Heavy', active: s.uiFontWeight == 700,
+                    onTap: () => s.setUiFontWeight(700)),
+              ]),
+            ]),
+            const Divider(height: 24),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Sanskrit font', style: AT.garamond(14, color: AC.text)),
+              const SizedBox(height: 10),
+              Row(children: [
+                ASettingChip(label: 'Tiro',
+                    active: s.devFontFamily == 'TiroDevanagarSanskrit',
+                    onTap: () => s.setDevFontFamily('TiroDevanagarSanskrit')),
+                const SizedBox(width: 8),
+                ASettingChip(label: 'Noto Serif',
+                    active: s.devFontFamily == 'NotoSerifDevanagari',
+                    onTap: () => s.setDevFontFamily('NotoSerifDevanagari')),
+              ]),
+            ]),
+          ]),
+        );
+      },
     ),
   );
 }

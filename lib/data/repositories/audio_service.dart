@@ -1,16 +1,20 @@
 // lib/data/repositories/audio_service.dart
 //
-// Loads and plays audio for practice sessions.
+// Asset files: assets/audio/1.1.11.wav  (preferred, from recording tools)
+//              assets/audio/1.1.11.m4a  (legacy, also supported)
+// Registry key: "1.1.11"  (same as Pada.id)
 //
-// Priority order for each pada:
-//   1. User recording (from recording studio, stored as blob URL on web)
-//   2. Bundled asset file  (assets/audio/1-1-1-1.m4a)
-//   3. Nothing — player stays silent, UI shows "no audio"
+// Priority:
+//   1. User recording registered via registerRecording(gretilId, blobUrl)
+//   2. Bundled asset  assets/audio/<gretilId>.wav  (tried first)
+//   3. Bundled asset  assets/audio/<gretilId>.m4a  (fallback)
+//   4. Silent — playPada() returns false
 //
-// Asset naming: {kanda}-{varga}-{verse}-{pada}.m4a
-// e.g. assets/audio/1-1-3-1.m4a = Kanda 1, Varga 1, Verse 3, Pada 1
+// On web, player.setUrl('/assets/audio/...') is used instead of setAsset() to
+// avoid Flutter's dev-server asset routing which returns 500 for some files.
 
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:just_audio/just_audio.dart';
 
 class AudioService {
@@ -19,83 +23,92 @@ class AudioService {
 
   final AudioPlayer player = AudioPlayer();
 
-  // User recordings saved by the recording studio this session
-  // key: "1-1-3-1"  value: blob URL or file path
+  /// User recordings keyed by GRETIL ID (e.g. "1.1.11").
   final Map<String, String> userRecordings = {};
 
-  // ── Asset path helper ────────────────────────────────────────────────────────
+  // GRETIL IDs that have bundled audio files (populated by preloadManifest).
+  final Set<String> _manifestIds = {};
 
-  static String assetPath(int kanda, int varga, int verse, int pada) =>
-      'assets/audio/$kanda-$varga-$verse-$pada.m4a';
+  // Cache the asset manifest so we don't reload it on every playback.
+  AssetManifest? _manifest;
+  Future<AssetManifest> _getManifest() async {
+    _manifest ??= await AssetManifest.loadFromAssetBundle(rootBundle);
+    return _manifest!;
+  }
 
-  static String keyFor(int kanda, int varga, int verse, int pada) =>
-      '$kanda-$varga-$verse-$pada';
-
-  /// Check whether a bundled asset file actually exists.
-  Future<bool> assetExists(String path) async {
+  /// Call once at startup to pre-index bundled audio files.
+  /// Enables synchronous hasAudio() checks for the tree pane.
+  Future<void> preloadManifest() async {
     try {
-      await rootBundle.load(path);
-      return true;
-    } catch (_) {
-      return false;
+      final manifest = await _getManifest();
+      for (final a in manifest.listAssets()) {
+        final m = RegExp(r'assets/audio/(.+)\.(wav|m4a)$').firstMatch(a);
+        if (m != null) _manifestIds.add(m.group(1)!);
+      }
+    } catch (_) {}
+  }
+
+  /// Register a user recording (blob URL on web, file path on native).
+  void registerRecording(String gretilId, String blobUrlOrPath) {
+    userRecordings[gretilId] = blobUrlOrPath;
+    _manifestIds.add(gretilId); // treat user recordings as "has audio" too
+  }
+
+  /// Returns true if any audio is available for this pada (sync, after preloadManifest).
+  bool hasAudio(String gretilId) =>
+      userRecordings.containsKey(gretilId) || _manifestIds.contains(gretilId);
+
+  /// Returns the extension ('wav' or 'm4a') of the first bundled file found, or null.
+  Future<String?> _bundledExt(String gretilId) async {
+    try {
+      final manifest = await _getManifest();
+      final assets = manifest.listAssets();
+      for (final ext in ['wav', 'm4a']) {
+        if (assets.contains('assets/audio/$gretilId.$ext')) return ext;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _loadBundledAsset(String gretilId, String ext) async {
+    if (kIsWeb) {
+      // Direct URL avoids Flutter dev-server asset routing (returns 500 for setAsset).
+      await player.setUrl('/assets/audio/$gretilId.$ext');
+    } else {
+      // setAsset requires path WITHOUT leading "assets/" — Flutter prepends it.
+      await player.setAsset('audio/$gretilId.$ext');
     }
   }
 
-  // ── Playback ─────────────────────────────────────────────────────────────────
+  // ── Playback ──────────────────────────────────────────────────────────────
 
-  /// Play audio for a specific pada.
-  /// Returns true if audio was found and started, false if nothing available.
-  Future<bool> playPada({
-    required int kanda, required int varga,
-    required int verse, required int pada,
-    double speed = 1.0,
-  }) async {
+  /// Play audio for a pada identified by its GRETIL ID (e.g. "1.1.11").
+  /// Returns true if audio was found and started.
+  Future<bool> playPada(String gretilId, {double speed = 1.0}) async {
     await player.stop();
 
-    final key  = keyFor(kanda, varga, verse, pada);
-    final path = assetPath(kanda, varga, verse, pada);
-
-    // 1. Check for user recording first
-    if (userRecordings.containsKey(key)) {
-      final url = userRecordings[key]!;
+    // 1. User recording
+    if (userRecordings.containsKey(gretilId)) {
       try {
-        await player.setUrl(url);
+        await player.setUrl(userRecordings[gretilId]!);
         await player.setSpeed(speed);
         await player.play();
         return true;
       } catch (_) {}
     }
 
-    // 2. Try bundled asset
-    if (await assetExists(path)) {
+    // 2. Bundled asset (.wav preferred, .m4a fallback)
+    final ext = await _bundledExt(gretilId);
+    if (ext != null) {
       try {
-        await player.setAsset(path);
+        await _loadBundledAsset(gretilId, ext);
         await player.setSpeed(speed);
         await player.play();
         return true;
       } catch (_) {}
     }
 
-    // 3. Nothing available
     return false;
-  }
-
-  /// Play a full shloka (both padas in sequence).
-  Future<void> playShloka({
-    required int kanda, required int varga,
-    required int verse, int padaCount = 2,
-    double speed = 1.0,
-  }) async {
-    for (var p = 1; p <= padaCount; p++) {
-      final found = await playPada(
-          kanda: kanda, varga: varga, verse: verse,
-          pada: p, speed: speed);
-      if (!found) continue;
-      // Wait for this pada to finish before playing the next
-      await player.playerStateStream.firstWhere(
-          (s) => s.processingState == ProcessingState.completed
-              || s.processingState == ProcessingState.idle);
-    }
   }
 
   Future<void> pause()  async => player.pause();
