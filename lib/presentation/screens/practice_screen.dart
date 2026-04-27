@@ -11,8 +11,10 @@
 // Recording: mic button in nav opens RecordingScreen
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart' hide LoopMode;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/repositories/audio_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/static_data.dart';
@@ -84,6 +86,54 @@ class _PracticeScreenState extends State<PracticeScreen> {
   StreamSubscription<PlayerState>? _setCompletionSub;
   bool _advancing = false; // prevents double-fire on auto-advance
 
+  static const _kSetKey = 'amarakosha_practice_set';
+
+  Future<void> _saveSet() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = _setItems.map((item) => {
+      'label': item.label,
+      'ids'  : item.padas.map((p) => p.id).toList(),
+    }).toList();
+    await prefs.setString(_kSetKey, jsonEncode(data));
+  }
+
+  Future<void> _restoreSet() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kSetKey);
+      if (raw == null || raw.isEmpty) return;
+      final data = jsonDecode(raw) as List<dynamic>;
+      final items = <_SetItem>[];
+      for (final entry in data) {
+        final label = entry['label'] as String;
+        final ids   = (entry['ids'] as List<dynamic>).cast<String>();
+        final padas = <Pada>[];
+        for (final id in ids) {
+          outer:
+          for (final k in _kandas) {
+            for (final v in k.vargas) {
+              for (final s in v.sections) {
+                for (final p in s.padas) {
+                  if (p.id == id) { padas.add(p); break outer; }
+                }
+              }
+            }
+          }
+        }
+        if (padas.isNotEmpty) items.add(_SetItem(label, padas));
+      }
+      if (mounted && items.isNotEmpty) {
+        setState(() {
+          for (final item in items) {
+            if (!_setItems.any((e) => e.label == item.label)) {
+              _setItems.add(item);
+            }
+          }
+        });
+      }
+    } catch (_) {}
+  }
+
   // ── Tree UI ───────────────────────────────────────────────────────────────
   bool              _treePaneOpen   = true;
   final Set<int>    _expandedKandas = {};
@@ -121,6 +171,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (!mounted) return;
     setState(() { _kandas = k; });
     _refreshPada();
+    await _restoreSet();
   }
 
   void _refreshPada() {
@@ -202,6 +253,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void _addSectionToSet(Section sec) {
     if (_setItems.any((i) => i.label == sec.titleEn && i.padas == sec.padas)) return;
     setState(() => _setItems.add(_SetItem(sec.titleEn, sec.padas)));
+    _saveSet();
     _showSetToast('Section "${sec.titleEn}" added to Practice Set');
   }
 
@@ -209,10 +261,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final label = pada.id;
     if (_setItems.any((i) => i.label == label)) return;
     setState(() => _setItems.add(_SetItem(label, [pada])));
+    _saveSet();
     _showSetToast('Pada ${pada.id} added to Practice Set');
   }
 
-  void _removeFromSet(int idx) => setState(() => _setItems.removeAt(idx));
+  void _removeFromSet(int idx) {
+    setState(() => _setItems.removeAt(idx));
+    _saveSet();
+  }
 
   void _showSetToast(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -629,7 +685,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           const Spacer(),
           if (_setItems.isNotEmpty)
             GestureDetector(
-              onTap: () => setState(() => _setItems.clear()),
+              onTap: () { setState(() => _setItems.clear()); _saveSet(); },
               child: Text('Clear', style: AT.garamond(13, color: AC.textMuted, italic: true)),
             ),
         ]),
@@ -652,6 +708,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   final item = _setItems.removeAt(o);
                   _setItems.insert(n > o ? n - 1 : n, item);
                 });
+                _saveSet();
               },
               children: _setItems.asMap().entries.map((e) {
                 final i = e.key;

@@ -188,7 +188,9 @@ let playAudio = null;
 // ── Data loading ───────────────────────────────────────────────────────────────
 async function init() {
   try {
-    const res = await fetch('/assets/data/amarakosha_v3.json');
+    // Flutter web places assets at {root}/assets/{pubspec-key}.
+    // The pubspec key starts with "assets/", so the path has a double prefix.
+    const res = await fetch('assets/assets/data/amarakosha_v3.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     kandas = json.kandas || json;
@@ -199,8 +201,7 @@ async function init() {
     document.getElementById('loading').style.display = 'none';
     const err = document.getElementById('error');
     err.style.display = 'block';
-    err.textContent = 'Could not load data. Serve this page via the Flutter app: '
-      + 'run "flutter run -d chrome" then open /recorder.html. Error: ' + e.message;
+    err.textContent = 'Could not load data. Error: ' + e.message;
   }
 }
 
