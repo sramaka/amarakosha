@@ -117,6 +117,65 @@
     /* ── Error ── */
     #error { color: var(--rec); font-size: 14px; margin-top: 16px; display: none; }
     #loading { color: var(--text-muted); font-size: 14px; margin-top: 24px; font-style: italic; }
+
+    /* ── Downloads toggle (desktop: hide; mobile: show) ── */
+    .dl-toggle {
+      display: none;
+      width: 100%; margin-top: 16px;
+      font-family: inherit; font-size: 14px; color: var(--text-sec);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 16px; cursor: pointer;
+      text-align: left;
+    }
+    .dl-toggle .dl-toggle-arrow { float: right; transition: transform .2s; }
+    .dl-toggle.open .dl-toggle-arrow { transform: rotate(180deg); }
+
+    /* ── Secondary control buttons (mobile: displayed as a row) ── */
+    .ctrl-secondary { display: contents; }
+
+    /* ── Mobile overrides ── */
+    @media (max-width: 768px) {
+      .selectors { flex-direction: column; gap: 10px; }
+      .selectors label { width: 100%; }
+      .selectors select { width: 100%; min-width: unset; }
+
+      /* Large centered record button */
+      .controls {
+        flex-direction: column; align-items: center;
+        gap: 12px; padding: 14px 0;
+      }
+      .status-text { flex: none; text-align: center; }
+      #recBtn { width: 64px; height: 64px; font-size: 26px; }
+      #dlBtn  { display: none; }
+
+      /* Play/delete as a secondary row below record button */
+      .ctrl-secondary {
+        display: flex; gap: 20px; align-items: center;
+      }
+      #playBtn, #delBtn { width: 40px; height: 40px; font-size: 18px; }
+
+      /* Scrollable tab strip for pada dots */
+      .dots {
+        flex-wrap: nowrap; overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-alt);
+        gap: 0;
+        -webkit-overflow-scrolling: touch;
+      }
+      .dot {
+        flex: 0 0 auto; min-width: 48px; height: 44px;
+        border-radius: 0; border: none;
+        border-right: 1px solid var(--border-lt);
+        font-size: 12px;
+      }
+      .dot:last-child { border-right: none; }
+
+      /* Collapsible downloads */
+      .dl-toggle { display: block; }
+      .downloads { display: none; margin-top: 10px; }
+      .downloads.open { display: flex; }
+    }
   </style>
 </head>
 <body>
@@ -149,10 +208,12 @@
         <div id="padaText" class="pada-text dev"></div>
         <div class="controls">
           <span class="status-text" id="statusText"></span>
-          <button class="btn-circle btn-play" id="playBtn" onclick="togglePlay()" disabled title="Play">▶</button>
-          <button class="btn-circle btn-rec"  id="recBtn"  onclick="toggleRec()"  title="Record">⏺</button>
-          <button class="btn-circle btn-del"  id="delBtn"  onclick="deleteRec()"  disabled title="Delete">×</button>
-          <button class="btn-circle btn-dl"   id="dlBtn"   onclick="downloadPada()" disabled title="Download">⬇</button>
+          <button class="btn-circle btn-rec" id="recBtn" onclick="toggleRec()" title="Record">⏺</button>
+          <div class="ctrl-secondary">
+            <button class="btn-circle btn-play" id="playBtn" onclick="togglePlay()" disabled title="Play">▶</button>
+            <button class="btn-circle btn-del"  id="delBtn"  onclick="deleteRec()"  disabled title="Delete">×</button>
+            <button class="btn-circle btn-dl"   id="dlBtn"   onclick="downloadPada()" disabled title="Download">⬇</button>
+          </div>
         </div>
       </div>
     </div>
@@ -166,7 +227,10 @@
     </div>
     <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
 
-    <div class="downloads">
+    <button class="dl-toggle" id="dlToggle" onclick="toggleDownloads()">
+      Export &middot;&middot;&middot; <span class="dl-toggle-arrow">▾</span>
+    </button>
+    <div class="downloads" id="downloadsDiv">
       <button class="dl-btn" id="dlPada"    onclick="downloadPada()">⬇ This pāda</button>
       <button class="dl-btn" id="dlSection" onclick="downloadSection()">⬇ Section <span class="count" id="secCount">0</span></button>
       <button class="dl-btn" id="dlVarga"   onclick="downloadVarga()">⬇ Varga ZIP <span class="count" id="vargaCount">0</span></button>
@@ -525,6 +589,14 @@ function render() {
   document.getElementById('dlPada').disabled    = !hasRec;
 
   updateStatus();
+}
+
+// ── Downloads toggle ───────────────────────────────────────────────────────────
+function toggleDownloads() {
+  const div = document.getElementById('downloadsDiv');
+  const btn = document.getElementById('dlToggle');
+  div.classList.toggle('open');
+  btn.classList.toggle('open');
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
