@@ -10,8 +10,9 @@
 //   3. Bundled asset  assets/audio/<gretilId>.m4a  (fallback)
 //   4. Silent — playPada() returns false
 //
-// On web, player.setUrl('/assets/audio/...') is used instead of setAsset() to
-// avoid Flutter's dev-server asset routing which returns 500 for some files.
+// On web, player.setUrl(Uri.base.resolve('assets/audio/...')) is used instead of
+// setAsset() to avoid Flutter's dev-server asset routing (500 for some files)
+// and to respect the --base-href set at build time (e.g. GitHub Pages).
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart' show AssetManifest, rootBundle;
@@ -72,8 +73,10 @@ class AudioService {
 
   Future<void> _loadBundledAsset(String gretilId, String ext) async {
     if (kIsWeb) {
-      // Direct URL avoids Flutter dev-server asset routing (returns 500 for setAsset).
-      await player.setUrl('/assets/audio/$gretilId.$ext');
+      // Resolve relative to the page base so it works both locally and on
+      // GitHub Pages (where base-href is /repo-name/ — an absolute path would miss it).
+      final url = Uri.base.resolve('assets/audio/$gretilId.$ext').toString();
+      await player.setUrl(url);
     } else {
       // setAsset requires path WITHOUT leading "assets/" — Flutter prepends it.
       await player.setAsset('audio/$gretilId.$ext');
