@@ -85,6 +85,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Timer? _setTimer;
   StreamSubscription<PlayerState>? _setCompletionSub;
   bool _advancing = false; // prevents double-fire on auto-advance
+  bool _mobileTreeOpen = false;
 
   static const _kSetKey = 'amarakosha_practice_set';
 
@@ -165,6 +166,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   void _onSettings() => setState(() {});
 
+  bool get _isMobile => MediaQuery.of(context).size.width <= 768;
+
   // ── Data ──────────────────────────────────────────────────────────────────
   Future<void> _loadData() async {
     final k = await loadKandas();
@@ -209,10 +212,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   void _goTo(int kanda, int varga, int sec, int pada) {
     setState(() {
-      _selKandaNum = kanda;
-      _selVargaSeq = varga;
-      _selSecSeq   = sec;
-      _selPadaSeq  = pada;
+      _selKandaNum    = kanda;
+      _selVargaSeq    = varga;
+      _selSecSeq      = sec;
+      _selPadaSeq     = pada;
+      _mobileTreeOpen = false;
     });
     _refreshPada();
   }
@@ -426,99 +430,132 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_pada == null) return const Center(child: CircularProgressIndicator(color: AC.accent));
-    return Column(children: [
-      _buildNav(),
-      Expanded(child: Row(children: [
-        // Persistent tree toggle tab on the left edge
-        _TreeTab(open: _treePaneOpen, onTap: () => setState(() => _treePaneOpen = !_treePaneOpen)),
-        if (_treePaneOpen) _buildTreePane(),
-        if (_treePaneOpen) Container(width: 1, color: AC.border),
-        // Practice pane
-        Expanded(child: _buildPracticePane()),
-        // Practice set panel
-        if (_showSetPanel) Container(width: 1, color: AC.border),
-        if (_showSetPanel) _buildSetPanel(),
-      ])),
-    ]);
+    final isMobile = _isMobile;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Column(children: [
+          _buildNav(),
+          Expanded(child: isMobile
+            ? Column(children: [
+                Expanded(child: _buildPracticePane()),
+                _buildSetTray(),
+              ])
+            : Row(children: [
+                _TreeTab(open: _treePaneOpen,
+                    onTap: () => setState(() => _treePaneOpen = !_treePaneOpen)),
+                if (_treePaneOpen) _buildTreePane(),
+                if (_treePaneOpen) Container(width: 1, color: AC.border),
+                Expanded(child: _buildPracticePane()),
+                if (_showSetPanel) Container(width: 1, color: AC.border),
+                if (_showSetPanel) _buildSetPanel(),
+              ])),
+        ]),
+        if (isMobile && _mobileTreeOpen) _buildMobileTreeOverlay(),
+      ],
+    );
   }
 
   // ── Nav bar ───────────────────────────────────────────────────────────────
-  Widget _buildNav() => Container(
-    padding: const EdgeInsets.fromLTRB(6, 6, 12, 8),
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
-    child: Column(children: [
-      Row(children: [
-        GestureDetector(
-          onTap: widget.onBack,
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.chevron_left, color: AC.accent, size: 18),
-            Text('Back', style: AT.garamond(15, color: AC.accent)),
+  Widget _buildNav() {
+    final isMobile = _isMobile;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 6, 12, 8),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
+      child: Column(children: [
+        Row(children: [
+          GestureDetector(
+            onTap: widget.onBack,
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.chevron_left, color: AC.accent, size: 18),
+              Text('Back', style: AT.garamond(15, color: AC.accent)),
+            ]),
+          ),
+          // Mobile: Contents button opens tree overlay
+          if (isMobile) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => setState(() => _mobileTreeOpen = true),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AC.border)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.menu_book_outlined, size: 13, color: AC.textSec),
+                  const SizedBox(width: 4),
+                  Text('Contents', style: AT.garamond(12, color: AC.textSec)),
+                ]),
+              ),
+            ),
+          ],
+          Expanded(child: Center(
+            child: Text(_pada != null ? '${_pada!.id}' : '',
+                style: AT.garamond(13, color: AC.textSec, italic: true)),
+          )),
+          // Desktop only: Practice Set toggle (mobile uses bottom tray instead)
+          if (!isMobile)
+            GestureDetector(
+              onTap: () => setState(() => _showSetPanel = !_showSetPanel),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _showSetPanel ? AC.accent.withOpacity(0.10) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: _showSetPanel ? AC.accent : AC.border)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.playlist_play_rounded, size: 14,
+                      color: _showSetPanel ? AC.accent : AC.textSec),
+                  const SizedBox(width: 4),
+                  Text('Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
+                      style: AT.garamond(12,
+                          color: _showSetPanel ? AC.accent : AC.textSec)),
+                ]),
+              ),
+            ),
+          // Record
+          GestureDetector(
+            onTap: widget.onGoRecord,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AC.border)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.mic_outlined, size: 13, color: AC.recRed),
+                const SizedBox(width: 4),
+                Text('Record', style: AT.garamond(12, color: AC.recRed)),
+              ]),
+            ),
+          ),
+          // Display settings
+          GestureDetector(
+            onTap: _showDisplaySettings,
+            child: Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: AC.border)),
+              child: const Icon(Icons.text_fields_rounded, size: 14, color: AC.textSec),
+            ),
+          ),
+        ]),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8), border: Border.all(color: AC.border)),
+          clipBehavior: Clip.antiAlias,
+          child: Row(children: [
+            _ModeSeg('Listen', PracticeMode.listen, _mode, _switchMode, 0),
+            _ModeSeg('Recite', PracticeMode.recite, _mode, _switchMode, 1),
+            _ModeSeg('Guided', PracticeMode.guided, _mode, _switchMode, 2),
           ]),
         ),
-        Expanded(child: Center(
-          child: Text(_pada != null ? '${_pada!.id}' : '',
-              style: AT.garamond(13, color: AC.textSec, italic: true)),
-        )),
-        // Practice Set toggle
-        GestureDetector(
-          onTap: () => setState(() => _showSetPanel = !_showSetPanel),
-          child: Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: _showSetPanel ? AC.accent.withOpacity(0.10) : Colors.transparent,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: _showSetPanel ? AC.accent : AC.border)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.playlist_play_rounded, size: 14,
-                  color: _showSetPanel ? AC.accent : AC.textSec),
-              const SizedBox(width: 4),
-              Text('Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
-                  style: AT.garamond(12, color: _showSetPanel ? AC.accent : AC.textSec)),
-            ]),
-          ),
-        ),
-        // Record
-        GestureDetector(
-          onTap: widget.onGoRecord,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AC.border)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.mic_outlined, size: 13, color: AC.recRed),
-              const SizedBox(width: 4),
-              Text('Record', style: AT.garamond(12, color: AC.recRed)),
-            ]),
-          ),
-        ),
-        // Display settings
-        GestureDetector(
-          onTap: _showDisplaySettings,
-          child: Container(
-            margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: AC.border)),
-            child: const Icon(Icons.text_fields_rounded, size: 14, color: AC.textSec),
-          ),
-        ),
       ]),
-      const SizedBox(height: 8),
-      Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8), border: Border.all(color: AC.border)),
-        clipBehavior: Clip.antiAlias,
-        child: Row(children: [
-          _ModeSeg('Listen', PracticeMode.listen, _mode, _switchMode, 0),
-          _ModeSeg('Recite', PracticeMode.recite, _mode, _switchMode, 1),
-          _ModeSeg('Guided', PracticeMode.guided, _mode, _switchMode, 2),
-        ]),
-      ),
-    ]),
-  );
+    );
+  }
 
   // ── Tree pane ─────────────────────────────────────────────────────────────
   Widget _buildTreePane() => Container(
@@ -804,6 +841,262 @@ class _PracticeScreenState extends State<PracticeScreen> {
     ]),
   );
 
+  // ── Mobile: set tray (52px bar at bottom) ────────────────────────────────
+  Widget _buildSetTray() => GestureDetector(
+    onTap: _showMobileSetSheet,
+    child: Container(
+      height: 52,
+      decoration: const BoxDecoration(
+        color: AC.surface,
+        border: Border(top: BorderSide(color: AC.border))),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(children: [
+        Icon(Icons.playlist_play_rounded, size: 18,
+            color: _setItems.isEmpty ? AC.textMuted : AC.accent),
+        const SizedBox(width: 10),
+        Expanded(child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Practice Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
+              style: AT.garamond(14,
+                  color: _setItems.isEmpty ? AC.textMuted : AC.text),
+            ),
+            if (_setItems.isNotEmpty)
+              Text('$_totalSetPadas pādas',
+                  style: AT.garamond(11, color: AC.textMuted, italic: true)),
+          ],
+        )),
+        if (_setPlaying)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: AC.recRed.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AC.recRed)),
+            child: Text('Playing', style: AT.garamond(12, color: AC.recRed)),
+          ),
+        const Icon(Icons.expand_less_rounded, color: AC.textMuted, size: 18),
+      ]),
+    ),
+  );
+
+  void _showMobileSetSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AC.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) => SizedBox(
+          height: MediaQuery.of(context).size.height * 0.75,
+          child: Column(children: [
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 4),
+                width: 36, height: 4,
+                decoration: BoxDecoration(
+                    color: AC.border, borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              child: Row(children: [
+                Text('Practice Set'.toUpperCase(),
+                    style: AT.garamond(12, color: AC.textMuted, letterSpacing: 1.0)),
+                const Spacer(),
+                if (_setItems.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _setItems.clear());
+                      _saveSet();
+                      setSheet(() {});
+                    },
+                    child: Text('Clear',
+                        style: AT.garamond(13, color: AC.textMuted, italic: true)),
+                  ),
+              ]),
+            ),
+            Expanded(child: _setItems.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Long-press a Section or Pada in the tree to add it here.',
+                    style: AT.garamond(13, color: AC.textMuted, italic: true, height: 1.5),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              : ReorderableListView(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  onReorder: (o, n) {
+                    setState(() {
+                      final item = _setItems.removeAt(o);
+                      _setItems.insert(n > o ? n - 1 : n, item);
+                    });
+                    _saveSet();
+                    setSheet(() {});
+                  },
+                  children: _setItems.asMap().entries.map((e) {
+                    final i = e.key; final item = e.value;
+                    return ListTile(
+                      key: ValueKey(i),
+                      dense: true,
+                      contentPadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                      leading: Container(
+                        width: 26, height: 26,
+                        decoration: BoxDecoration(
+                            color: AC.surfaceAlt,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: AC.border)),
+                        child: Center(child: Text('${i + 1}',
+                            style: AT.garamond(13, color: AC.textMuted))),
+                      ),
+                      title: Text(item.label,
+                          style: AT.garamond(14, color: AC.text),
+                          overflow: TextOverflow.ellipsis),
+                      subtitle: Text(
+                          '${item.padas.length} pada${item.padas.length != 1 ? "s" : ""}',
+                          style: AT.garamond(12, color: AC.textMuted)),
+                      trailing: GestureDetector(
+                        onTap: () { _removeFromSet(i); setSheet(() {}); },
+                        child: const Icon(Icons.close_rounded,
+                            size: 16, color: AC.textMuted),
+                      ),
+                    );
+                  }).toList(),
+                )),
+            Container(
+              decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: AC.border))),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+              child: Column(children: [
+                Row(children: [
+                  Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Each Pāda', style: AT.garamond(13, color: AC.text)),
+                        Text('repeat × per pada',
+                            style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                      ])),
+                  _SmallStepper(
+                    value: _padaRepeat,
+                    onDec: _padaRepeat > 1
+                        ? () { setState(() => _padaRepeat--); setSheet(() {}); } : null,
+                    onInc: _padaRepeat < 20
+                        ? () { setState(() => _padaRepeat++); setSheet(() {}); } : null,
+                  ),
+                ]),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Full Set', style: AT.garamond(13, color: AC.text)),
+                        Text('repeat entire set',
+                            style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                      ])),
+                  _SmallStepper(
+                    value: _setRepeat,
+                    onDec: _setRepeat > 1
+                        ? () { setState(() => _setRepeat--); setSheet(() {}); } : null,
+                    onInc: _setRepeat < 20
+                        ? () { setState(() => _setRepeat++); setSheet(() {}); } : null,
+                  ),
+                ]),
+                if (_setItems.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text('$_totalSetPadas total pādas',
+                      style: AT.garamond(13, color: AC.textMuted, italic: true)),
+                ],
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: _setItems.isEmpty ? null : () {
+                    if (_setPlaying) {
+                      _stopSetPlayback();
+                      setSheet(() {});
+                    } else {
+                      Navigator.pop(ctx);
+                      _startSetPlayback();
+                    }
+                  },
+                  child: Opacity(
+                    opacity: _setItems.isEmpty ? 0.4 : 1.0,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: _setPlaying ? AC.recRed : AC.btnBg,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                        Icon(
+                          _setPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                          color: AC.btnText, size: 20),
+                        const SizedBox(width: 8),
+                        Text(_setPlaying ? 'Stop Set' : 'Play Set',
+                            style: AT.garamond(16, color: AC.btnText,
+                                weight: FontWeight.w600)),
+                      ]),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ── Mobile: full-screen tree slide-in overlay ─────────────────────────────
+  Widget _buildMobileTreeOverlay() => Positioned.fill(
+    child: GestureDetector(
+      onTap: () => setState(() => _mobileTreeOpen = false),
+      child: Container(
+        color: Colors.black54,
+        child: GestureDetector(
+          onTap: () {},
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              color: AC.sidebar,
+              child: Column(children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  decoration: const BoxDecoration(
+                    color: AC.sidebarHdr,
+                    border: Border(bottom: BorderSide(color: AC.sidebarBorder))),
+                  child: Row(children: [
+                    Text('Contents'.toUpperCase(),
+                        style: AT.garamond(12, color: AC.sidebarText,
+                            letterSpacing: 1.2, weight: FontWeight.w700)),
+                    const Spacer(),
+                    Text('Long-press → Set',
+                        style: AT.garamond(10, color: AC.sidebarMuted,
+                            italic: true)),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () => setState(() => _mobileTreeOpen = false),
+                      child: const Icon(Icons.close_rounded,
+                          color: AC.sidebarText, size: 20),
+                    ),
+                  ]),
+                ),
+                Expanded(child: ListView(
+                    children: _kandas.map(_buildKandaNode).toList())),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   // ── Practice pane ─────────────────────────────────────────────────────────
   Widget _buildPracticePane() {
     final pada = _pada;
@@ -893,9 +1186,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
     ]),
   );
 
-  Widget _buildPadaCard(Pada pada) => Container(
+  Widget _buildPadaCard(Pada pada) {
+    final pad = _isMobile ? 20.0 : 16.0;
+    return Container(
     margin: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+    padding: EdgeInsets.all(pad),
     decoration: AD.card(radius: 16),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -935,6 +1230,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _buildPadaText(pada),
     ]),
   );
+  }
 
   Widget _buildPadaText(Pada pada) {
     final isPlaceholder = !pada.hasText;
@@ -1049,7 +1345,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     );
   }
 
-  Widget _buildPlayer() => Container(
+  Widget _buildPlayer() {
+    final mob = _isMobile;
+    return Container(
     margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
     decoration: AD.card(radius: 14),
     child: Column(children: [
@@ -1091,23 +1389,23 @@ class _PracticeScreenState extends State<PracticeScreen> {
       const SizedBox(height: 6),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         IconButton(icon: const Icon(Icons.skip_previous_rounded),
-            color: AC.textSec, iconSize: 20, onPressed: _prevPada),
+            color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _prevPada),
         GestureDetector(onTap: _stopPlay, child: Container(
-          width: 32, height: 32,
+          width: mob ? 36 : 32, height: mob ? 36 : 32,
           decoration: BoxDecoration(color: AC.surfaceAlt, shape: BoxShape.circle,
               border: Border.all(color: AC.border)),
-          child: const Icon(Icons.stop_rounded, color: AC.textSec, size: 14))),
+          child: Icon(Icons.stop_rounded, color: AC.textSec, size: mob ? 16 : 14))),
         const SizedBox(width: 6),
         GestureDetector(onTap: _togglePlay, child: Container(
-          width: 46, height: 46,
+          width: mob ? 50 : 46, height: mob ? 50 : 46,
           decoration: BoxDecoration(color: AC.btnBg, shape: BoxShape.circle,
             boxShadow: [BoxShadow(color: AC.trackFill.withOpacity(0.33),
                 blurRadius: 10, offset: const Offset(0, 3))]),
           child: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: AC.btnText, size: 22))),
+              color: AC.btnText, size: mob ? 24 : 22))),
         const SizedBox(width: 6),
         IconButton(icon: const Icon(Icons.skip_next_rounded),
-            color: AC.textSec, iconSize: 20, onPressed: _nextPada),
+            color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _nextPada),
       ]),
       const SizedBox(height: 2),
       Row(mainAxisAlignment: MainAxisAlignment.center,
@@ -1148,6 +1446,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       const SizedBox(height: 12),
     ]),
   );
+  }
 }
 
 // ─── Persistent tree toggle tab ────────────────────────────────────────────────
