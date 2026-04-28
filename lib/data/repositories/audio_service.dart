@@ -18,6 +18,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/services.dart' show AssetManifest, rootBundle;
 import 'package:just_audio/just_audio.dart';
+import 'audio_set_store.dart';
 
 class AudioService {
   AudioService._();
@@ -94,9 +95,26 @@ class AudioService {
   // ── Playback ──────────────────────────────────────────────────────────────
 
   /// Play audio for a pada identified by its GRETIL ID (e.g. "1.1.11").
+  /// [setId] — if non-null, tries the named audio set before built-in assets.
   /// Returns true if audio was found and started.
-  Future<bool> playPada(String gretilId, {double speed = 1.0}) async {
-    _log('playPada($gretilId)');
+  Future<bool> playPada(String gretilId, {double speed = 1.0, String? setId}) async {
+    _log('playPada($gretilId, set=$setId)');
+
+    // 0. Named audio set (imported ZIP)
+    if (setId != null) {
+      try {
+        final url = await AudioSetStore.instance.getRecordingBlobUrl(setId, gretilId);
+        if (url != null) {
+          _log('audio set: $url');
+          await player.setUrl(url);
+          await player.setSpeed(speed);
+          await player.play();
+          return true;
+        }
+      } catch (e) {
+        _log('audio set error: $e');
+      }
+    }
 
     // 1. User recording
     if (userRecordings.containsKey(gretilId)) {

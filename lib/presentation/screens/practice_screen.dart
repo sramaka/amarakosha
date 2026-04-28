@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart' hide LoopMode;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/repositories/audio_service.dart';
+import '../../data/repositories/audio_set_store.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/static_data.dart';
 import '../../domain/entities/entities.dart';
@@ -87,6 +88,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
   bool _advancing = false; // prevents double-fire on auto-advance
   bool _mobileTreeOpen = false;
 
+  // ── Audio sets ────────────────────────────────────────────────────────────
+  List<AudioSetMeta> _audioSets  = [];
+  String?            _activeSetId; // null = built-in / user recordings
+
   static const _kSetKey = 'amarakosha_practice_set';
 
   Future<void> _saveSet() async {
@@ -154,6 +159,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _loadData();      // load full JSON in background
     _bindAudio();
     AppSettings.instance.addListener(_onSettings);
+    _loadAudioSets();
   }
 
   @override
@@ -167,6 +173,42 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void _onSettings() => setState(() {});
 
   bool get _isMobile => MediaQuery.of(context).size.width <= 768;
+
+  // ── Audio sets ────────────────────────────────────────────────────────────
+  Future<void> _loadAudioSets() async {
+    final sets = await AudioSetStore.instance.listSets();
+    if (mounted) setState(() => _audioSets = sets);
+  }
+
+  Future<void> _importAudioSet() async {
+    final bytes = await AudioSetStore.instance.pickFile();
+    if (bytes == null || !mounted) return;
+
+    final count = AudioSetStore.instance.countWavs(bytes);
+    if (!mounted) return;
+
+    final result = await showDialog<_ImportSetResult>(
+      context: context,
+      builder: (ctx) => _ImportSetDialog(wavCount: count, existingSets: _audioSets),
+    );
+    if (result == null || !mounted) return;
+
+    try {
+      final setId = await AudioSetStore.instance.importZip(
+        bytes, name: result.name, updateId: result.updateId);
+      if (!mounted) return;
+      await _loadAudioSets();
+      if (setId != null) setState(() => _activeSetId = setId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Import failed: $e',
+            style: AT.garamond(13, color: Colors.white)),
+        backgroundColor: AC.recRed,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
 
   // ── Data ──────────────────────────────────────────────────────────────────
   Future<void> _loadData() async {
@@ -336,7 +378,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             pada.seq);
     }
 
-    final hasAudio = await _audio.playPada(pada.id, speed: _speed);
+    final hasAudio = await _audio.playPada(pada.id, speed: _speed, setId: _activeSetId);
     if (!_setPlaying) return; // stopped while loading
 
     if (!hasAudio) {
@@ -403,7 +445,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _nextPada();
     await Future.delayed(const Duration(milliseconds: 150));
     if (!mounted || _pada == null || !_autoAdvance) { _advancing = false; return; }
-    await _audio.playPada(_pada!.id, speed: _speed);
+    await _audio.playPada(_pada!.id, speed: _speed, setId: _activeSetId);
     _advancing = false;
   }
 
@@ -411,8 +453,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     if (_playing) { await _audio.pause(); return; }
     final pada = _pada;
     if (pada == null) return;
-    // Use GRETIL ID directly as the audio key (e.g. "1.1.11")
-    await _audio.playPada(pada.id, speed: _speed);
+    await _audio.playPada(pada.id, speed: _speed, setId: _activeSetId);
   }
 
   Future<void> _stopPlay() async {
@@ -1386,6 +1427,51 @@ class _PracticeScreenState extends State<PracticeScreen> {
             valueColor: const AlwaysStoppedAnimation<Color>(AC.trackFill)),
         ),
       ),
+      // Audio source selector
+      Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+        child: Row(children: [
+          Text('Source'.toUpperCase(),
+              style: AT.garamond(11, color: AC.textSec, letterSpacing: 0.8)),
+          const SizedBox(width: 8),
+          Expanded(child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              _AudioSetChip(
+                label: 'Built-in',
+                active: _activeSetId == null,
+                onTap: () => setState(() => _activeSetId = null),
+              ),
+              ..._audioSets.map((s) => _AudioSetChip(
+                label: s.name,
+                active: _activeSetId == s.id,
+                onTap: () => setState(() => _activeSetId = s.id),
+                onDelete: () async {
+                  await AudioSetStore.instance.deleteSet(s.id);
+                  if (!mounted) return;
+                  if (_activeSetId == s.id) setState(() => _activeSetId = null);
+                  await _loadAudioSets();
+                },
+              )),
+              GestureDetector(
+                onTap: _importAudioSet,
+                child: Container(
+                  margin: const EdgeInsets.only(left: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AC.border)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.add_rounded, size: 12, color: AC.textMuted),
+                    const SizedBox(width: 3),
+                    Text('Import', style: AT.garamond(12, color: AC.textMuted)),
+                  ]),
+                ),
+              ),
+            ]),
+          )),
+        ]),
+      ),
       const SizedBox(height: 6),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         IconButton(icon: const Icon(Icons.skip_previous_rounded),
@@ -1540,6 +1626,169 @@ class _PadaBadge extends StatelessWidget {
     child: Text('Pāda ${padaNum == 1 ? "A" : "B"}',
         style: AT.garamond(14, color: AC.textSec, weight: FontWeight.w600)),
   );
+}
+
+// ─── Audio set chip ────────────────────────────────────────────────────────────
+class _AudioSetChip extends StatelessWidget {
+  final String        label;
+  final bool          active;
+  final VoidCallback  onTap;
+  final VoidCallback? onDelete;
+  const _AudioSetChip({
+    required this.label, required this.active,
+    required this.onTap, this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: EdgeInsets.fromLTRB(10, 4, active && onDelete != null ? 4 : 10, 4),
+      decoration: BoxDecoration(
+        color: active ? AC.accent.withOpacity(0.10) : AC.surfaceAlt,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: active ? AC.accent : AC.border)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(label, style: AT.garamond(12,
+            color: active ? AC.accent : AC.textSec)),
+        if (active && onDelete != null) ...[
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onDelete,
+            child: const Icon(Icons.close_rounded, size: 12, color: AC.textMuted),
+          ),
+        ],
+      ]),
+    ),
+  );
+}
+
+// ─── Import set dialog ─────────────────────────────────────────────────────────
+class _ImportSetResult {
+  final String  name;
+  final String? updateId;
+  const _ImportSetResult(this.name, this.updateId);
+}
+
+class _ImportSetDialog extends StatefulWidget {
+  final int                wavCount;
+  final List<AudioSetMeta> existingSets;
+  const _ImportSetDialog({required this.wavCount, required this.existingSets});
+  @override
+  State<_ImportSetDialog> createState() => _ImportSetDialogState();
+}
+
+class _ImportSetDialogState extends State<_ImportSetDialog> {
+  late final TextEditingController _nameCtrl;
+  bool    _updating = false;
+  String? _updateId;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: 'Imported Set');
+    if (widget.existingSets.isNotEmpty) _updateId = widget.existingSets.first.id;
+  }
+
+  @override
+  void dispose() { _nameCtrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final canImport = widget.wavCount > 0 &&
+        (_updating ? _updateId != null : _nameCtrl.text.trim().isNotEmpty);
+    return AlertDialog(
+      backgroundColor: AC.surface,
+      title: Text('Import Audio Set', style: AT.garamond(18, color: AC.text)),
+      content: SizedBox(
+        width: 360,
+        child: Column(mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(
+            widget.wavCount > 0
+                ? 'Found ${widget.wavCount} WAV recording${widget.wavCount != 1 ? "s" : ""} in ZIP.'
+                : 'No WAV files found in this ZIP.',
+            style: AT.garamond(14, color: widget.wavCount > 0 ? AC.text : AC.recRed),
+          ),
+          if (widget.wavCount > 0) ...[
+            const SizedBox(height: 16),
+            if (widget.existingSets.isNotEmpty)
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                RadioListTile<bool>(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Create new set', style: AT.garamond(14, color: AC.text)),
+                  value: false, groupValue: _updating,
+                  activeColor: AC.accent,
+                  onChanged: (v) => setState(() => _updating = false),
+                ),
+                RadioListTile<bool>(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Update existing set', style: AT.garamond(14, color: AC.text)),
+                  value: true, groupValue: _updating,
+                  activeColor: AC.accent,
+                  onChanged: (v) => setState(() => _updating = true),
+                ),
+              ]),
+            const SizedBox(height: 8),
+            if (!_updating) ...[
+              Text('Set name', style: AT.garamond(13, color: AC.textSec)),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _nameCtrl,
+                onChanged: (_) => setState(() {}),
+                style: AT.garamond(14, color: AC.text),
+                decoration: InputDecoration(
+                  filled: true, fillColor: AC.surfaceAlt,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AC.border)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AC.border)),
+                ),
+              ),
+            ] else ...[
+              Text('Select set to update', style: AT.garamond(13, color: AC.textSec)),
+              const SizedBox(height: 4),
+              DropdownButton<String>(
+                value: _updateId,
+                isExpanded: true,
+                style: AT.garamond(14, color: AC.text),
+                dropdownColor: AC.surface,
+                underline: Container(height: 1, color: AC.border),
+                onChanged: (v) => setState(() => _updateId = v),
+                items: widget.existingSets.map((s) => DropdownMenuItem(
+                  value: s.id,
+                  child: Text(s.name, style: AT.garamond(14, color: AC.text)),
+                )).toList(),
+              ),
+            ],
+          ],
+        ]),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel', style: AT.garamond(14, color: AC.textMuted)),
+        ),
+        TextButton(
+          onPressed: canImport
+              ? () => Navigator.pop(context, _ImportSetResult(
+                  _updating
+                      ? (widget.existingSets
+                            .firstWhere((s) => s.id == _updateId!).name)
+                      : _nameCtrl.text.trim(),
+                  _updating ? _updateId : null))
+              : null,
+          child: Text(_updating ? 'Update' : 'Import',
+              style: AT.garamond(14,
+                  color: canImport ? AC.accent : AC.textMuted)),
+        ),
+      ],
+    );
+  }
 }
 
 class _ModeSeg extends StatelessWidget {

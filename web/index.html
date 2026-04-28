@@ -228,6 +228,157 @@
 
       return { saveRecording, loadAll, deleteRecording, listKeys, downloadRecording, downloadZip };
     })();
+
+    // ── Audio Set Store ────────────────────────────────────────────────────────
+    // Named audio sets imported from ZIP files. Stored in a separate IndexedDB.
+    window.amaraSetStore = (() => {
+      const DB_NAME    = 'amarakosha_audio_sets';
+      const DB_VERSION = 1;
+
+      function openDb() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('sets')) {
+              db.createObjectStore('sets', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('recordings')) {
+              const s = db.createObjectStore('recordings', { keyPath: ['setId', 'padaId'] });
+              s.createIndex('bySetId', 'setId');
+            }
+          };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+
+      // Parse uncompressed (STORE) ZIP; returns [{name, data: Uint8Array}]
+      function parseZip(bytes) {
+        const view  = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        const dec   = new TextDecoder();
+        const files = [];
+        let i = 0;
+        while (i <= bytes.length - 30) {
+          if (view.getUint32(i, true) !== 0x04034b50) { i++; continue; }
+          const compression = view.getUint16(i + 8,  true);
+          const compSize    = view.getUint32(i + 18, true);
+          const nameLen     = view.getUint16(i + 26, true);
+          const extraLen    = view.getUint16(i + 28, true);
+          const name        = dec.decode(bytes.subarray(i + 30, i + 30 + nameLen));
+          const dataStart   = i + 30 + nameLen + extraLen;
+          if (compression === 0 && compSize > 0) {
+            files.push({ name, data: bytes.slice(dataStart, dataStart + compSize) });
+          }
+          i = dataStart + compSize;
+        }
+        return files;
+      }
+
+      async function listSets() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const req = db.transaction('sets', 'readonly').objectStore('sets').getAll();
+          req.onsuccess = e => resolve(e.target.result || []);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+
+      // Parse ZIP bytes and store all WAV files as a named set.
+      // updateId: if provided, overwrites an existing set's recordings.
+      // Returns the setId string.
+      async function importZip(name, updateId, zipBytes) {
+        const files = parseZip(new Uint8Array(zipBytes));
+        const wavs  = files.filter(f => f.name.toLowerCase().endsWith('.wav'));
+        if (!wavs.length) throw new Error('No WAV files found in ZIP');
+
+        const db    = await openDb();
+        const setId = updateId ||
+          (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(['sets', 'recordings'], 'readwrite');
+          tx.objectStore('sets').put({
+            id: setId, name, padaCount: wavs.length, createdAt: Date.now()
+          });
+          for (const f of wavs) {
+            const padaId = f.name.split('/').pop().replace(/\.wav$/i, '');
+            tx.objectStore('recordings').put({ setId, padaId, data: f.data.buffer.slice(0) });
+          }
+          tx.oncomplete = () => resolve();
+          tx.onerror    = e => reject(e.target.error);
+        });
+        return setId;
+      }
+
+      // Returns a WAV blob: URL for a pada in the given set, or null.
+      async function getRecordingBlobUrl(setId, padaId) {
+        const db = await openDb();
+        const row = await new Promise((resolve, reject) => {
+          const req = db.transaction('recordings', 'readonly')
+            .objectStore('recordings').get([setId, padaId]);
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror   = e => reject(e.target.error);
+        });
+        if (!row) return null;
+        return URL.createObjectURL(new Blob([row.data], { type: 'audio/wav' }));
+      }
+
+      async function deleteSet(setId) {
+        const db = await openDb();
+        await new Promise((resolve, reject) => {
+          const tx  = db.transaction(['sets', 'recordings'], 'readwrite');
+          tx.objectStore('sets').delete(setId);
+          const idx = tx.objectStore('recordings').index('bySetId');
+          const req = idx.openKeyCursor(IDBKeyRange.only(setId));
+          req.onsuccess = e => {
+            const cur = e.target.result;
+            if (cur) { tx.objectStore('recordings').delete(cur.primaryKey); cur.continue(); }
+          };
+          tx.oncomplete = () => resolve();
+          tx.onerror    = e => reject(e.target.error);
+        });
+      }
+
+      return { listSets, importZip, getRecordingBlobUrl, deleteSet };
+    })();
+
+    // Open a file-picker dialog for a ZIP; resolves to Uint8Array or null.
+    window.pickWavZip = () => new Promise(resolve => {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = '.zip';
+      input.onchange = () => {
+        const file = input.files[0];
+        if (!file) { resolve(null); return; }
+        const reader = new FileReader();
+        reader.onload  = e => resolve(new Uint8Array(e.target.result));
+        reader.onerror = () => resolve(null);
+        reader.readAsArrayBuffer(file);
+      };
+      // Some browsers require the input to be in the DOM
+      document.body.appendChild(input);
+      input.click();
+      setTimeout(() => document.body.removeChild(input), 1000);
+    });
+
+    // Count WAV files in a ZIP (synchronous scan, no storage).
+    window.countZipWavs = zipBytes => {
+      const bytes = new Uint8Array(zipBytes);
+      const view  = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const dec   = new TextDecoder();
+      let count = 0, i = 0;
+      while (i <= bytes.length - 30) {
+        if (view.getUint32(i, true) !== 0x04034b50) { i++; continue; }
+        const compression = view.getUint16(i + 8,  true);
+        const compSize    = view.getUint32(i + 18, true);
+        const nameLen     = view.getUint16(i + 26, true);
+        const extraLen    = view.getUint16(i + 28, true);
+        const name        = dec.decode(bytes.subarray(i + 30, i + 30 + nameLen));
+        if (compression === 0 && name.toLowerCase().endsWith('.wav')) count++;
+        i += 30 + nameLen + extraLen + compSize;
+      }
+      return count;
+    };
   </script>
 </head>
 <body>
