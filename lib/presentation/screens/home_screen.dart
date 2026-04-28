@@ -1,10 +1,19 @@
 // lib/presentation/screens/home_screen.dart (v3 model)
 
+import 'dart:js_interop';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/settings/app_settings.dart';
 import '../../data/repositories/static_data.dart';
 import '../widgets/shared_widgets.dart';
+
+@JS('open')
+external void _jsOpen(JSString url, JSString target);
+
+void _openUrl(String url) {
+  if (kIsWeb) _jsOpen(url.toJS, '_blank'.toJS);
+}
 
 class HomeScreen extends StatelessWidget {
   final VoidCallback onBrowse;
@@ -27,18 +36,25 @@ class HomeScreen extends StatelessWidget {
 
         // ── Header ────────────────────────────────────────────────────────
         Container(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
+          padding: const EdgeInsets.fromLTRB(20, 8, 12, 14),
           decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: AC.border))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('अमरकोश', style: TextStyle(
-                fontFamily: 'TiroDevanagarSanskrit',
-                fontSize: 22, color: AC.text, height: 1.2)),
-            Text('Amarakosha Practice'.toUpperCase(),
-                style: AT.garamond(
-                    (AppSettings.instance.uiFontSize - 2).toDouble(),
-                    color: AC.textSec, letterSpacing: 1.0,
-                    weight: AppSettings.instance.fontWeight)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('अमरकोश', style: TextStyle(
+                  fontFamily: 'TiroDevanagarSanskrit',
+                  fontSize: 22, color: AC.text, height: 1.2)),
+              Text('Amarakosha Practice'.toUpperCase(),
+                  style: AT.garamond(
+                      (AppSettings.instance.uiFontSize - 2).toDouble(),
+                      color: AC.textSec, letterSpacing: 1.0,
+                      weight: AppSettings.instance.fontWeight)),
+            ])),
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              _NavLink(label: 'Studio', onTap: () => _openUrl('recorder.html')),
+              const SizedBox(width: 6),
+              _NavLink(label: 'Help', onTap: () => _openUrl('help.html')),
+            ]),
           ]),
         ),
 
@@ -180,6 +196,24 @@ class _KandaRow extends StatelessWidget {
         const SizedBox(width: 8),
         const AChevRight(),
       ]),
+    ),
+  );
+}
+
+class _NavLink extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _NavLink({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: AC.border)),
+      child: Text(label, style: AT.garamond(12, color: AC.textMuted)),
     ),
   );
 }

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Practice App Help — Amarakosha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #EDE0C0; --surface: #F8F2E4; --surface-alt: #EAD9B2;
+      --text: #1E1208; --text-sec: #6A4618; --text-muted: #9C7848;
+      --accent: #7A3A10; --border: #C4A060; --border-lt: #DEC890;
+      --btn-bg: #7A3A10; --btn-text: #FFF4E4;
+      --green: #4A6A30; --green-bg: #E8F0D8;
+      --red: #C03020;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif;
+      min-height: 100vh; font-size: 16px; line-height: 1.7;
+    }
+    .dev { font-family: 'Tiro Devanagari Sanskrit', serif; }
+    a { color: var(--accent); }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ── */
+    #outer { display: flex; min-height: 100vh; }
+
+    /* Sidebar TOC */
+    #toc {
+      width: 220px; flex-shrink: 0;
+      background: var(--surface); border-right: 1px solid var(--border);
+      padding: 28px 0 40px; position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; font-size: 14px;
+    }
+    #toc .toc-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); padding: 0 18px 12px; display: block;
+    }
+    #toc a {
+      display: block; padding: 5px 18px; color: var(--text-sec); text-decoration: none;
+      border-left: 2px solid transparent;
+    }
+    #toc a:hover { color: var(--accent); background: var(--surface-alt); }
+    #toc a.sub { padding-left: 30px; font-size: 13px; color: var(--text-muted); }
+    #toc .toc-section { margin-top: 10px; }
+
+    /* Main content */
+    #main { flex: 1; max-width: 680px; padding: 36px 36px 80px; }
+    @media (max-width: 680px) { #toc { display: none; } #main { padding: 24px 18px 60px; } }
+
+    /* ── Nav bar ── */
+    .topnav {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+      font-size: 14px; color: var(--text-muted);
+    }
+    .topnav a { color: var(--text-muted); text-decoration: none; }
+    .topnav a:hover { color: var(--accent); }
+    .topnav .sep { color: var(--border); }
+
+    /* ── Typography ── */
+    h1 { font-size: 28px; color: var(--accent); margin-bottom: 6px; line-height: 1.2; }
+    .subtitle { font-size: 15px; color: var(--text-muted); margin-bottom: 32px; font-style: italic; }
+    h2 {
+      font-size: 20px; color: var(--accent); margin: 40px 0 12px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border-lt);
+    }
+    h3 { font-size: 17px; color: var(--text-sec); margin: 22px 0 8px; }
+    p  { margin-bottom: 12px; color: var(--text-sec); }
+    ul, ol { padding-left: 22px; margin-bottom: 12px; color: var(--text-sec); }
+    li { margin-bottom: 4px; }
+    strong { color: var(--text); }
+    em { font-style: italic; }
+    code {
+      font-family: monospace; font-size: 13px; background: var(--surface-alt);
+      border: 1px solid var(--border-lt); border-radius: 4px; padding: 1px 5px;
+      color: var(--text);
+    }
+
+    /* ── Callout boxes ── */
+    .note {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 12px 16px; margin: 16px 0;
+      font-size: 15px; color: var(--text-sec);
+    }
+    .tip {
+      background: var(--green-bg); border: 1px solid rgba(74,106,48,.3);
+      border-left: 3px solid var(--green);
+      border-radius: 8px; padding: 12px 16px; margin: 16px 0;
+      font-size: 15px; color: #2E4A20;
+    }
+
+    /* ── Mode chips ── */
+    .mode-row { display: flex; gap: 12px; margin: 12px 0 16px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 20px; font-size: 14px;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .chip.active { background: var(--btn-bg); color: var(--btn-text); border-color: var(--accent); }
+    .chip.green  { background: var(--green-bg); color: var(--green); border-color: rgba(74,106,48,.4); }
+
+    /* ── Screenshot-like boxes ── */
+    .ui-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px 18px; margin: 14px 0; font-size: 14px; color: var(--text-sec);
+    }
+    .ui-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .ui-row:last-child { margin-bottom: 0; }
+    .badge {
+      font-size: 12px; background: var(--surface-alt); border: 1px solid var(--border-lt);
+      border-radius: 4px; padding: 2px 7px; color: var(--text-muted);
+    }
+
+    /* ── Key shortcut ── */
+    kbd {
+      font-family: inherit; font-size: 13px;
+      background: var(--surface-alt); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px; color: var(--text);
+    }
+
+    hr { border: none; border-top: 1px solid var(--border-lt); margin: 36px 0; }
+  </style>
+</head>
+<body>
+<div id="outer">
+
+  <!-- Table of Contents -->
+  <nav id="toc">
+    <span class="toc-title">Practice App Help</span>
+    <div class="toc-section">
+      <a href="#overview">Overview</a>
+      <a href="#home">Home Screen</a>
+      <a href="#browsing">Browsing the Text</a>
+      <a href="#modes">Practice Modes</a>
+      <a class="sub" href="#listen">Listen</a>
+      <a class="sub" href="#recite">Recite</a>
+      <a class="sub" href="#guided">Guided</a>
+      <a href="#audio">Audio Playback</a>
+      <a class="sub" href="#sources">Audio Sources</a>
+      <a class="sub" href="#speed">Speed &amp; Auto-advance</a>
+      <a href="#set">Practice Set</a>
+      <a href="#teacher-sets">Teacher Audio Sets</a>
+      <a href="#recording">Recording Your Voice</a>
+      <a href="#words">Word Analysis</a>
+      <a href="#display">Display Settings</a>
+      <a href="#mobile">Mobile Tips</a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main id="main">
+
+    <div class="topnav">
+      <a href="landing.html">← Home</a>
+      <span class="sep">·</span>
+      <a href="recorder-help.html">Recording Studio Help</a>
+    </div>
+
+    <h1>Practice App Help</h1>
+    <p class="subtitle">Study and recite the Amarakosha with Listen, Recite, and Guided modes.</p>
+
+    <!-- ── Overview ── -->
+    <h2 id="overview">Overview</h2>
+    <p>
+      The Amarakosha Practice App lets you work through the pādas of the
+      <em>Nāmaliṅgānuśāsana</em> at your own pace. You can listen to reference
+      audio, recite from memory, study word-by-word, and build custom practice
+      playlists called <strong>Practice Sets</strong>.
+    </p>
+    <p>
+      The text is organised as: <strong>Kāṇḍa → Varga → Section → Pāda</strong>.
+      There are 3 Kāṇḍas, 25 Vargas, 63 Sections, and 2,865 Pādas in total.
+      Each Varga is a topical group (e.g. heavenly bodies, trees, animals);
+      each Section is a semantic cluster within a Varga.
+    </p>
+
+    <!-- ── Home Screen ── -->
+    <h2 id="home">Home Screen</h2>
+    <p>
+      The home screen shows a <strong>resume card</strong> for your current position,
+      three quick stats (total pādas, sections, vargas), and a list of all Kāṇḍas
+      with pada counts.
+    </p>
+    <ul>
+      <li>Tap <strong>Continue Practice</strong> or any Kāṇḍa row to go to the Browse screen.</li>
+      <li>The Browse screen lets you pick a Varga to enter the Practice screen.</li>
+    </ul>
+
+    <!-- ── Browsing ── -->
+    <h2 id="browsing">Browsing the Text</h2>
+    <p>
+      The <strong>Practice screen</strong> has three areas:
+    </p>
+    <ul>
+      <li><strong>Tree pane</strong> (left sidebar on desktop, slide-in overlay on mobile) — the
+          full hierarchy of Kāṇḍas, Vargas, Sections, and Pādas.</li>
+      <li><strong>Practice pane</strong> (centre) — the currently selected pāda, audio player,
+          and word chips.</li>
+      <li><strong>Practice Set panel</strong> (right sidebar on desktop, bottom sheet on mobile) —
+          your curated playlist.</li>
+    </ul>
+
+    <h3>Tree pane navigation</h3>
+    <ul>
+      <li>Tap a <strong>Kāṇḍa</strong> row to expand or collapse it.</li>
+      <li>Tap a <strong>Varga</strong> row to expand it and see its Sections.</li>
+      <li>Tap a <strong>Section</strong> to jump to its first Pāda.</li>
+      <li>When a Section is selected, its individual Pādas appear below it — tap any to go directly to it.</li>
+      <li>A small speaker icon (🔊) next to a Pāda means audio is available for it.</li>
+      <li>A small dot (●) means Devanagari text is available.</li>
+    </ul>
+
+    <div class="note">
+      <strong>Long-press</strong> a Section or Pāda in the tree to add it to your Practice Set.
+      A checkmark icon (✓) appears on items already in the set.
+    </div>
+
+    <h3>Practice pane navigation</h3>
+    <p>Use the <strong>← → skip buttons</strong> in the audio player to move to the previous or
+    next pāda within the current section. Navigation wraps across section boundaries.</p>
+    <p>The progress bar and "Pāda N of M" label at the top show your position within the current section.</p>
+
+    <!-- ── Modes ── -->
+    <h2 id="modes">Practice Modes</h2>
+    <p>Three modes are available via the segmented control at the top of the practice pane:</p>
+
+    <div class="mode-row">
+      <span class="chip active">Listen</span>
+      <span class="chip">Recite</span>
+      <span class="chip">Guided</span>
+    </div>
+
+    <h3 id="listen">Listen</h3>
+    <p>
+      The full Devanagari text is always visible. Use this mode to read along while
+      audio plays, or to familiarise yourself with the pāda before memorising it.
+      Audio plays on demand — tap the play button.
+    </p>
+
+    <h3 id="recite">Recite</h3>
+    <p>
+      The Devanagari text is <strong>hidden</strong> initially, asking you to recite the pāda
+      from memory. Tap <strong>Reveal</strong> (or the hidden text area) to uncover it and
+      check your recitation. Use audio playback before or after revealing to hear the correct form.
+    </p>
+
+    <h3 id="guided">Guided</h3>
+    <p>
+      The text is hidden but can be toggled on and off with a tap — useful for a prompt-then-reveal
+      study method. Tap the shaded area to reveal; tap again to hide.
+    </p>
+
+    <!-- ── Audio ── -->
+    <h2 id="audio">Audio Playback</h2>
+    <p>The <strong>Audio</strong> card at the bottom of each pāda contains the full playback controls.</p>
+
+    <div class="ui-box">
+      <div class="ui-row">
+        <span>◀</span>
+        <span>⏹</span>
+        <span style="font-size:20px">▶ / ⏸</span>
+        <span>▶</span>
+        <span style="margin-left:8px;color:var(--text-muted)">skip prev · stop · play/pause · skip next</span>
+      </div>
+      <div class="ui-row" style="margin-top:8px">
+        <span class="chip" style="font-size:13px">0.5×</span>
+        <span class="chip" style="font-size:13px">0.75×</span>
+        <span class="chip active" style="font-size:13px">1×</span>
+        <span class="chip" style="font-size:13px">1.25×</span>
+        <span class="chip" style="font-size:13px">1.5×</span>
+        <span style="margin-left:6px;color:var(--text-muted);font-size:13px">playback speed</span>
+      </div>
+    </div>
+
+    <ul>
+      <li><strong>Play/Pause</strong> — starts or pauses audio for the current pāda.</li>
+      <li><strong>Stop</strong> — stops playback and resets the progress bar to the beginning.</li>
+      <li><strong>Skip buttons</strong> — navigate to the previous or next pāda.</li>
+      <li><strong>Speed chips</strong> (0.5× – 1.5×) — adjust playback rate without re-loading.</li>
+    </ul>
+
+    <h3 id="sources">Audio Sources</h3>
+    <p>Below the progress bar is a <strong>Source</strong> row with chips for each available audio source:</p>
+
+    <div class="ui-box">
+      <div class="ui-row">
+        <span class="chip active" style="font-size:13px">Built-in</span>
+        <span class="chip" style="font-size:13px">Teacher A ×</span>
+        <span class="chip" style="font-size:13px;border-style:dashed">+ Import</span>
+      </div>
+    </div>
+
+    <ul>
+      <li><strong>Built-in</strong> — the reference recordings bundled with the app (where available).</li>
+      <li><strong>Named sets</strong> — teacher recordings you have imported from a ZIP file.
+          Tap a set chip to activate it; the × button removes the set from the app.</li>
+      <li><strong>+ Import</strong> — opens the import dialog (see <a href="#teacher-sets">Teacher Audio Sets</a>).</li>
+    </ul>
+
+    <p>
+      The active source chip is highlighted. If the selected source has no recording for the
+      current pāda, the app automatically falls through to the next available source.
+    </p>
+
+    <h3 id="speed">Auto-advance</h3>
+    <p>
+      The <strong>Auto-advance</strong> toggle (below the speed chips) makes the app automatically
+      move to the next pāda and begin playing as soon as the current pāda finishes. Useful for
+      continuous listening without touching the screen.
+    </p>
+
+    <!-- ── Practice Set ── -->
+    <h2 id="set">Practice Set</h2>
+    <p>
+      A Practice Set is a curated playlist of Sections and/or individual Pādas that you want to
+      drill. It persists across sessions (saved locally in the browser).
+    </p>
+
+    <h3>Adding items</h3>
+    <ul>
+      <li><strong>Long-press a Section</strong> in the tree → adds all pādas in that section.</li>
+      <li><strong>Long-press a Pāda</strong> in the tree → adds just that pāda.</li>
+      <li>Tap the <strong>+ Set</strong> button on the pāda card → adds the current pāda.</li>
+    </ul>
+
+    <h3>Managing the set</h3>
+    <p>
+      On <strong>desktop</strong>, tap the <kbd>Set (N)</kbd> button in the nav bar to open the
+      Practice Set panel on the right. On <strong>mobile</strong>, tap the set tray bar at the
+      bottom of the screen.
+    </p>
+    <ul>
+      <li>Drag items to reorder them.</li>
+      <li>Tap × on an item to remove it.</li>
+      <li>Tap <strong>Clear</strong> to remove all items.</li>
+    </ul>
+
+    <h3>Repeat settings</h3>
+    <ul>
+      <li><strong>Each Pāda</strong> — how many times each pāda is repeated before advancing.</li>
+      <li><strong>Full Set</strong> — how many times the entire set is cycled through.</li>
+      <li>The total pāda count is shown below the steppers.</li>
+    </ul>
+
+    <h3>Playing the set</h3>
+    <p>
+      Tap <strong>Play Set</strong> to begin sequential playback through all items. The practice
+      pane navigates automatically to the current pāda as the set plays. Tap <strong>Stop Set</strong>
+      (red button) to end playback at any time.
+    </p>
+
+    <div class="tip">
+      <strong>Tip:</strong> Set playback uses the currently active Audio Source. Switch to a
+      teacher set before tapping Play Set to drill with the teacher's voice.
+    </div>
+
+    <!-- ── Teacher Sets ── -->
+    <h2 id="teacher-sets">Teacher Audio Sets</h2>
+    <p>
+      A teacher can record pādas in the <a href="recorder.html">Recording Studio</a> and export
+      them as a ZIP file. You can import that ZIP here as a named Audio Set.
+    </p>
+
+    <h3>Importing a ZIP</h3>
+    <ol>
+      <li>In the Audio card, tap <strong>+ Import</strong>.</li>
+      <li>A dialog appears showing how many WAV recordings were found in the ZIP.</li>
+      <li>Choose <strong>Create new set</strong> and enter a name (e.g. "Pandit Sharma"), or
+          choose <strong>Update existing set</strong> to replace recordings in an already-imported set.</li>
+      <li>Tap <strong>Import</strong>. The set appears immediately in the Source row.</li>
+    </ol>
+
+    <h3>Using a set</h3>
+    <p>Tap the set's chip in the Source row to activate it. All playback (individual pādas and
+    Practice Set) will now use the teacher's recordings where available, falling back to Built-in
+    for any pādas not covered by the import.</p>
+
+    <h3>Removing a set</h3>
+    <p>Activate the set, then tap the × that appears on its chip. This permanently deletes the
+    imported recordings from the browser's storage.</p>
+
+    <div class="note">
+      Audio sets are stored in the browser using IndexedDB. They persist across sessions but are
+      specific to this browser and device. To use a set on another device, import the ZIP there as well.
+    </div>
+
+    <!-- ── Recording ── -->
+    <h2 id="recording">Recording Your Own Voice</h2>
+    <p>
+      Tap the <strong>🎙 Record</strong> button in the nav bar (or in the Audio card) to open
+      the Recording screen for the current pāda.
+    </p>
+    <p>
+      The Recording screen uses your device's microphone to capture a recitation. Recordings
+      are saved locally and appear as a source option in the Audio card. This is useful for
+      self-assessment — record your recitation, then compare it to the reference.
+    </p>
+    <div class="note">
+      For creating and distributing recordings to students, use the dedicated
+      <a href="recorder.html">Recording Studio</a> instead — it has export features and a
+      full varga-level workflow.
+    </div>
+
+    <!-- ── Words ── -->
+    <h2 id="words">Word Analysis</h2>
+    <p>
+      Where word analysis data is available, a <strong>Words</strong> section appears below the
+      pāda card. Tap the "Words N" heading to expand it.
+    </p>
+    <p>
+      Each word chip shows:
+    </p>
+    <ul>
+      <li>The Devanagari form of the word</li>
+      <li>A brief meaning or grammatical label</li>
+      <li>The IAST transliteration (italicised)</li>
+    </ul>
+    <p>
+      <strong>Long-press a word chip</strong> to open a detailed grammar sheet with the full
+      analysis, stem form, and grammatical category.
+    </p>
+
+    <!-- ── Display ── -->
+    <h2 id="display">Display Settings</h2>
+    <p>
+      Tap the <strong>⊞</strong> (font/text) icon in the top-right of the nav bar to open
+      Display Settings. You can adjust:
+    </p>
+    <ul>
+      <li><strong>Devanagari font size</strong> — the size of Sanskrit text in the pāda card.</li>
+      <li><strong>UI font size</strong> — the size of English labels and section titles.</li>
+      <li><strong>Devanagari font</strong> — choose between bundled fonts for optimal rendering.</li>
+      <li><strong>Context lines</strong> — show 0–3 neighbouring pādas (greyed out) above and
+          below the current one for contextual reading.</li>
+    </ul>
+
+    <!-- ── Mobile ── -->
+    <h2 id="mobile">Mobile Tips</h2>
+    <p>On small screens the layout adapts:</p>
+    <ul>
+      <li>The tree pane is hidden by default. Tap <strong>Contents</strong> in the nav bar to
+          open a full-screen slide-in tree. Tap outside it (or the × button) to close.</li>
+      <li>The Practice Set panel becomes a bottom sheet. Tap the <strong>Practice Set</strong>
+          tray bar at the bottom to open it.</li>
+      <li>Audio controls are slightly larger for easier tapping.</li>
+      <li>The Set toggle button in the nav bar is hidden — use the bottom tray instead.</li>
+    </ul>
+
+    <div class="tip">
+      <strong>Install as an app:</strong> On Chrome or Safari, use <em>Add to Home Screen</em>
+      (or <em>Install</em> in Chrome's address bar) to run the Practice App as a standalone app
+      without browser chrome. It works offline once cached.
+    </div>
+
+    <hr>
+    <p style="font-size:14px;color:var(--text-muted)">
+      <a href="landing.html">← Back to Home</a>
+      &nbsp;·&nbsp;
+      <a href="recorder-help.html">Recording Studio Help →</a>
+    </p>
+
+  </main>
+</div>
+</body>
+</html>
