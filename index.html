@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/amarakosha/">
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Amarakosha Practice App">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="अमरकोश">
+  <link rel="manifest" href="manifest.json">
+  <title>अमरकोश</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!--
+    Amarakosha Recording Storage — IndexedDB helpers
+    Called from Dart via dart:js_interop as window.amaraStore.*
+  -->
+  <script>
+    window.amaraStore = (() => {
+      const DB_NAME    = 'amarakosha_recordings';
+      const STORE_NAME = 'audio';
+      const DB_VERSION = 1;
+
+      // Open (or create) the IndexedDB database
+      function openDb() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+              db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+            }
+          };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+
+      // Decode any audio buffer and re-encode as 16-bit mono WAV.
+      // AudioContext.decodeAudioData gives the exact sample count, so the
+      // WAV header carries a byte-precise duration — no early-stop issues.
+      async function toWav(rawBuffer) {
+        const ctx     = new AudioContext();
+        const decoded = await ctx.decodeAudioData(rawBuffer.slice(0));
+        ctx.close();
+        const sr  = decoded.sampleRate;
+        const n   = decoded.length;
+        const pcm = decoded.getChannelData(0); // mono
+        const wav = new ArrayBuffer(44 + n * 2);
+        const v   = new DataView(wav);
+        const w   = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+        w(0,'RIFF'); v.setUint32(4, 36 + n*2, true); w(8,'WAVE'); w(12,'fmt ');
+        v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+        v.setUint32(24,sr,true); v.setUint32(28,sr*2,true);
+        v.setUint16(32,2,true);  v.setUint16(34,16,true);
+        w(36,'data'); v.setUint32(40,n*2,true);
+        const p = new Int16Array(wav, 44);
+        for (let i = 0; i < n; i++) p[i] = Math.max(-32768, Math.min(32767, pcm[i] * 32768));
+        return wav;
+      }
+
+      // Save a recording under audioKey.
+      // Converts WebM → WAV so playback duration is always exact.
+      // Returns a WAV blob URL for immediate in-session playback.
+      async function saveRecording(audioKey, blobUrl) {
+        const response = await fetch(blobUrl);
+        const raw      = await response.arrayBuffer();
+        let buf  = raw;
+        let mime = 'audio/webm';
+        try {
+          buf  = await toWav(raw);
+          mime = 'audio/wav';
+        } catch(e) {
+          // fallback: store original WebM
+        }
+        const wavBlobUrl = URL.createObjectURL(new Blob([buf], { type: mime }));
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).put({ key: audioKey, data: buf, mime, ts: Date.now() });
+          tx.oncomplete = () => resolve(wavBlobUrl);
+          tx.onerror    = e => reject(e.target.error);
+        });
+      }
+
+      // Load all saved recordings; returns array of {key, blobUrl, durationMs}
+      async function loadAll() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const tx   = db.transaction(STORE_NAME, 'readonly');
+          const req  = tx.objectStore(STORE_NAME).getAll();
+          req.onsuccess = e => {
+            const rows = e.target.result || [];
+            const result = rows.map(row => {
+              const blob    = new Blob([row.data], { type: row.mime || 'audio/webm' });
+              const blobUrl = URL.createObjectURL(blob);
+              return { key: row.key, blobUrl, ts: row.ts || 0 };
+            });
+            resolve(result);
+          };
+          req.onerror = e => reject(e.target.error);
+        });
+      }
+
+      // Delete one recording by key
+      async function deleteRecording(audioKey) {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const tx  = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).delete(audioKey);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror    = e => reject(e.target.error);
+        });
+      }
+
+      // List all stored keys
+      async function listKeys() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const tx  = db.transaction(STORE_NAME, 'readonly');
+          const req = tx.objectStore(STORE_NAME).getAllKeys();
+          req.onsuccess = e => resolve(e.target.result || []);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+
+      // ── ZIP helpers ────────────────────────────────────────────────────────
+
+      const _crcTable = (() => {
+        const t = new Uint32Array(256);
+        for (let n = 0; n < 256; n++) {
+          let c = n;
+          for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          t[n] = c;
+        }
+        return t;
+      })();
+
+      function crc32(data) {
+        let c = 0xFFFFFFFF;
+        for (let i = 0; i < data.length; i++) c = _crcTable[(c ^ data[i]) & 0xFF] ^ (c >>> 8);
+        return (c ^ 0xFFFFFFFF) >>> 0;
+      }
+
+      // Build a ZIP with no compression (stored). files = [{name, data: Uint8Array}]
+      function buildZip(files) {
+        const enc = new TextEncoder();
+        const parts = [], dirs = [];
+        let offset = 0;
+        for (const f of files) {
+          const name = enc.encode(f.name);
+          const crc  = crc32(f.data);
+          const sz   = f.data.length;
+          const loc  = new Uint8Array(30 + name.length);
+          const lv   = new DataView(loc.buffer);
+          lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true);
+          lv.setUint16(6, 0, true); lv.setUint16(8, 0, true);
+          lv.setUint16(10, 0, true); lv.setUint16(12, 0, true);
+          lv.setUint32(14, crc, true); lv.setUint32(18, sz, true);
+          lv.setUint32(22, sz, true); lv.setUint16(26, name.length, true);
+          lv.setUint16(28, 0, true); loc.set(name, 30);
+
+          const dir = new Uint8Array(46 + name.length);
+          const dv  = new DataView(dir.buffer);
+          dv.setUint32(0, 0x02014b50, true); dv.setUint16(4, 20, true);
+          dv.setUint16(6, 20, true); dv.setUint16(8, 0, true);
+          dv.setUint16(10, 0, true); dv.setUint16(12, 0, true);
+          dv.setUint16(14, 0, true); dv.setUint32(16, crc, true);
+          dv.setUint32(20, sz, true); dv.setUint32(24, sz, true);
+          dv.setUint16(28, name.length, true); dv.setUint16(30, 0, true);
+          dv.setUint16(32, 0, true); dv.setUint16(34, 0, true);
+          dv.setUint16(36, 0, true); dv.setUint32(38, 0, true);
+          dv.setUint32(42, offset, true); dir.set(name, 46);
+
+          parts.push(loc, f.data); dirs.push(dir);
+          offset += 30 + name.length + sz;
+        }
+        const cdSz = dirs.reduce((s, d) => s + d.length, 0);
+        const eocd = new Uint8Array(22);
+        const ev   = new DataView(eocd.buffer);
+        ev.setUint32(0, 0x06054b50, true); ev.setUint16(4, 0, true);
+        ev.setUint16(6, 0, true); ev.setUint16(8, files.length, true);
+        ev.setUint16(10, files.length, true); ev.setUint32(12, cdSz, true);
+        ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+        return new Blob([...parts, ...dirs, eocd], { type: 'application/zip' });
+      }
+
+      function triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a   = Object.assign(document.createElement('a'), { href: url, download: filename });
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+      }
+
+      // Download a single recording from IndexedDB as a file.
+      async function downloadRecording(key, filename) {
+        const db  = await openDb();
+        const row = await new Promise((res, rej) => {
+          const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(key);
+          req.onsuccess = e => res(e.target.result);
+          req.onerror   = e => rej(e.target.error);
+        });
+        if (!row) return;
+        const ext  = row.mime === 'audio/wav' ? 'wav' : 'webm';
+        triggerDownload(new Blob([row.data], { type: row.mime }), filename || `${key}.${ext}`);
+      }
+
+      // Download multiple recordings as a ZIP. keys passed as comma-separated string.
+      async function downloadZip(keysCommaSep, zipFilename) {
+        const keys  = keysCommaSep.split(',').filter(Boolean);
+        if (!keys.length) return;
+        const db    = await openDb();
+        const files = [];
+        for (const key of keys) {
+          const row = await new Promise((res, rej) => {
+            const req = db.transaction(STORE_NAME).objectStore(STORE_NAME).get(key);
+            req.onsuccess = e => res(e.target.result);
+            req.onerror   = e => rej(e.target.error);
+          });
+          if (row) {
+            const ext = row.mime === 'audio/wav' ? 'wav' : 'webm';
+            files.push({ name: `${key}.${ext}`, data: new Uint8Array(row.data) });
+          }
+        }
+        if (files.length) triggerDownload(buildZip(files), zipFilename || 'recordings.zip');
+      }
+
+      return { saveRecording, loadAll, deleteRecording, listKeys, downloadRecording, downloadZip };
+    })();
+
+    // ── Audio Set Store ────────────────────────────────────────────────────────
+    // Named audio sets imported from ZIP files. Stored in a separate IndexedDB.
+    window.amaraSetStore = (() => {
+      const DB_NAME    = 'amarakosha_audio_sets';
+      const DB_VERSION = 1;
+
+      function openDb() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open(DB_NAME, DB_VERSION);
+          req.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('sets')) {
+              db.createObjectStore('sets', { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains('recordings')) {
+              const s = db.createObjectStore('recordings', { keyPath: ['setId', 'padaId'] });
+              s.createIndex('bySetId', 'setId');
+            }
+          };
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+
+      // Parse uncompressed (STORE) ZIP; returns [{name, data: Uint8Array}]
+      function parseZip(bytes) {
+        const view  = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+        const dec   = new TextDecoder();
+        const files = [];
+        let i = 0;
+        while (i <= bytes.length - 30) {
+          if (view.getUint32(i, true) !== 0x04034b50) { i++; continue; }
+          const compression = view.getUint16(i + 8,  true);
+          const compSize    = view.getUint32(i + 18, true);
+          const nameLen     = view.getUint16(i + 26, true);
+          const extraLen    = view.getUint16(i + 28, true);
+          const name        = dec.decode(bytes.subarray(i + 30, i + 30 + nameLen));
+          const dataStart   = i + 30 + nameLen + extraLen;
+          if (compression === 0 && compSize > 0) {
+            files.push({ name, data: bytes.slice(dataStart, dataStart + compSize) });
+          }
+          i = dataStart + compSize;
+        }
+        return files;
+      }
+
+      async function listSets() {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const req = db.transaction('sets', 'readonly').objectStore('sets').getAll();
+          req.onsuccess = e => resolve(e.target.result || []);
+          req.onerror   = e => reject(e.target.error);
+        });
+      }
+
+      // Parse ZIP bytes and store all WAV files as a named set.
+      // updateId: if provided, overwrites an existing set's recordings.
+      // Returns the setId string.
+      async function importZip(name, updateId, zipBytes) {
+        const files = parseZip(new Uint8Array(zipBytes));
+        const wavs  = files.filter(f => f.name.toLowerCase().endsWith('.wav'));
+        if (!wavs.length) throw new Error('No WAV files found in ZIP');
+
+        const db    = await openDb();
+        const setId = updateId ||
+          (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(['sets', 'recordings'], 'readwrite');
+          tx.objectStore('sets').put({
+            id: setId, name, padaCount: wavs.length, createdAt: Date.now()
+          });
+          for (const f of wavs) {
+            const padaId = f.name.split('/').pop().replace(/\.wav$/i, '');
+            tx.objectStore('recordings').put({ setId, padaId, data: f.data.buffer.slice(0) });
+          }
+          tx.oncomplete = () => resolve();
+          tx.onerror    = e => reject(e.target.error);
+        });
+        return setId;
+      }
+
+      // Returns a WAV blob: URL for a pada in the given set, or null.
+      async function getRecordingBlobUrl(setId, padaId) {
+        const db = await openDb();
+        const row = await new Promise((resolve, reject) => {
+          const req = db.transaction('recordings', 'readonly')
+            .objectStore('recordings').get([setId, padaId]);
+          req.onsuccess = e => resolve(e.target.result);
+          req.onerror   = e => reject(e.target.error);
+        });
+        if (!row) return null;
+        return URL.createObjectURL(new Blob([row.data], { type: 'audio/wav' }));
+      }
+
+      async function deleteSet(setId) {
+        const db = await openDb();
+        await new Promise((resolve, reject) => {
+          const tx  = db.transaction(['sets', 'recordings'], 'readwrite');
+          tx.objectStore('sets').delete(setId);
+          const idx = tx.objectStore('recordings').index('bySetId');
+          const req = idx.openKeyCursor(IDBKeyRange.only(setId));
+          req.onsuccess = e => {
+            const cur = e.target.result;
+            if (cur) { tx.objectStore('recordings').delete(cur.primaryKey); cur.continue(); }
+          };
+          tx.oncomplete = () => resolve();
+          tx.onerror    = e => reject(e.target.error);
+        });
+      }
+
+      return { listSets, importZip, getRecordingBlobUrl, deleteSet };
+    })();
+
+    // Open a file-picker dialog for a ZIP; resolves to Uint8Array or null.
+    window.pickWavZip = () => new Promise(resolve => {
+      const input = document.createElement('input');
+      input.type = 'file'; input.accept = '.zip';
+      input.onchange = () => {
+        const file = input.files[0];
+        if (!file) { resolve(null); return; }
+        const reader = new FileReader();
+        reader.onload  = e => resolve(new Uint8Array(e.target.result));
+        reader.onerror = () => resolve(null);
+        reader.readAsArrayBuffer(file);
+      };
+      // Some browsers require the input to be in the DOM
+      document.body.appendChild(input);
+      input.click();
+      setTimeout(() => document.body.removeChild(input), 1000);
+    });
+
+    // Count WAV files in a ZIP (synchronous scan, no storage).
+    window.countZipWavs = zipBytes => {
+      const bytes = new Uint8Array(zipBytes);
+      const view  = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      const dec   = new TextDecoder();
+      let count = 0, i = 0;
+      while (i <= bytes.length - 30) {
+        if (view.getUint32(i, true) !== 0x04034b50) { i++; continue; }
+        const compression = view.getUint16(i + 8,  true);
+        const compSize    = view.getUint32(i + 18, true);
+        const nameLen     = view.getUint16(i + 26, true);
+        const extraLen    = view.getUint16(i + 28, true);
+        const name        = dec.decode(bytes.subarray(i + 30, i + 30 + nameLen));
+        if (compression === 0 && name.toLowerCase().endsWith('.wav')) count++;
+        i += 30 + nameLen + extraLen + compSize;
+      }
+      return count;
+    };
+  </script>
+</head>
+<body>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

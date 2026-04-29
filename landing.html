@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amarakosha — Sanskrit Recitation Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #EDE0C0; --surface: #F8F2E4; --surface-alt: #EAD9B2;
+      --text: #1E1208; --text-sec: #6A4618; --text-muted: #9C7848;
+      --accent: #7A3A10; --border: #C4A060; --border-lt: #DEC890;
+      --btn-bg: #7A3A10; --btn-text: #FFF4E4;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif;
+      min-height: 100vh;
+    }
+    .dev { font-family: 'Tiro Devanagari Sanskrit', serif; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    #wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 64px; }
+
+    /* ── Header ── */
+    header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); }
+    .logo { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+    .logo-dev { font-size: 34px; color: var(--accent); line-height: 1; font-family: 'Tiro Devanagari Sanskrit', serif; }
+    .logo-en  { font-size: 13px; letter-spacing: 2.5px; color: var(--text-muted); text-transform: uppercase; }
+    header p  { font-size: 16px; color: var(--text-sec); line-height: 1.7; max-width: 600px; }
+    header em { font-style: italic; }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex; gap: 0; margin: 28px 0;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      overflow: hidden; flex-wrap: wrap;
+    }
+    .stat {
+      flex: 1; min-width: 100px; padding: 16px 20px; text-align: center;
+      border-right: 1px solid var(--border-lt);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num   { font-size: 26px; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; letter-spacing: 0.5px; }
+
+    /* ── Tool cards ── */
+    .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 580px) { .cards { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 26px; display: flex; flex-direction: column; gap: 14px;
+    }
+    .card-head { display: flex; align-items: center; gap: 12px; }
+    .card-icon  { font-size: 26px; line-height: 1; }
+    .card-title { font-size: 20px; color: var(--accent); font-weight: 600; }
+    .card-desc  { font-size: 15px; color: var(--text-sec); line-height: 1.65; flex: 1; }
+    .card-desc ul { padding-left: 18px; margin-top: 6px; }
+    .card-desc li { margin-bottom: 3px; }
+    .card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-block; border-radius: 8px; padding: 9px 18px;
+      font-family: inherit; font-size: 15px; cursor: pointer; text-decoration: none;
+    }
+    .btn:hover { text-decoration: none; opacity: 0.88; }
+    .btn-primary  { background: var(--btn-bg); color: var(--btn-text); border: none; }
+    .btn-outline  { background: transparent; color: var(--accent); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--surface-alt); }
+
+    /* ── Workflow ── */
+    .workflow {
+      margin-top: 36px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 24px;
+    }
+    .workflow h2 {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); margin-bottom: 16px;
+    }
+    .steps { display: flex; gap: 0; flex-wrap: wrap; }
+    .step {
+      flex: 1; min-width: 160px; padding: 0 16px 0 0;
+      border-right: 1px solid var(--border-lt); margin-right: 16px;
+    }
+    .step:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+    .step-num { font-size: 22px; color: var(--border); margin-bottom: 6px; }
+    .step-text { font-size: 14px; color: var(--text-sec); line-height: 1.55; }
+    .step-text strong { color: var(--text); }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 48px; padding-top: 14px; border-top: 1px solid var(--border-lt);
+      font-size: 13px; color: var(--text-muted); font-style: italic;
+    }
+  </style>
+</head>
+<body>
+<div id="wrap">
+
+  <header>
+    <div class="logo">
+      <span class="logo-dev">अमरकोश</span>
+      <span class="logo-en">Amarakosha</span>
+    </div>
+    <p>
+      The <em>Nāmaliṅgānuśāsana</em> of Amarasiṃha — a Sanskrit thesaurus composed entirely in
+      verse, organised by topic, and memorised by students for over a thousand years.
+      This site provides tools for listening to, reciting, and recording the pādas.
+    </p>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">2,865</div>
+      <div class="stat-label">Total Pādas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Kāṇḍas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">25</div>
+      <div class="stat-label">Vargas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">63</div>
+      <div class="stat-label">Sections</div>
+    </div>
+  </div>
+
+  <div class="cards">
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">📖</span>
+        <span class="card-title">Practice App</span>
+      </div>
+      <div class="card-desc">
+        Listen to recitations, test your recall, and study at your own pace.
+        <ul>
+          <li>Browse Kāṇḍa → Varga → Section</li>
+          <li><strong>Listen</strong>, <strong>Recite</strong>, and <strong>Guided</strong> modes</li>
+          <li>Build a custom Practice Set</li>
+          <li>Import teacher audio sets</li>
+          <li>Record your own voice</li>
+          <li>Word-level grammar chips</li>
+        </ul>
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href="index.html">Open App →</a>
+        <a class="btn btn-outline" href="help.html">Help</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-icon">🎙</span>
+        <span class="card-title">Recording Studio</span>
+      </div>
+      <div class="card-desc">
+        Record recitations of every pāda and export them for distribution to students.
+        <ul>
+          <li>Navigate by Kāṇḍa and Varga</li>
+          <li>Record, review, and re-record pādas</li>
+          <li>Track completion across a Varga</li>
+          <li>Download as individual WAV files</li>
+          <li>Export Varga ZIP for student import</li>
+        </ul>
+      </div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href="recorder.html">Open Studio →</a>
+        <a class="btn btn-outline" href="recorder-help.html">Help</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="workflow">
+    <h2>Teacher → Student Workflow</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">①</div>
+        <div class="step-text">
+          Teacher opens the <strong>Recording Studio</strong> and records pādas for a Varga.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">②</div>
+        <div class="step-text">
+          Teacher exports a <strong>Varga ZIP</strong> (all recorded pādas bundled as WAV files).
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">③</div>
+        <div class="step-text">
+          Teacher shares the ZIP file with students by email, WhatsApp, or any file-sharing method.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">④</div>
+        <div class="step-text">
+          Students open the <strong>Practice App</strong>, tap <em>+ Import</em> in the Audio section,
+          and import the ZIP as a named Audio Set.
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">⑤</div>
+        <div class="step-text">
+          Students select the teacher's Audio Set as their audio source and practise with the teacher's voice.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Based on the GRETIL digital edition. Text and audio are for educational use.
+  </footer>
+
+</div>
+</body>
+</html>
