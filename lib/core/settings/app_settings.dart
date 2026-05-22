@@ -13,14 +13,16 @@ class AppSettings extends ChangeNotifier {
   String devFontFamily   = 'TiroDevanagarSanskrit';
   int    contextBefore   = 1;    // padas shown above active pada (0–5)
   int    contextAfter    = 1;    // padas shown below active pada (0–5)
+  int    reciteVolumePct = 10;   // volume % for repeat plays in Recite mode (2–20, step 2)
 
-  static const _kDevSize      = 'dev_font_size';
-  static const _kTreeSize     = 'tree_font_size';
-  static const _kUiSize       = 'ui_font_size';
-  static const _kUiWeight     = 'ui_font_weight';
-  static const _kDevFamily    = 'dev_font_family';
-  static const _kCtxBefore    = 'context_before';
-  static const _kCtxAfter     = 'context_after';
+  static const _kDevSize       = 'dev_font_size';
+  static const _kTreeSize      = 'tree_font_size';
+  static const _kUiSize        = 'ui_font_size';
+  static const _kUiWeight      = 'ui_font_weight';
+  static const _kDevFamily     = 'dev_font_family';
+  static const _kCtxBefore     = 'context_before';
+  static const _kCtxAfter      = 'context_after';
+  static const _kReciteVolume  = 'recite_volume_pct';
 
   FontWeight get fontWeight {
     switch (uiFontWeight) {
@@ -38,8 +40,9 @@ class AppSettings extends ChangeNotifier {
     uiFontSize    = p.getInt(_kUiSize)       ?? 13;
     uiFontWeight  = p.getInt(_kUiWeight)     ?? 500;
     devFontFamily = p.getString(_kDevFamily) ?? 'TiroDevanagarSanskrit';
-    contextBefore = p.getInt(_kCtxBefore)   ?? 1;
-    contextAfter  = p.getInt(_kCtxAfter)    ?? 1;
+    contextBefore    = p.getInt(_kCtxBefore)      ?? 1;
+    contextAfter     = p.getInt(_kCtxAfter)       ?? 1;
+    reciteVolumePct  = p.getInt(_kReciteVolume)   ?? 10;
     notifyListeners();
   }
 
@@ -83,5 +86,11 @@ class AppSettings extends ChangeNotifier {
     contextAfter = v.clamp(0, 5);
     notifyListeners();
     (await SharedPreferences.getInstance()).setInt(_kCtxAfter, contextAfter);
+  }
+
+  Future<void> setReciteVolumePct(int v) async {
+    reciteVolumePct = v.clamp(0, 20);
+    notifyListeners();
+    (await SharedPreferences.getInstance()).setInt(_kReciteVolume, reciteVolumePct);
   }
 }

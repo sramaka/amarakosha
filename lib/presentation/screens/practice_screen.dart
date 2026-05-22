@@ -63,8 +63,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
   double _speed    = 1.0;
   final AudioService _audio = AudioService.instance;
 
-  bool _showWords   = false;
-  bool _reciteMode  = false; // on repeat plays, reduce volume so student can recite
+  bool _showWords      = false;
+  bool _reciteMode     = false; // on repeat plays, reduce volume so student can recite
+  bool _stepMode       = false; // pause between padas; student presses Next to advance
+  bool _waitingForStep = false; // true after a pada's repeats complete in step mode
 
   // ── Practice Set ──────────────────────────────────────────────────────────
   final List<_SetItem> _setItems     = [];
@@ -341,7 +343,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _setCompletionSub?.cancel();
     _setCompletionSub = null;
     _audio.stop();
-    setState(() => _setPlaying = false);
+    setState(() { _setPlaying = false; _waitingForStep = false; });
   }
 
   void _playCurrentSetPada() async {
@@ -374,8 +376,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
 
     final isRepeatPlay = _reciteMode && _setCurPadaRep > 0;
+    final vol = isRepeatPlay ? AppSettings.instance.reciteVolumePct / 100.0 : 1.0;
     final hasAudio = await _audio.playPada(pada.id,
-        speed: _speed, volume: isRepeatPlay ? 0.2 : 1.0, setId: _activeSetId);
+        speed: _speed, volume: vol, setId: _activeSetId);
     if (!_setPlaying) return; // stopped while loading
 
     if (!hasAudio) {
@@ -397,10 +400,32 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _setTimer?.cancel();
     if (!_setPlaying) return;
     if (_setCurPadaRep + 1 < _padaRepeat) {
+      // More repeats left for this pada — always continue automatically
       setState(() => _setCurPadaRep++);
+      _playCurrentSetPada();
     } else {
+      // All repeats done — move to next pada
       setState(() { _setCurPada++; _setCurPadaRep = 0; });
+      if (_stepMode) {
+        setState(() => _waitingForStep = true);
+      } else {
+        _playCurrentSetPada();
+      }
     }
+  }
+
+  void _stepNext() {
+    if (!_setPlaying) return;
+    setState(() => _waitingForStep = false);
+    _playCurrentSetPada();
+  }
+
+  void _replayCurrentPada() {
+    if (!_setPlaying) return;
+    _setTimer?.cancel();
+    _setCompletionSub?.cancel();
+    _setCompletionSub = null;
+    setState(() { _setCurPadaRep = 0; _waitingForStep = false; });
     _playCurrentSetPada();
   }
 
@@ -849,6 +874,53 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ]),
             ),
           ),
+          if (_reciteMode && _padaRepeat > 1) ...[
+            const SizedBox(height: 6),
+            Row(children: [
+              Expanded(child: Text('Repeat volume',
+                  style: AT.garamond(12, color: AC.textMuted, italic: true))),
+              _SmallStepper(
+                value: AppSettings.instance.reciteVolumePct,
+                label: '${AppSettings.instance.reciteVolumePct}%',
+                onDec: AppSettings.instance.reciteVolumePct > 0
+                    ? () => AppSettings.instance.setReciteVolumePct(
+                        AppSettings.instance.reciteVolumePct - 2)
+                    : null,
+                onInc: AppSettings.instance.reciteVolumePct < 20
+                    ? () => AppSettings.instance.setReciteVolumePct(
+                        AppSettings.instance.reciteVolumePct + 2)
+                    : null,
+              ),
+            ]),
+          ],
+          if (_reciteMode) ...[
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => setState(() => _stepMode = !_stepMode),
+              child: Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Step through pādas', style: AT.garamond(12, color: AC.text)),
+                  Text('press Next to advance', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                ])),
+                Container(
+                  width: 36, height: 20,
+                  decoration: BoxDecoration(
+                    color: _stepMode ? AC.accent : AC.border,
+                    borderRadius: BorderRadius.circular(10)),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: _stepMode ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      width: 16, height: 16,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: const BoxDecoration(
+                          color: Colors.white, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+          ],
           const SizedBox(height: 10),
           // Play Set button
           GestureDetector(
@@ -1082,6 +1154,58 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     ]),
                   ),
                 ),
+                if (_reciteMode && _padaRepeat > 1) ...[
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Expanded(child: Text('Repeat volume',
+                        style: AT.garamond(12, color: AC.textMuted, italic: true))),
+                    _SmallStepper(
+                      value: AppSettings.instance.reciteVolumePct,
+                      label: '${AppSettings.instance.reciteVolumePct}%',
+                      onDec: AppSettings.instance.reciteVolumePct > 0
+                          ? () { AppSettings.instance.setReciteVolumePct(
+                                AppSettings.instance.reciteVolumePct - 2);
+                                setSheet(() {}); }
+                          : null,
+                      onInc: AppSettings.instance.reciteVolumePct < 20
+                          ? () { AppSettings.instance.setReciteVolumePct(
+                                AppSettings.instance.reciteVolumePct + 2);
+                                setSheet(() {}); }
+                          : null,
+                    ),
+                  ]),
+                ],
+                if (_reciteMode) ...[
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _stepMode = !_stepMode);
+                      setSheet(() {});
+                    },
+                    child: Row(children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Step through pādas', style: AT.garamond(13, color: AC.text)),
+                        Text('press Next to advance', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                      ])),
+                      Container(
+                        width: 36, height: 20,
+                        decoration: BoxDecoration(
+                          color: _stepMode ? AC.accent : AC.border,
+                          borderRadius: BorderRadius.circular(10)),
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 150),
+                          alignment: _stepMode ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            width: 16, height: 16,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: const BoxDecoration(
+                                color: Colors.white, shape: BoxShape.circle),
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 GestureDetector(
                   onTap: _setItems.isEmpty ? null : () {
@@ -1270,23 +1394,63 @@ class _PracticeScreenState extends State<PracticeScreen> {
         Expanded(child: Text(pada.id,
             style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
                 color: AC.textSec, italic: true))),
-        // Add to set button
-        GestureDetector(
-          onTap: () => _addPadaToSet(pada),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: AC.border)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.playlist_add_rounded, size: 12, color: AC.textMuted),
-              const SizedBox(width: 3),
-              Text('Set', style: AT.garamond(
-                  (AppSettings.instance.uiFontSize - 1).toDouble(),
-                  color: AC.textMuted)),
-            ]),
+        // Replay / Next buttons during set playback
+        if (_setPlaying || _waitingForStep) ...[
+          const SizedBox(width: 6),
+          GestureDetector(
+            onTap: (_setPlaying || _waitingForStep) ? _replayCurrentPada : null,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AC.border)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
+                const SizedBox(width: 3),
+                Text('Replay', style: AT.garamond(
+                    (AppSettings.instance.uiFontSize - 1).toDouble(),
+                    color: AC.textMuted)),
+              ]),
+            ),
           ),
-        ),
+          if (_waitingForStep) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: _stepNext,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AC.accent,
+                  borderRadius: BorderRadius.circular(4)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Next', style: AT.garamond(
+                      (AppSettings.instance.uiFontSize - 1).toDouble(),
+                      color: Colors.white)),
+                  const SizedBox(width: 3),
+                  const Icon(Icons.arrow_forward_rounded, size: 12, color: Colors.white),
+                ]),
+              ),
+            ),
+          ],
+        ] else ...[
+          // Add to set button
+          GestureDetector(
+            onTap: () => _addPadaToSet(pada),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AC.border)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.playlist_add_rounded, size: 12, color: AC.textMuted),
+                const SizedBox(width: 3),
+                Text('Set', style: AT.garamond(
+                    (AppSettings.instance.uiFontSize - 1).toDouble(),
+                    color: AC.textMuted)),
+              ]),
+            ),
+          ),
+        ],
       ]),
       const SizedBox(height: 14),
       _buildPadaText(pada),
@@ -1545,8 +1709,9 @@ class _TreeTab extends StatelessWidget {
 // ─── Small stepper ─────────────────────────────────────────────────────────────
 class _SmallStepper extends StatelessWidget {
   final int value;
+  final String? label;
   final VoidCallback? onDec, onInc;
-  const _SmallStepper({required this.value, this.onDec, this.onInc});
+  const _SmallStepper({required this.value, this.label, this.onDec, this.onInc});
 
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1562,7 +1727,7 @@ class _SmallStepper extends StatelessWidget {
     ),
     Container(
       width: 32, alignment: Alignment.center,
-      child: Text('$value', style: AT.garamond(14, color: AC.text)),
+      child: Text(label ?? '$value', style: AT.garamond(14, color: AC.text)),
     ),
     GestureDetector(
       onTap: onInc,
