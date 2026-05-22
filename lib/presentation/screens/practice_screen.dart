@@ -35,13 +35,11 @@ class _SetItem {
 class PracticeScreen extends StatefulWidget {
   final Session      session;
   final VoidCallback onBack;
-  final VoidCallback onGoRecord;
 
   const PracticeScreen({
     super.key,
     required this.session,
     required this.onBack,
-    required this.onGoRecord,
   });
 
   @override
@@ -65,10 +63,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
   double _speed    = 1.0;
   final AudioService _audio = AudioService.instance;
 
-  // ── Practice mode ─────────────────────────────────────────────────────────
-  late PracticeMode _mode;
-  bool _revealed  = false;
-  bool _showWords = false;
+  bool _showWords   = false;
+  bool _reciteMode  = false; // on repeat plays, reduce volume so student can recite
 
   // ── Practice Set ──────────────────────────────────────────────────────────
   final List<_SetItem> _setItems     = [];
@@ -149,7 +145,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    _mode        = widget.session.mode;
     _selKandaNum = widget.session.kanda.num;
     _selVargaSeq = widget.session.varga.seq;
     _selSecSeq   = widget.session.section.seq;
@@ -234,7 +229,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         }
       }
     }
-    setState(() { _pada = found; _revealed = false; _progress = 0; });
+    setState(() { _pada = found; _progress = 0; });
   }
 
   Section? get _currentSection {
@@ -378,7 +373,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
             pada.seq);
     }
 
-    final hasAudio = await _audio.playPada(pada.id, speed: _speed, setId: _activeSetId);
+    final isRepeatPlay = _reciteMode && _setCurPadaRep > 0;
+    final hasAudio = await _audio.playPada(pada.id,
+        speed: _speed, volume: isRepeatPlay ? 0.2 : 1.0, setId: _activeSetId);
     if (!_setPlaying) return; // stopped while loading
 
     if (!hasAudio) {
@@ -462,10 +459,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
     setState(() { _playing = false; _progress = 0; });
   }
 
-  void _switchMode(PracticeMode m) {
-    _stopPlay();
-    setState(() { _mode = m; _revealed = false; });
-  }
 
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
@@ -555,21 +548,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 ]),
               ),
             ),
-          // Record
-          GestureDetector(
-            onTap: widget.onGoRecord,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AC.border)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.mic_outlined, size: 13, color: AC.recRed),
-                const SizedBox(width: 4),
-                Text('Record', style: AT.garamond(12, color: AC.recRed)),
-              ]),
-            ),
-          ),
           // Display settings
           GestureDetector(
             onTap: _showDisplaySettings,
@@ -583,17 +561,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
             ),
           ),
         ]),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8), border: Border.all(color: AC.border)),
-          clipBehavior: Clip.antiAlias,
-          child: Row(children: [
-            _ModeSeg('Listen', PracticeMode.listen, _mode, _switchMode, 0),
-            _ModeSeg('Recite', PracticeMode.recite, _mode, _switchMode, 1),
-            _ModeSeg('Guided', PracticeMode.guided, _mode, _switchMode, 2),
-          ]),
-        ),
       ]),
     );
   }
@@ -852,6 +819,36 @@ class _PracticeScreenState extends State<PracticeScreen> {
             Text('$_totalSetPadas total pādas',
                 style: AT.garamond(13, color: AC.textMuted, italic: true)),
           ],
+          const SizedBox(height: 8),
+          // Recite toggle
+          GestureDetector(
+            onTap: _padaRepeat > 1 ? () => setState(() => _reciteMode = !_reciteMode) : null,
+            child: Opacity(
+              opacity: _padaRepeat > 1 ? 1.0 : 0.4,
+              child: Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Recite', style: AT.garamond(12, color: AC.text)),
+                  Text('2nd+ repeat at low volume', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                ])),
+                Container(
+                  width: 36, height: 20,
+                  decoration: BoxDecoration(
+                    color: _reciteMode ? AC.accent : AC.border,
+                    borderRadius: BorderRadius.circular(10)),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: _reciteMode ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      width: 16, height: 16,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: const BoxDecoration(
+                          color: Colors.white, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+          ),
           const SizedBox(height: 10),
           // Play Set button
           GestureDetector(
@@ -1052,6 +1049,39 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   Text('$_totalSetPadas total pādas',
                       style: AT.garamond(13, color: AC.textMuted, italic: true)),
                 ],
+                const SizedBox(height: 10),
+                // Recite toggle
+                GestureDetector(
+                  onTap: _padaRepeat > 1 ? () {
+                    setState(() => _reciteMode = !_reciteMode);
+                    setSheet(() {});
+                  } : null,
+                  child: Opacity(
+                    opacity: _padaRepeat > 1 ? 1.0 : 0.4,
+                    child: Row(children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Recite', style: AT.garamond(13, color: AC.text)),
+                        Text('2nd+ repeat at low volume', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                      ])),
+                      Container(
+                        width: 36, height: 20,
+                        decoration: BoxDecoration(
+                          color: _reciteMode ? AC.accent : AC.border,
+                          borderRadius: BorderRadius.circular(10)),
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 150),
+                          alignment: _reciteMode ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            width: 16, height: 16,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: const BoxDecoration(
+                                color: Colors.white, shape: BoxShape.circle),
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 GestureDetector(
                   onTap: _setItems.isEmpty ? null : () {
@@ -1257,15 +1287,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
             ]),
           ),
         ),
-        if (_mode == PracticeMode.recite && !_revealed) ...[
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () => setState(() => _revealed = true),
-            child: Text('Reveal', style: AT.garamond(
-                AppSettings.instance.uiFontSize.toDouble(),
-                color: AC.accent, italic: true)),
-          ),
-        ],
       ]),
       const SizedBox(height: 14),
       _buildPadaText(pada),
@@ -1274,52 +1295,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
   }
 
   Widget _buildPadaText(Pada pada) {
-    final isPlaceholder = !pada.hasText;
-
-    if (_mode == PracticeMode.recite && !_revealed) {
-      return GestureDetector(
-        onTap: () => setState(() => _revealed = true),
-        child: Container(
-          width: double.infinity, padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: AC.surfaceAlt,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AC.borderLight)),
-          child: Row(children: [
-            const Icon(Icons.visibility_off_outlined, size: 14, color: AC.textMuted),
-            const SizedBox(width: 6),
-            Text('Tap to reveal Pāda ${pada.padaNum == 1 ? "A" : "B"}',
-                style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
-                    color: AC.textSec, italic: true)),
-          ]),
-        ),
-      );
-    }
-
-    if (_mode == PracticeMode.guided) {
-      return GestureDetector(
-        onTap: () => setState(() => _revealed = !_revealed),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          width: double.infinity, padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: _revealed ? AC.lineHl : AC.surfaceAlt,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: _revealed ? AC.lineBorder : AC.borderLight)),
-          child: _revealed
-              ? _devText(pada.textDev, isPlaceholder)
-              : Text('Pāda ${pada.padaNum == 1 ? "A" : "B"} — tap to reveal',
-                  style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
-                      color: AC.textSec, italic: true)),
-        ),
-      );
-    }
-
     return Container(
       width: double.infinity, padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: AC.surfaceAlt,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AC.borderLight)),
-      child: _devText(pada.textDev, isPlaceholder),
+      child: _devText(pada.textDev, !pada.hasText),
     );
   }
 
@@ -1399,23 +1380,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
               AppSettings.instance.uiFontSize.toDouble(),
               color: AC.textSec, weight: AppSettings.instance.fontWeight,
               letterSpacing: 1.0)),
-          const Spacer(),
-          GestureDetector(
-            onTap: widget.onGoRecord,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(8, 3, 8, 3),
-              decoration: BoxDecoration(color: AC.chipBg,
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(color: AC.border)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.mic_outlined, size: 12, color: AC.recRed),
-                const SizedBox(width: 4),
-                Text('Record', style: AT.garamond(
-                    (AppSettings.instance.uiFontSize - 1).toDouble(),
-                    color: AC.recRed)),
-              ]),
-            ),
-          ),
         ]),
       ),
       Padding(
@@ -1791,27 +1755,3 @@ class _ImportSetDialogState extends State<_ImportSetDialog> {
   }
 }
 
-class _ModeSeg extends StatelessWidget {
-  final String label;
-  final PracticeMode value, current;
-  final ValueChanged<PracticeMode> onTap;
-  final int index;
-  const _ModeSeg(this.label, this.value, this.current, this.onTap, this.index);
-  @override
-  Widget build(BuildContext context) {
-    final active = value == current;
-    return Expanded(child: GestureDetector(
-      onTap: () => onTap(value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 7),
-        decoration: BoxDecoration(
-          color: active ? AC.btnBg : Colors.transparent,
-          border: index > 0 ? const Border(left: BorderSide(color: AC.border)) : null),
-        child: Text(label, textAlign: TextAlign.center,
-            style: AT.garamond(13,
-                color: active ? AC.btnText : AC.text,
-                weight: FontWeight.w600)),
-      ),
-    ));
-  }
-}

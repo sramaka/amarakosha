@@ -166,27 +166,18 @@ class Kanda {
 }
 
 // ─── Session ──────────────────────────────────────────────────────────────────
-enum PracticeMode { listen, recite, guided }
-
 class Session {
-  final Kanda      kanda;
-  final Varga      varga;
-  final Section    section;   // active section when session started
-  final PracticeMode mode;
-  final int        repeatN;
+  final Kanda   kanda;
+  final Varga   varga;
+  final Section section;   // active section when session started
+  final int     repeatN;
 
   const Session({
     required this.kanda,
     required this.varga,
     required this.section,
-    required this.mode,
     required this.repeatN,
   });
-
-  Session copyWith({PracticeMode? mode}) => Session(
-    kanda: kanda, varga: varga, section: section,
-    mode: mode ?? this.mode, repeatN: repeatN,
-  );
 }
 
 // ─── Audio / Recording ───────────────────────────────────────────────────────

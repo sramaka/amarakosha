@@ -53,8 +53,7 @@ class _AppShellState extends State<AppShell> {
     final kanda = kBootstrapKandas.first;
     final varga = kanda.vargas.first;
     final section = varga.sections.first;
-    return Session(kanda: kanda, varga: varga, section: section,
-        mode: PracticeMode.listen, repeatN: 1);
+    return Session(kanda: kanda, varga: varga, section: section, repeatN: 1);
   }
 
   // Session from last practice screen (so Record tab uses same varga)
@@ -65,8 +64,7 @@ class _AppShellState extends State<AppShell> {
 
   void _onSelectVarga(Kanda kanda, Varga varga) {
     final section = varga.sections.isNotEmpty ? varga.sections.first : kBootstrapSection;
-    final session = Session(kanda: kanda, varga: varga, section: section,
-        mode: PracticeMode.listen, repeatN: 1);
+    final session = Session(kanda: kanda, varga: varga, section: section, repeatN: 1);
     _lastSession = session;
     _openPractice(session);
   }
@@ -75,7 +73,6 @@ class _AppShellState extends State<AppShell> {
     _push(PracticeScreen(
       session: session,
       onBack: _pop,
-      onGoRecord: () => _push(RecordingScreen(session: session, onBack: _pop)),
     ));
   }
 

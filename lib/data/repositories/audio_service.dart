@@ -97,7 +97,7 @@ class AudioService {
   /// Play audio for a pada identified by its GRETIL ID (e.g. "1.1.11").
   /// [setId] — if non-null, tries the named audio set before built-in assets.
   /// Returns true if audio was found and started.
-  Future<bool> playPada(String gretilId, {double speed = 1.0, String? setId}) async {
+  Future<bool> playPada(String gretilId, {double speed = 1.0, double volume = 1.0, String? setId}) async {
     _log('playPada($gretilId, set=$setId)');
 
     // 0. Named audio set (imported ZIP)
@@ -108,6 +108,7 @@ class AudioService {
           _log('audio set: $url');
           await player.setUrl(url);
           await player.setSpeed(speed);
+          await player.setVolume(volume);
           await player.play();
           return true;
         }
@@ -122,6 +123,7 @@ class AudioService {
         _log('loading user recording');
         await player.setUrl(userRecordings[gretilId]!);
         await player.setSpeed(speed);
+        await player.setVolume(volume);
         await player.play();
         _log('user recording playing');
         return true;
@@ -138,6 +140,7 @@ class AudioService {
         await _loadBundledAsset(gretilId, ext);
         _log('source loaded, calling play()');
         await player.setSpeed(speed);
+        await player.setVolume(volume);
         await player.play();
         _log('play() returned OK');
         return true;
