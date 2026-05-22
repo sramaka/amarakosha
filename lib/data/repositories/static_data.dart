@@ -36,7 +36,7 @@ const kTotalVargas   = 25;
 
 // Minimal bootstrap data for immediate screen render
 const kBootstrapPada = Pada(
-  id: '1.1.11', legacyId: '1.1.6.1', audioKey: '1-1-6-1',
+  id: '1.1.11', legacyId: '1.1.6.1',
   seq: 1, shlokaId: '1.1.6', padaNum: 1,
   textDev:  'स्वरव्ययं स्वर्गनाकत्रिदिवत्रिदशालयाः',
   textIast: 'svaravyayaṃ svarganākatridivatridaśālayāḥ',

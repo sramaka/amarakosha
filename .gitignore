@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local/temp files
+.claude/settings.local.json
+"assets/data/amarakosha_v3 - Copy.json"
+assets/data/*\ -\ Copy.json

@@ -43,7 +43,6 @@ class AWord {
 class Pada {
   final String    id;        // PRIMARY: GRETIL reference e.g. "1.1.11"
   final String    legacyId;  // KEPT: k.v.csv_shloka.pada e.g. "1.1.6.1"
-  final String    audioKey;  // audio file key e.g. "1-1-6-1"
   final int       seq;       // position within parent Section (1-based)
   final String    shlokaId;  // parent shloka e.g. "1.1.6"
   final int       padaNum;   // 1 (A) or 2 (B)
@@ -54,7 +53,6 @@ class Pada {
   const Pada({
     required this.id,
     this.legacyId = '',
-    this.audioKey = '',
     required this.seq,
     required this.shlokaId,
     required this.padaNum,
@@ -66,7 +64,6 @@ class Pada {
   factory Pada.fromJson(Map<String, dynamic> j) => Pada(
     id:        (j['id']         as String?) ?? '',
     legacyId:  (j['legacy_id']  as String?) ?? (j['id'] as String?) ?? '',
-    audioKey:  (j['audio_key']  as String?) ?? '',
     seq:       (j['seq']        as int?)    ?? 0,
     shlokaId:  (j['shloka_id']  as String?) ?? '',
     padaNum:   (j['pada_num']   as int?)    ?? 1,

@@ -3,8 +3,7 @@
 # Example: .\deploy.ps1 -Repo sramaka/amarakosha
 
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$Repo   # e.g. "sramaka/amarakosha"
+    [string]$Repo = "sramaka/amarakosha"
 )
 
 $ErrorActionPreference = "Stop"

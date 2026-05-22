@@ -41,7 +41,7 @@ class HomeScreen extends StatelessWidget {
               border: Border(bottom: BorderSide(color: AC.border))),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('अमरकोश', style: TextStyle(
+              const Text('अमरकोशः', style: TextStyle(
                   fontFamily: 'TiroDevanagarSanskrit',
                   fontSize: 22, color: AC.text, height: 1.2)),
               Text('Amarakosha Practice'.toUpperCase(),

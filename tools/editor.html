@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amarakosha JSON Editor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #f0f4f8; }
+
+/* ── Header ── */
+#header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; background: #1e3a5f; color: white; flex-shrink: 0;
+}
+#header h1 { font-size: 0.92rem; font-weight: 600; flex: 1; letter-spacing: 0.02em; }
+#dirtyBadge {
+  background: #f59e0b; color: white; padding: 2px 9px;
+  border-radius: 10px; font-size: 0.72rem; font-weight: 600; display: none;
+}
+#header button {
+  padding: 5px 13px; border: none; border-radius: 4px;
+  cursor: pointer; font-size: 0.82rem; font-weight: 500;
+}
+#btnLoad   { background: #4a9eff; color: white; }
+#btnExport { background: #22c55e; color: white; }
+#btnExport:disabled { background: #4b5563; cursor: default; opacity: 0.6; }
+
+.view-toggle { display: flex; border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.3); }
+.view-toggle button {
+  padding: 4px 12px; background: transparent; color: rgba(255,255,255,0.7);
+  border: none; border-radius: 0; font-size: 0.8rem; cursor: pointer;
+}
+.view-toggle button.active { background: rgba(255,255,255,0.2); color: white; font-weight: 600; }
+.view-toggle button:hover:not(.active) { background: rgba(255,255,255,0.1); }
+
+/* ── Nav bar ── */
+#nav {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 14px; background: white; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+}
+#nav label { font-size: 0.75rem; color: #64748b; font-weight: 500; }
+#nav select {
+  padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 4px;
+  font-size: 0.82rem; background: white; max-width: 260px;
+}
+#stats { font-size: 0.74rem; color: #94a3b8; margin-left: auto; }
+
+/* ── Edit view ── */
+#editArea { display: flex; flex: 1; overflow: hidden; }
+
+#padaList {
+  width: 210px; flex-shrink: 0; overflow-y: auto;
+  background: white; border-right: 1px solid #e2e8f0; padding: 6px 0;
+}
+.pada-item {
+  padding: 7px 12px; cursor: pointer; font-size: 0.82rem;
+  border-left: 3px solid transparent;
+}
+.pada-item:hover { background: #f8fafc; }
+.pada-item.active { background: #eff6ff; border-left-color: #3b82f6; }
+.pada-item .pid { font-weight: 600; font-size: 0.78rem; color: #374151; }
+.pada-item.active .pid { color: #1d4ed8; }
+.pada-item .ppreview {
+  color: #9ca3af; font-size: 0.74rem; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 182px;
+}
+.pada-item.has-text .ppreview { color: #475569; }
+
+#editPanel { flex: 1; overflow-y: auto; }
+#emptyState {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: #94a3b8; font-size: 0.9rem;
+}
+#editorContent { display: none; padding: 16px; }
+
+.info-bar {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  padding: 7px 12px; background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 6px; margin-bottom: 14px; font-size: 0.78rem; color: #475569;
+}
+.info-bar strong { color: #1e3a5f; }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.field-group { margin-bottom: 12px; }
+.field-group label {
+  display: block; font-size: 0.7rem; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+}
+.field-group textarea, .field-group input[type=text] {
+  width: 100%; padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 4px;
+  font-size: 1rem; font-family: inherit; background: white; resize: vertical;
+}
+.field-group textarea:focus, .field-group input[type=text]:focus {
+  outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px #dbeafe;
+}
+.dev-textarea { font-size: 1.15rem !important; }
+
+hr.divider { border: none; border-top: 1px solid #e2e8f0; margin: 12px 0; }
+
+.words-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.words-header h2 { font-size: 0.85rem; font-weight: 700; color: #1e3a5f; }
+#btnAddWord {
+  padding: 4px 11px; background: #3b82f6; color: white;
+  border: none; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 500;
+}
+#btnAddWord:hover { background: #2563eb; }
+
+.word-table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
+#wordTable {
+  width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 860px;
+}
+#wordTable th {
+  background: #f1f5f9; padding: 6px 7px; text-align: left; white-space: nowrap;
+  font-size: 0.68rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
+}
+#wordTable td { padding: 3px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+#wordTable tr:last-child td { border-bottom: none; }
+#wordTable tr:hover td { background: #f8fafc; }
+#wordTable input[type=text] {
+  width: 100%; padding: 4px 6px; border: 1px solid transparent;
+  border-radius: 3px; font-size: 0.78rem; font-family: inherit; background: transparent;
+}
+#wordTable input[type=text]:hover { border-color: #cbd5e1; background: white; }
+#wordTable input[type=text]:focus {
+  outline: none; border-color: #3b82f6; background: white; box-shadow: 0 0 0 2px #dbeafe;
+}
+.dev-input { font-size: 0.95rem !important; }
+.word-num { text-align: center; color: #94a3b8; font-size: 0.72rem; padding: 0 6px !important; }
+.word-actions { white-space: nowrap; padding: 0 4px !important; }
+.word-actions button {
+  padding: 2px 5px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.72rem; margin: 1px;
+}
+.btn-move { background: #e2e8f0; color: #475569; }
+.btn-move:hover:not(:disabled) { background: #cbd5e1; }
+.btn-move:disabled { opacity: 0.35; cursor: default; }
+.btn-delete { background: #fee2e2; color: #dc2626; }
+.btn-delete:hover { background: #fecaca; }
+
+/* ── Tree view ── */
+#treeView {
+  display: none; flex: 1; overflow-y: auto;
+  padding: 10px 14px; background: #f8fafc;
+}
+#treeInner { max-width: 820px; }
+#treeEmpty { color: #94a3b8; font-size: 0.88rem; padding: 40px; text-align: center; }
+
+/* Section drop zone (between sections, for reordering sections) */
+.sec-drop-zone {
+  height: 4px; border-radius: 2px; margin: 1px 0; transition: all 0.1s;
+}
+.sec-drop-zone.dz-over { height: 8px; background: #3b82f6; border-radius: 3px; }
+
+/* Section block */
+.tree-sec {
+  background: white; border: 1px solid #e2e8f0; border-radius: 6px;
+  margin-bottom: 3px; overflow: hidden;
+}
+.tree-sec.dz-over-header { border-color: #60a5fa; background: #eff6ff; }
+.tree-sec.dragging { opacity: 0.35; }
+
+.sec-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; cursor: pointer; user-select: none;
+}
+.sec-handle {
+  cursor: grab; color: #cbd5e1; font-size: 1rem; padding: 0 2px;
+  flex-shrink: 0;
+}
+.sec-handle:hover { color: #94a3b8; }
+.sec-arrow { font-size: 0.68rem; color: #94a3b8; width: 12px; flex-shrink: 0; transition: transform 0.15s; }
+.sec-arrow.collapsed { transform: rotate(-90deg); }
+.sec-id   { font-weight: 700; font-size: 0.78rem; color: #1e3a5f; flex-shrink: 0; }
+.sec-title { font-size: 0.8rem; color: #475569; flex: 1;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sec-count { font-size: 0.7rem; color: #94a3b8; flex-shrink: 0; }
+
+/* Pada list within section */
+.sec-padas { padding: 0 0 4px 32px; }
+
+/* Pada drop zone (between padas, for positioning / inserting) */
+.pada-drop-zone {
+  height: 4px; border-radius: 2px; margin: 1px 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: height 0.12s;
+}
+.pada-drop-zone:not(.dz-over):hover { height: 22px; }
+.pada-drop-zone.dz-over { height: 6px; background: #60a5fa; border-radius: 3px; }
+
+.dz-insert-btn {
+  display: none; padding: 1px 9px; font-size: 0.65rem; cursor: pointer;
+  color: #3b82f6; background: white; border: 1px dashed #93c5fd; border-radius: 3px;
+  white-space: nowrap;
+}
+.pada-drop-zone:not(.dz-over):hover .dz-insert-btn { display: block; }
+
+/* Delete button on pada rows */
+.pada-del {
+  padding: 1px 5px; font-size: 0.7rem; background: none; border: none;
+  color: #fca5a5; cursor: pointer; border-radius: 3px; margin-left: 4px; flex-shrink: 0;
+  visibility: hidden;
+}
+.tree-pada:hover .pada-del { visibility: visible; }
+.pada-del:hover { background: #fee2e2; color: #dc2626; }
+
+/* Pada row */
+.tree-pada {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 8px; border-radius: 4px; cursor: default;
+}
+.tree-pada:hover { background: #f1f5f9; }
+.tree-pada.dragging { opacity: 0.35; }
+
+.pada-handle {
+  cursor: grab; color: #d1d5db; font-size: 0.85rem; flex-shrink: 0;
+}
+.pada-handle:hover { color: #9ca3af; }
+.pada-ab  { font-size: 0.72rem; font-weight: 700; color: #64748b; width: 14px; flex-shrink: 0; }
+.pada-ref { font-size: 0.8rem; font-weight: 600; color: #1e3a5f; min-width: 68px; flex-shrink: 0; }
+.pada-preview {
+  font-size: 0.8rem; color: #374151; flex: 1;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.pada-preview.no-text { color: #d1d5db; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Amarakosha JSON Editor</h1>
+  <span id="dirtyBadge">Unsaved changes</span>
+  <input type="file" id="fileInput" accept=".json" style="display:none">
+  <button id="btnLoad" onclick="document.getElementById('fileInput').click()">Load JSON</button>
+  <button id="btnExport" disabled onclick="exportJson()">Export JSON</button>
+  <div class="view-toggle">
+    <button id="btnViewEdit" class="active" onclick="showEditView()">Edit</button>
+    <button id="btnViewTree" onclick="showTreeView()">Tree</button>
+  </div>
+</div>
+
+<div id="nav">
+  <label>Kanda</label>
+  <select id="kandaSel" onchange="onKandaChange()"></select>
+  <label>Varga</label>
+  <select id="vargaSel" onchange="onVargaChange()"></select>
+  <span id="sectionWrap" style="display:contents">
+    <label>Section</label>
+    <select id="sectionSel" onchange="onSectionChange()"></select>
+  </span>
+  <div id="stats"></div>
+</div>
+
+<!-- ── Edit view ── -->
+<div id="editArea">
+  <div id="padaList">
+    <div style="padding:20px; color:#9ca3af; font-size:0.82rem; text-align:center;">
+      Load a JSON file to begin.
+    </div>
+  </div>
+  <div id="editPanel">
+    <div id="emptyState">← Select a pada to edit</div>
+    <div id="editorContent">
+      <div class="info-bar" id="infoBar"></div>
+      <div class="field-group">
+        <label>Section Title (English)</label>
+        <input type="text" id="sectionTitle" oninput="onSectionTitleChange()">
+      </div>
+      <hr class="divider">
+      <div class="row2">
+        <div class="field-group">
+          <label>Text — Devanagari</label>
+          <textarea id="textDev" rows="2" class="dev-textarea" oninput="onPadaFieldChange('text_dev', this.value)"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Text — IAST</label>
+          <textarea id="textIast" rows="2" oninput="onPadaFieldChange('text_iast', this.value)"></textarea>
+        </div>
+      </div>
+      <div class="words-header">
+        <h2>Words</h2>
+        <button id="btnAddWord" onclick="addWord()">+ Add Word</button>
+      </div>
+      <div class="word-table-wrap">
+        <table id="wordTable">
+          <thead>
+            <tr>
+              <th style="width:28px">#</th>
+              <th style="min-width:80px">w (Dev)</th>
+              <th style="min-width:130px">artha</th>
+              <th style="min-width:65px">linga</th>
+              <th style="min-width:45px">vibh.</th>
+              <th style="min-width:55px">vacana</th>
+              <th style="min-width:95px">stem_iast</th>
+              <th style="min-width:95px">form_iast</th>
+              <th style="min-width:150px">case_en</th>
+              <th style="min-width:85px">form_note</th>
+              <th style="width:88px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="wordTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Tree view ── -->
+<div id="treeView">
+  <div id="treeInner">
+    <div id="treeEmpty">Load a JSON file to begin.</div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// State
+// ════════════════════════════════════════════════════════════════════════════
+let data = null;
+let dirty = false;
+let currentView = 'edit';   // 'edit' | 'tree'
+let currentSection = null;
+let currentPadaIdx = null;
+const collapsedSecs = new Set();
+
+const WORD_FIELDS = ['w','artha','linga','vibhakti','vacana','stem_iast','form_iast','case_en','form_note'];
+
+// ════════════════════════════════════════════════════════════════════════════
+// File I/O
+// ════════════════════════════════════════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      data = JSON.parse(ev.target.result);
+      collapsedSecs.clear();
+      initEditor();
+    } catch (err) {
+      alert('Failed to parse JSON:\n' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+
+function initEditor() {
+  document.getElementById('btnExport').disabled = false;
+  dirty = false;
+  updateDirty();
+  populateKandas();
+  if (currentView === 'tree') renderTree();
+}
+
+function exportJson() {
+  if (!data) return;
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'amarakosha_v3.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  dirty = false; updateDirty();
+}
+
+function markDirty() { dirty = true; updateDirty(); }
+function updateDirty() {
+  document.getElementById('dirtyBadge').style.display = dirty ? 'inline' : 'none';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// View switching
+// ════════════════════════════════════════════════════════════════════════════
+function showEditView() {
+  currentView = 'edit';
+  document.getElementById('editArea').style.display = 'flex';
+  document.getElementById('treeView').style.display = 'none';
+  document.getElementById('sectionWrap').style.display = 'contents';
+  document.getElementById('btnViewEdit').classList.add('active');
+  document.getElementById('btnViewTree').classList.remove('active');
+  if (data) {
+    populateSections();   // sections may have been reordered in tree view
+    currentPadaIdx = null;
+    renderPadaList();
+    showEmpty();
+  }
+}
+
+function showTreeView() {
+  currentView = 'tree';
+  document.getElementById('editArea').style.display = 'none';
+  document.getElementById('treeView').style.display = 'flex';
+  document.getElementById('sectionWrap').style.display = 'none';
+  document.getElementById('btnViewTree').classList.add('active');
+  document.getElementById('btnViewEdit').classList.remove('active');
+  if (data) renderTree();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Navigation dropdowns
+// ════════════════════════════════════════════════════════════════════════════
+function populateKandas() {
+  const sel = document.getElementById('kandaSel');
+  sel.innerHTML = '';
+  (data.kandas || []).forEach((k, i) =>
+    sel.appendChild(new Option(`${k.num}. ${k.name_dev}  (${k.name_en})`, i)));
+  sel.value = 0;
+  populateVargas();
+}
+function onKandaChange() { collapsedSecs.clear(); populateVargas(); }
+
+function populateVargas() {
+  const kIdx = +document.getElementById('kandaSel').value;
+  const sel = document.getElementById('vargaSel');
+  sel.innerHTML = '';
+  (data.kandas[kIdx].vargas || []).forEach((v, i) =>
+    sel.appendChild(new Option(`${v.id}  ${v.name_dev}`, i)));
+  sel.value = 0;
+  populateSections();
+}
+function onVargaChange() { collapsedSecs.clear(); populateSections(); }
+
+function populateSections() {
+  const varga = getCurrentVarga();
+  const sel = document.getElementById('sectionSel');
+  sel.innerHTML = '';
+  (varga?.sections || []).forEach((s, i) =>
+    sel.appendChild(new Option(`${s.id} — ${s.title_en || '(no title)'}`, i)));
+  sel.value = 0;
+  onSectionChange();
+}
+function onSectionChange() {
+  const kIdx = +document.getElementById('kandaSel').value;
+  const vIdx = +document.getElementById('vargaSel').value;
+  const sIdx = +document.getElementById('sectionSel').value;
+  currentSection = data.kandas[kIdx].vargas[vIdx].sections[sIdx];
+  currentPadaIdx = null;
+  renderPadaList();
+  showEmpty();
+  updateStats();
+}
+function updateStats() {
+  if (!currentSection) { document.getElementById('stats').textContent = ''; return; }
+  const padas = currentSection.padas || [];
+  const withText = padas.filter(p => hasText(p)).length;
+  document.getElementById('stats').textContent =
+    `${padas.length} padas · ${withText} with text`;
+}
+function hasText(p) { return p.text_dev && !p.text_dev.startsWith('['); }
+
+// ════════════════════════════════════════════════════════════════════════════
+// Edit view — pada list
+// ════════════════════════════════════════════════════════════════════════════
+function renderPadaList() {
+  const container = document.getElementById('padaList');
+  container.innerHTML = '';
+  if (!currentSection) return;
+  (currentSection.padas || []).forEach((pada, idx) => {
+    const div = document.createElement('div');
+    div.className = 'pada-item' + (hasText(pada) ? ' has-text' : '') + (idx === currentPadaIdx ? ' active' : '');
+    const pid = document.createElement('div'); pid.className = 'pid';
+    pid.textContent = pada.id + (pada.pada_num === 1 ? ' A' : ' B');
+    const pre = document.createElement('div'); pre.className = 'ppreview';
+    pre.textContent = pada.text_dev || '(no text)';
+    div.appendChild(pid); div.appendChild(pre);
+    div.onclick = () => selectPada(idx);
+    container.appendChild(div);
+  });
+}
+
+function selectPada(idx) {
+  currentPadaIdx = idx;
+  document.querySelectorAll('.pada-item').forEach((el, i) =>
+    el.classList.toggle('active', i === idx));
+  renderEditPanel();
+}
+
+function showEmpty() {
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('editorContent').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Edit view — edit panel
+// ════════════════════════════════════════════════════════════════════════════
+function renderEditPanel() {
+  if (!currentSection || currentPadaIdx === null) { showEmpty(); return; }
+  const pada = currentSection.padas[currentPadaIdx];
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('editorContent').style.display = 'block';
+
+  document.getElementById('infoBar').innerHTML =
+    `<span><strong>ID:</strong> ${pada.id}</span>` +
+    `<span><strong>Pada:</strong> ${pada.pada_num === 1 ? 'A' : 'B'}</span>` +
+    `<span><strong>Shloka:</strong> ${pada.shloka_id}</span>` +
+    `<span><strong>Seq:</strong> ${pada.seq}</span>` +
+    `<span><strong>Legacy:</strong> ${pada.legacy_id || '—'}</span>`;
+
+  document.getElementById('sectionTitle').value = currentSection.title_en || '';
+  document.getElementById('textDev').value   = pada.text_dev  || '';
+  document.getElementById('textIast').value  = pada.text_iast || '';
+  renderWordTable(pada.words || []);
+}
+
+function onPadaFieldChange(field, value) {
+  if (!currentSection || currentPadaIdx === null) return;
+  const pada = currentSection.padas[currentPadaIdx];
+  pada[field] = value;
+  if (field === 'text_dev') {
+    const items = document.querySelectorAll('.pada-item');
+    if (items[currentPadaIdx]) {
+      items[currentPadaIdx].querySelector('.ppreview').textContent = value || '(no text)';
+      items[currentPadaIdx].classList.toggle('has-text', hasText(pada));
+    }
+  }
+  markDirty();
+}
+
+function onSectionTitleChange() {
+  if (!currentSection) return;
+  currentSection.title_en = document.getElementById('sectionTitle').value;
+  const sel = document.getElementById('sectionSel');
+  sel.options[sel.selectedIndex].text = `${currentSection.id} — ${currentSection.title_en || '(no title)'}`;
+  markDirty();
+}
+
+function onWordFieldChange(idx, field, value) {
+  if (!currentSection || currentPadaIdx === null) return;
+  const words = currentSection.padas[currentPadaIdx].words;
+  if (words[idx] !== undefined) { words[idx][field] = value; markDirty(); }
+}
+
+function renderWordTable(words) {
+  const tbody = document.getElementById('wordTbody');
+  tbody.innerHTML = '';
+  words.forEach((word, idx) => tbody.appendChild(makeWordRow(word, idx, words.length)));
+}
+
+function makeWordRow(word, idx, total) {
+  const tr = document.createElement('tr');
+  const numTd = document.createElement('td');
+  numTd.className = 'word-num'; numTd.textContent = idx + 1;
+  tr.appendChild(numTd);
+  WORD_FIELDS.forEach(field => {
+    const td = document.createElement('td');
+    const inp = document.createElement('input'); inp.type = 'text';
+    if (field === 'w' || field === 'linga') inp.className = 'dev-input';
+    inp.value = word[field] || '';
+    inp.addEventListener('input', () => onWordFieldChange(idx, field, inp.value));
+    td.appendChild(inp); tr.appendChild(td);
+  });
+  const actTd = document.createElement('td'); actTd.className = 'word-actions';
+  const up = document.createElement('button'); up.className = 'btn-move'; up.textContent = '↑'; up.disabled = idx === 0; up.onclick = () => moveWordInTable(idx, -1);
+  const dn = document.createElement('button'); dn.className = 'btn-move'; dn.textContent = '↓'; dn.disabled = idx === total-1; dn.onclick = () => moveWordInTable(idx, 1);
+  const del = document.createElement('button'); del.className = 'btn-delete'; del.textContent = '×'; del.onclick = () => deleteWord(idx);
+  actTd.appendChild(up); actTd.appendChild(dn); actTd.appendChild(del);
+  tr.appendChild(actTd);
+  return tr;
+}
+
+function addWord() {
+  if (!currentSection || currentPadaIdx === null) return;
+  const words = currentSection.padas[currentPadaIdx].words;
+  words.push({ w:'', artha:'', linga:'', vibhakti:'', vacana:'', stem_iast:'', form_iast:'', case_en:'', form_note:'' });
+  renderWordTable(words); markDirty();
+}
+function deleteWord(idx) {
+  if (!currentSection || currentPadaIdx === null) return;
+  if (!confirm('Delete word ' + (idx + 1) + '?')) return;
+  const words = currentSection.padas[currentPadaIdx].words;
+  words.splice(idx, 1); renderWordTable(words); markDirty();
+}
+function moveWordInTable(idx, dir) {
+  if (!currentSection || currentPadaIdx === null) return;
+  const words = currentSection.padas[currentPadaIdx].words;
+  const to = idx + dir;
+  if (to < 0 || to >= words.length) return;
+  [words[idx], words[to]] = [words[to], words[idx]];
+  renderWordTable(words); markDirty();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Tree view
+// ════════════════════════════════════════════════════════════════════════════
+function getCurrentVarga() {
+  if (!data) return null;
+  const kIdx = +document.getElementById('kandaSel').value;
+  const vIdx = +document.getElementById('vargaSel').value;
+  return data.kandas[kIdx]?.vargas[vIdx];
+}
+function getCurrentVargaSections() {
+  return getCurrentVarga()?.sections || [];
+}
+
+function recalcSeqs() {
+  getCurrentVargaSections().forEach((s, si) => {
+    s.seq = si + 1;
+    s.padas.forEach((p, pi) => { p.seq = pi + 1; });
+  });
+}
+
+function renderTree() {
+  const inner = document.getElementById('treeInner');
+  inner.innerHTML = '';
+  const sections = getCurrentVargaSections();
+  if (!sections.length) {
+    inner.innerHTML = '<div id="treeEmpty">No sections. Load a JSON file and select a Varga.</div>';
+    return;
+  }
+
+  // Section drop zone before first section
+  inner.appendChild(makeSectionDropZone(0));
+
+  sections.forEach((sec, sIdx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'tree-sec';
+    wrap.dataset.sIdx = sIdx;
+
+    // Section header
+    const hdr = document.createElement('div');
+    hdr.className = 'sec-header';
+
+    const handle = document.createElement('span');
+    handle.className = 'sec-handle'; handle.textContent = '⠿';
+    handle.title = 'Drag to reorder section';
+    handle.setAttribute('draggable', 'true');
+    handle.addEventListener('dragstart', e => {
+      e.stopPropagation();
+      dragState = { type: 'section', fromSec: sIdx };
+      e.dataTransfer.effectAllowed = 'move';
+      wrap.classList.add('dragging');
+      e.dataTransfer.setDragImage(wrap, 0, 0);
+    });
+    handle.addEventListener('dragend', () => {
+      wrap.classList.remove('dragging');
+      dragState = null;
+      clearDzHighlights();
+    });
+
+    const arrow = document.createElement('span');
+    arrow.className = 'sec-arrow' + (collapsedSecs.has(sIdx) ? ' collapsed' : '');
+    arrow.textContent = '▼';
+
+    const idSpan = document.createElement('span');
+    idSpan.className = 'sec-id'; idSpan.textContent = sec.id;
+
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'sec-title'; titleSpan.textContent = sec.title_en || '(no title)';
+
+    const countSpan = document.createElement('span');
+    countSpan.className = 'sec-count'; countSpan.textContent = (sec.padas || []).length + ' padas';
+
+    hdr.appendChild(handle); hdr.appendChild(arrow); hdr.appendChild(idSpan);
+    hdr.appendChild(titleSpan); hdr.appendChild(countSpan);
+
+    // Click header (not handle) to collapse
+    hdr.addEventListener('click', e => {
+      if (e.target === handle) return;
+      collapsedSecs.has(sIdx) ? collapsedSecs.delete(sIdx) : collapsedSecs.add(sIdx);
+      arrow.classList.toggle('collapsed', collapsedSecs.has(sIdx));
+      padas.style.display = collapsedSecs.has(sIdx) ? 'none' : '';
+    });
+
+    // Header is a drop target for PADAS (append to section)
+    hdr.addEventListener('dragover', e => {
+      if (!dragState || dragState.type !== 'pada') return;
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      wrap.classList.add('dz-over-header');
+    });
+    hdr.addEventListener('dragleave', e => {
+      if (!e.currentTarget.contains(e.relatedTarget)) wrap.classList.remove('dz-over-header');
+    });
+    hdr.addEventListener('drop', e => {
+      if (!dragState || dragState.type !== 'pada') return;
+      e.preventDefault(); wrap.classList.remove('dz-over-header');
+      const { fromSec, fromPada } = dragState;
+      movePada(fromSec, fromPada, sIdx, -1); // -1 = append
+    });
+
+    wrap.appendChild(hdr);
+
+    // Pada list
+    const padas = document.createElement('div');
+    padas.className = 'sec-padas';
+    if (collapsedSecs.has(sIdx)) padas.style.display = 'none';
+
+    padas.appendChild(makePadaDropZone(sIdx, 0));
+    (sec.padas || []).forEach((pada, pIdx) => {
+      padas.appendChild(makePadaRow(pada, sIdx, pIdx));
+      padas.appendChild(makePadaDropZone(sIdx, pIdx + 1));
+    });
+    wrap.appendChild(padas);
+    inner.appendChild(wrap);
+    inner.appendChild(makeSectionDropZone(sIdx + 1));
+  });
+}
+
+// ── Drop zone factories ───────────────────────────────────────────────────────
+function makeSectionDropZone(zoneIdx) {
+  const dz = document.createElement('div');
+  dz.className = 'sec-drop-zone';
+  dz.addEventListener('dragover', e => {
+    if (!dragState || dragState.type !== 'section') return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    dz.classList.add('dz-over');
+  });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dz-over'));
+  dz.addEventListener('drop', e => {
+    if (!dragState || dragState.type !== 'section') return;
+    e.preventDefault(); dz.classList.remove('dz-over');
+    moveSection(dragState.fromSec, zoneIdx);
+  });
+  return dz;
+}
+
+function makePadaDropZone(secIdx, zoneIdx) {
+  const dz = document.createElement('div');
+  dz.className = 'pada-drop-zone';
+
+  const btn = document.createElement('button');
+  btn.className = 'dz-insert-btn';
+  btn.textContent = '+ insert';
+  btn.onclick = e => {
+    e.stopPropagation();
+    const ans = prompt('Insert how many padas here? (2 = full shloka)', '2');
+    if (!ans) return;
+    const n = parseInt(ans);
+    if (!n || n < 1) return;
+    insertPadas(secIdx, zoneIdx, n);
+  };
+  dz.appendChild(btn);
+
+  dz.addEventListener('dragover', e => {
+    if (!dragState || dragState.type !== 'pada') return;
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    dz.classList.add('dz-over');
+  });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dz-over'));
+  dz.addEventListener('drop', e => {
+    if (!dragState || dragState.type !== 'pada') return;
+    e.preventDefault(); dz.classList.remove('dz-over');
+    movePada(dragState.fromSec, dragState.fromPada, secIdx, zoneIdx);
+  });
+  return dz;
+}
+
+function makePadaRow(pada, sIdx, pIdx) {
+  const row = document.createElement('div');
+  row.className = 'tree-pada';
+
+  const handle = document.createElement('span');
+  handle.className = 'pada-handle'; handle.textContent = '⠿';
+  handle.title = 'Drag to move to a different section';
+  handle.setAttribute('draggable', 'true');
+  handle.addEventListener('dragstart', e => {
+    e.stopPropagation();
+    dragState = { type: 'pada', fromSec: sIdx, fromPada: pIdx };
+    e.dataTransfer.effectAllowed = 'move';
+    row.classList.add('dragging');
+  });
+  handle.addEventListener('dragend', () => {
+    row.classList.remove('dragging');
+    dragState = null;
+    clearDzHighlights();
+  });
+
+  const ab   = document.createElement('span'); ab.className = 'pada-ab';
+  ab.textContent = pada.pada_num === 1 ? 'A' : 'B';
+
+  const ref  = document.createElement('span'); ref.className = 'pada-ref';
+  ref.textContent = pada.id;
+
+  const prev = document.createElement('span');
+  prev.className = 'pada-preview' + (hasText(pada) ? '' : ' no-text');
+  prev.textContent = hasText(pada) ? pada.text_dev : '(no text)';
+
+  const del = document.createElement('button');
+  del.className = 'pada-del'; del.textContent = '×';
+  del.title = 'Delete — renumbers subsequent padas';
+  del.onclick = e => {
+    e.stopPropagation();
+    const p = getCurrentVargaSections()[sIdx]?.padas[pIdx];
+    const label = p ? p.id : `sec${sIdx} pos${pIdx}`;
+    if (!confirm(`Delete pada ${label}?\n\nAll subsequent padas in this varga will be renumbered.`)) return;
+    deletePada(sIdx, pIdx);
+  };
+
+  row.appendChild(handle); row.appendChild(ab); row.appendChild(ref);
+  row.appendChild(prev); row.appendChild(del);
+  return row;
+}
+
+// ── Drag state & move operations ─────────────────────────────────────────────
+let dragState = null;
+
+function clearDzHighlights() {
+  document.querySelectorAll('.dz-over').forEach(el => el.classList.remove('dz-over'));
+  document.querySelectorAll('.dz-over-header').forEach(el => el.classList.remove('dz-over-header'));
+}
+
+// Move a pada. toZone = -1 means append to end of target section.
+function movePada(fromSecIdx, fromPadaIdx, toSecIdx, toZone) {
+  const sections = getCurrentVargaSections();
+  const fromSec  = sections[fromSecIdx];
+  const toSec    = sections[toSecIdx];
+  const [pada]   = fromSec.padas.splice(fromPadaIdx, 1);
+
+  if (toZone < 0) {
+    toSec.padas.push(pada);
+  } else if (fromSecIdx === toSecIdx) {
+    // Same section: adjust for the removal
+    const insertAt = toZone > fromPadaIdx ? toZone - 1 : toZone;
+    fromSec.padas.splice(insertAt, 0, pada);
+  } else {
+    toSec.padas.splice(toZone, 0, pada);
+  }
+  recalcSeqs();
+  renderTree();
+  markDirty();
+}
+
+// Move a section. toZone is the drop-zone index (0 = before first section).
+function moveSection(fromIdx, toZone) {
+  if (toZone === fromIdx || toZone === fromIdx + 1) return; // no-op
+  const sections = getCurrentVargaSections();
+  const [sec] = sections.splice(fromIdx, 1);
+  const insertAt = toZone > fromIdx ? toZone - 1 : toZone;
+  sections.splice(insertAt, 0, sec);
+  recalcSeqs();
+  renderTree();
+  markDirty();
+}
+
+// ── Insert & delete padas (partial renumbering from affected point) ──────────
+
+// Extract the trailing number from a pada id, e.g. "1.1.12" → 12.
+function getIdNum(id) {
+  return parseInt(id.split('.').pop(), 10);
+}
+
+// Flat list of all padas across the current varga's sections (in order).
+function flatVargaPadas() {
+  return getCurrentVargaSections().flatMap(s => s.padas || []);
+}
+
+// Flat index of the pada at (secIdx, padaIdx).
+function flatPos(secIdx, padaIdx) {
+  const secs = getCurrentVargaSections();
+  let pos = 0;
+  for (let i = 0; i < secIdx; i++) pos += (secs[i].padas || []).length;
+  return pos + padaIdx;
+}
+
+// Shift id / shloka_id / pada_num / legacy_id of a single pada by delta.
+function shiftPadaId(p, vargaId, delta) {
+  const n       = getIdNum(p.id) + delta;
+  p.id          = `${vargaId}.${n}`;
+  p.shloka_id   = `${vargaId}.${Math.ceil(n / 2)}`;
+  p.pada_num    = n % 2 === 1 ? 1 : 2;
+  p.legacy_id   = `${p.shloka_id}.${p.pada_num}`;
+}
+
+function insertPadas(secIdx, zoneIdx, count) {
+  const varga    = getCurrentVarga();
+  const sections = getCurrentVargaSections();
+  const all      = flatVargaPadas();           // snapshot before insertion
+  const pos      = flatPos(secIdx, zoneIdx);
+
+  // ID number that the first new pada will take
+  const startNum = pos < all.length
+    ? getIdNum(all[pos].id)
+    : (all.length > 0 ? getIdNum(all[all.length - 1].id) + 1 : 1);
+
+  // Shift all existing padas from pos onwards
+  for (let i = pos; i < all.length; i++) shiftPadaId(all[i], varga.id, count);
+
+  // Build new blank padas with correct ids
+  const newPadas = Array.from({ length: count }, (_, k) => {
+    const n        = startNum + k;
+    const shlokaId = `${varga.id}.${Math.ceil(n / 2)}`;
+    const padaNum  = n % 2 === 1 ? 1 : 2;
+    return { id: `${varga.id}.${n}`, seq: 0,
+             shloka_id: shlokaId, pada_num: padaNum,
+             legacy_id: `${shlokaId}.${padaNum}`,
+             text_dev: '', text_iast: '', words: [] };
+  });
+
+  sections[secIdx].padas.splice(zoneIdx, 0, ...newPadas);
+  recalcSeqs();
+  renderTree();
+  markDirty();
+}
+
+function deletePada(secIdx, padaIdx) {
+  const varga    = getCurrentVarga();
+  const sections = getCurrentVargaSections();
+  const all      = flatVargaPadas();           // snapshot before deletion
+  const pos      = flatPos(secIdx, padaIdx);
+
+  sections[secIdx].padas.splice(padaIdx, 1);
+
+  // Shift all padas after pos by -1
+  for (let i = pos + 1; i < all.length; i++) shiftPadaId(all[i], varga.id, -1);
+
+  recalcSeqs();
+  renderTree();
+  markDirty();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Keyboard shortcut
+// ════════════════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    if (!document.getElementById('btnExport').disabled) exportJson();
+  }
+});
+</script>
+</body>
+</html>
