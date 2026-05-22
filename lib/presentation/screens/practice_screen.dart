@@ -1667,12 +1667,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
             border: Border.all(color: AC.borderLight),
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              _PadaBadge(p.padaNum),
-              const SizedBox(width: 8),
-              Text(p.id, style: AT.garamond(s.uiFontSize.toDouble(),
-                  color: AC.textMuted, italic: true)),
-            ]),
+            Text('${p.id} ${p.padaNum == 1 ? "A" : "B"}',
+                style: AT.garamond(s.uiFontSize.toDouble(),
+                    color: AC.textMuted, italic: true)),
             if (p.hasText) ...[
               const SizedBox(height: 8),
               Text(p.textDev,
@@ -1692,18 +1689,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Widget _buildProgress(Pada pada) => Padding(
     padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Flexible(child: Text(
-          'Pāda $_selPadaSeq of $_sectionPadaCount'
-          '${_currentSection != null ? "  ·  ${_currentSection!.titleEn}" : ""}',
-          style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
-              color: AC.textSec, weight: AppSettings.instance.fontWeight),
-          overflow: TextOverflow.ellipsis,
-        )),
-        Text(pada.id, style: AT.garamond(
-            AppSettings.instance.uiFontSize.toDouble(),
-            color: AC.textSec, italic: true)),
-      ]),
+      Text(
+        'Pāda $_selPadaSeq of $_sectionPadaCount'
+        '${_currentSection != null ? "  ·  ${_currentSection!.titleEn}" : ""}',
+        style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
+            color: AC.textSec, weight: AppSettings.instance.fontWeight),
+        overflow: TextOverflow.ellipsis,
+      ),
       const SizedBox(height: 6),
       AProgressBar(value: _sectionPadaCount > 0 ? _selPadaSeq / _sectionPadaCount : 0),
     ]),
@@ -1717,16 +1709,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
     decoration: AD.card(radius: 16),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        _PadaBadge(pada.padaNum),
-        const SizedBox(width: 8),
-        Expanded(child: Text(pada.id,
+        Text('${pada.id}  ${pada.padaNum == 1 ? "A" : "B"}',
             style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
-                color: AC.textSec, italic: true))),
-        // Replay / Next buttons during set playback
+                color: AC.textSec, italic: true)),
+        const Spacer(),
         if (_setPlaying || _waitingForStep) ...[
-          const SizedBox(width: 6),
           GestureDetector(
-            onTap: (_setPlaying || _waitingForStep) ? _replayCurrentPada : null,
+            onTap: _replayCurrentPada,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
@@ -1760,27 +1749,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ),
             ),
           ],
-        ] else ...[
-          // Add to set button
-          GestureDetector(
-            onTap: () => _addPadaToSet(pada),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AC.border)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.playlist_add_rounded, size: 12, color: AC.textMuted),
-                const SizedBox(width: 3),
-                Text('Set', style: AT.garamond(
-                    (AppSettings.instance.uiFontSize - 1).toDouble(),
-                    color: AC.textMuted)),
-              ]),
-            ),
-          ),
         ],
       ]),
-      const SizedBox(height: 14),
+      const SizedBox(height: 10),
       _buildPadaText(pada),
     ]),
   );
@@ -1865,70 +1836,57 @@ class _PracticeScreenState extends State<PracticeScreen> {
     margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
     decoration: AD.card(radius: 14),
     child: Column(children: [
+      // Audio source chips — no heading; chips are self-labelled
       Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-        child: Row(children: [
-          Text('Audio'.toUpperCase(), style: AT.garamond(
-              AppSettings.instance.uiFontSize.toDouble(),
-              color: AC.textSec, weight: AppSettings.instance.fontWeight,
-              letterSpacing: 1.0)),
-        ]),
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            _AudioSetChip(
+              label: 'Built-in',
+              active: _activeSetId == null,
+              onTap: () => setState(() => _activeSetId = null),
+            ),
+            ..._audioSets.map((s) => _AudioSetChip(
+              label: s.name,
+              active: _activeSetId == s.id,
+              onTap: () => setState(() => _activeSetId = s.id),
+              onDelete: () async {
+                await AudioSetStore.instance.deleteSet(s.id);
+                if (!mounted) return;
+                if (_activeSetId == s.id) setState(() => _activeSetId = null);
+                await _loadAudioSets();
+              },
+            )),
+            GestureDetector(
+              onTap: _importAudioSet,
+              child: Container(
+                margin: const EdgeInsets.only(left: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AC.border)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.add_rounded, size: 12, color: AC.textMuted),
+                  const SizedBox(width: 3),
+                  Text('Import', style: AT.garamond(12, color: AC.textMuted)),
+                ]),
+              ),
+            ),
+          ]),
+        ),
       ),
+      // Progress bar
       Padding(
         padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
-            value: _progress, backgroundColor: AC.trackBg, minHeight: 4,
+            value: _progress, backgroundColor: AC.trackBg, minHeight: 3,
             valueColor: const AlwaysStoppedAnimation<Color>(AC.trackFill)),
         ),
       ),
-      // Audio source selector
-      Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
-        child: Row(children: [
-          Text('Source'.toUpperCase(),
-              style: AT.garamond(11, color: AC.textSec, letterSpacing: 0.8)),
-          const SizedBox(width: 8),
-          Expanded(child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(children: [
-              _AudioSetChip(
-                label: 'Built-in',
-                active: _activeSetId == null,
-                onTap: () => setState(() => _activeSetId = null),
-              ),
-              ..._audioSets.map((s) => _AudioSetChip(
-                label: s.name,
-                active: _activeSetId == s.id,
-                onTap: () => setState(() => _activeSetId = s.id),
-                onDelete: () async {
-                  await AudioSetStore.instance.deleteSet(s.id);
-                  if (!mounted) return;
-                  if (_activeSetId == s.id) setState(() => _activeSetId = null);
-                  await _loadAudioSets();
-                },
-              )),
-              GestureDetector(
-                onTap: _importAudioSet,
-                child: Container(
-                  margin: const EdgeInsets.only(left: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AC.border)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.add_rounded, size: 12, color: AC.textMuted),
-                    const SizedBox(width: 3),
-                    Text('Import', style: AT.garamond(12, color: AC.textMuted)),
-                  ]),
-                ),
-              ),
-            ]),
-          )),
-        ]),
-      ),
-      const SizedBox(height: 6),
+      const SizedBox(height: 4),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         IconButton(icon: const Icon(Icons.skip_previous_rounded),
             color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _prevPada),
@@ -2102,21 +2060,6 @@ class _TwoOptionPicker extends StatelessWidget {
       ]),
     );
   }
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-class _PadaBadge extends StatelessWidget {
-  final int padaNum;
-  const _PadaBadge(this.padaNum);
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-    decoration: BoxDecoration(color: AC.surfaceAlt,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AC.borderLight)),
-    child: Text('Pāda ${padaNum == 1 ? "A" : "B"}',
-        style: AT.garamond(14, color: AC.textSec, weight: FontWeight.w600)),
-  );
 }
 
 // ─── Audio set chip ────────────────────────────────────────────────────────────
