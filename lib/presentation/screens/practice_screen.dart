@@ -263,6 +263,26 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _saveSet();
   }
 
+  // ── Range picker ─────────────────────────────────────────────────────────
+  void _showRangeSheet({VoidCallback? onDone}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AC.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) => _RangeSheet(
+        kandas: _kandas,
+        onAdd: (item) {
+          Navigator.pop(ctx);
+          setState(() => _setItems.add(item));
+          _saveSet();
+          onDone?.call();
+        },
+      ),
+    );
+  }
+
   // ── Audio sets ────────────────────────────────────────────────────────────
   Future<void> _loadAudioSets() async {
     final sets = await AudioSetStore.instance.listSets();
@@ -948,14 +968,33 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
       // Item list
       Expanded(child: _setItems.isEmpty
-          ? Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                'Long-press a Section or Pada in the tree to add it here.',
-                style: AT.garamond(12, color: AC.textMuted, italic: true, height: 1.5),
-                textAlign: TextAlign.center,
+          ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Text(
+                  'Long-press a Section or Pada in the tree to add it here.',
+                  style: AT.garamond(12, color: AC.textMuted, italic: true, height: 1.5),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            )
+              GestureDetector(
+                onTap: _showRangeSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: AC.surfaceAlt,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AC.border),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.format_list_numbered_rounded, size: 14, color: AC.accent),
+                    const SizedBox(width: 6),
+                    Text('Add by position',
+                        style: AT.garamond(12, color: AC.accent, weight: FontWeight.w600)),
+                  ]),
+                ),
+              ),
+            ])
           : ReorderableListView(
               padding: const EdgeInsets.symmetric(vertical: 4),
               onReorder: (o, n) {
@@ -993,6 +1032,21 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 );
               }).toList(),
             )),
+
+      // Add range link
+      GestureDetector(
+        onTap: _showRangeSheet,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+          decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AC.border))),
+          child: Row(children: [
+            const Icon(Icons.add_rounded, size: 13, color: AC.textSec),
+            const SizedBox(width: 4),
+            Text('Add range', style: AT.garamond(12, color: AC.textSec)),
+          ]),
+        ),
+      ),
 
       // Repeat settings
       Container(
@@ -1242,14 +1296,33 @@ class _PracticeScreenState extends State<PracticeScreen> {
             ),
             _buildSetSelectorStrip(setSheet: () => setSheet(() {})),
             Expanded(child: _setItems.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'Long-press a Section or Pada in the tree to add it here.',
-                    style: AT.garamond(13, color: AC.textMuted, italic: true, height: 1.5),
-                    textAlign: TextAlign.center,
+              ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                    child: Text(
+                      'Long-press a Section or Pada in the tree to add it here.',
+                      style: AT.garamond(13, color: AC.textMuted, italic: true, height: 1.5),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                )
+                  GestureDetector(
+                    onTap: () => _showRangeSheet(onDone: () => setSheet(() {})),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AC.surfaceAlt,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AC.border),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.format_list_numbered_rounded, size: 14, color: AC.accent),
+                        const SizedBox(width: 6),
+                        Text('Add by position',
+                            style: AT.garamond(13, color: AC.accent, weight: FontWeight.w600)),
+                      ]),
+                    ),
+                  ),
+                ])
               : ReorderableListView(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   onReorder: (o, n) {
@@ -1289,6 +1362,20 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     );
                   }).toList(),
                 )),
+            // Add range link
+            GestureDetector(
+              onTap: () => _showRangeSheet(onDone: () => setSheet(() {})),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 7, 16, 7),
+                decoration: const BoxDecoration(
+                    border: Border(top: BorderSide(color: AC.border))),
+                child: Row(children: [
+                  const Icon(Icons.add_rounded, size: 13, color: AC.textSec),
+                  const SizedBox(width: 5),
+                  Text('Add range', style: AT.garamond(13, color: AC.textSec)),
+                ]),
+              ),
+            ),
             Container(
               decoration: const BoxDecoration(
                   border: Border(top: BorderSide(color: AC.border))),
@@ -2191,6 +2278,276 @@ class _ImportSetDialogState extends State<_ImportSetDialog> {
                   color: canImport ? AC.accent : AC.textMuted)),
         ),
       ],
+    );
+  }
+}
+
+// ─── Range picker sheet ────────────────────────────────────────────────────────
+
+class _PadaListEntry {
+  final bool   isHeader;
+  final String headerTitle;
+  final Pada?  pada;
+  final int    flatIdx;
+  _PadaListEntry.header(this.headerTitle) : isHeader = true, pada = null, flatIdx = -1;
+  _PadaListEntry.pada(Pada p, int i) : isHeader = false, headerTitle = '', pada = p, flatIdx = i;
+}
+
+class _RangeSheet extends StatefulWidget {
+  final List<Kanda>              kandas;
+  final void Function(_SetItem) onAdd;
+  const _RangeSheet({required this.kandas, required this.onAdd});
+  @override State<_RangeSheet> createState() => _RangeSheetState();
+}
+
+class _RangeSheetState extends State<_RangeSheet> {
+  int _kandaIdx = 0;
+  int _vargaIdx = 0;
+  int _padaIdx  = 0;
+  int _count    = 5;
+
+  final _vargaScroll = ScrollController();
+  final _padaScroll  = ScrollController();
+
+  Kanda      get _kanda    => widget.kandas[_kandaIdx];
+  Varga      get _varga    => _kanda.vargas[_vargaIdx.clamp(0, _kanda.vargas.length - 1)];
+  List<Pada> get _allPadas => _varga.allPadas;
+  int        get _maxCount => (_allPadas.length - _padaIdx).clamp(1, 200);
+
+  void _clamp() {
+    _vargaIdx = _vargaIdx.clamp(0, (_kanda.vargas.length - 1).clamp(0, 999));
+    _padaIdx  = _padaIdx.clamp(0, (_allPadas.length - 1).clamp(0, 999));
+    _count    = _count.clamp(1, _maxCount);
+  }
+
+  List<_PadaListEntry> get _entries {
+    final list = <_PadaListEntry>[];
+    int fi = 0;
+    for (final sec in _varga.sections) {
+      if (sec.padas.isEmpty) continue;
+      if (sec.titleEn.isNotEmpty) list.add(_PadaListEntry.header(sec.titleEn));
+      for (final p in sec.padas) { list.add(_PadaListEntry.pada(p, fi)); fi++; }
+    }
+    return list;
+  }
+
+  @override
+  void dispose() { _vargaScroll.dispose(); _padaScroll.dispose(); super.dispose(); }
+
+  void _selectKanda(int idx) {
+    setState(() { _kandaIdx = idx; _vargaIdx = 0; _padaIdx = 0; _clamp(); });
+    _vargaScroll.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+    _padaScroll.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+  }
+
+  void _selectVarga(int idx) {
+    setState(() { _vargaIdx = idx; _padaIdx = 0; _clamp(); });
+    _padaScroll.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _clamp();
+    final padas    = _allPadas;
+    final endIdx   = (_padaIdx + _count - 1).clamp(0, (padas.length - 1).clamp(0, 999));
+    final actual   = padas.isEmpty ? 0 : endIdx - _padaIdx + 1;
+    final startId  = padas.isNotEmpty ? padas[_padaIdx].id : '—';
+    final endId    = padas.isNotEmpty ? padas[endIdx].id   : '—';
+    final entries  = _entries;
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.85,
+      child: Column(children: [
+        // Drag handle
+        Center(child: Container(
+          margin: const EdgeInsets.only(top: 8, bottom: 10),
+          width: 36, height: 4,
+          decoration: BoxDecoration(color: AC.border, borderRadius: BorderRadius.circular(2)),
+        )),
+
+        // Title
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text('Add Range to Set'.toUpperCase(),
+                style: AT.garamond(12, color: AC.textMuted, letterSpacing: 1.0)),
+          ),
+        ),
+
+        // Kanda pills
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Row(children: [
+            Text('Kāṇḍa ', style: AT.garamond(12, color: AC.textMuted)),
+            ...widget.kandas.asMap().entries.map((e) {
+              final active = e.key == _kandaIdx;
+              return GestureDetector(
+                onTap: () => _selectKanda(e.key),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: active ? AC.accent : AC.chipBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: active ? AC.accent : AC.border),
+                  ),
+                  child: Text(e.value.nameEn.split(' ').first,
+                      style: AT.garamond(12,
+                          color: active ? Colors.white : AC.text,
+                          weight: active ? FontWeight.w600 : FontWeight.w400)),
+                ),
+              );
+            }),
+          ]),
+        ),
+
+        // Varga chips (horizontal scroll)
+        SizedBox(
+          height: 30,
+          child: ListView.builder(
+            controller: _vargaScroll,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            itemCount: _kanda.vargas.length,
+            itemBuilder: (_, i) {
+              final v = _kanda.vargas[i];
+              final active = i == _vargaIdx;
+              // truncate Devanagari name to ~5 Unicode code points
+              final name = v.name;
+              final runes = name.runes.toList();
+              final label = runes.length > 5
+                  ? '${String.fromCharCodes(runes.take(5))}…'
+                  : name;
+              return GestureDetector(
+                onTap: () => _selectVarga(i),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: active ? AC.accent : AC.chipBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: active ? AC.accent : AC.border),
+                  ),
+                  child: Text(label,
+                      style: TextStyle(
+                          fontFamily: 'TiroDevanagarSanskrit',
+                          fontSize: 12,
+                          color: active ? Colors.white : AC.text)),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Divider(height: 1, color: AC.border),
+
+        // Pada list
+        Expanded(
+          child: padas.isEmpty
+              ? Center(child: Text('No pādas in this varga.',
+                  style: AT.garamond(13, color: AC.textMuted, italic: true)))
+              : ListView.builder(
+                  controller: _padaScroll,
+                  itemCount: entries.length,
+                  itemBuilder: (_, i) {
+                    final entry = entries[i];
+                    if (entry.isHeader) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 3),
+                        child: Text(entry.headerTitle.toUpperCase(),
+                            style: AT.garamond(10, color: AC.textMuted, letterSpacing: 0.6)),
+                      );
+                    }
+                    final fi       = entry.flatIdx;
+                    final isStart  = fi == _padaIdx;
+                    final isInRange = fi >= _padaIdx && fi < _padaIdx + _count;
+                    return GestureDetector(
+                      onTap: () => setState(() { _padaIdx = fi; _clamp(); }),
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        color: isInRange
+                            ? AC.lineHl.withAlpha(isStart ? 255 : 180)
+                            : Colors.transparent,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                        child: Row(children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: 9, height: 9,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isStart ? AC.accent : Colors.transparent,
+                              border: Border.all(
+                                  color: isStart ? AC.accent : AC.border, width: 1.5),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(entry.pada!.id,
+                              style: AT.garamond(11, color: AC.textMuted)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(entry.pada!.textDev,
+                                style: const TextStyle(
+                                    fontFamily: 'TiroDevanagarSanskrit',
+                                    fontSize: 13, color: AC.text),
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        const Divider(height: 1, color: AC.border),
+
+        // Footer: count stepper + summary + button
+        Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16,
+              12 + MediaQuery.of(context).padding.bottom),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Text('Number of pādas', style: AT.garamond(13, color: AC.text)),
+              const Spacer(),
+              _SmallStepper(
+                value: actual,
+                onDec: _count > 1 ? () => setState(() { _count--; }) : null,
+                onInc: _count < _maxCount ? () => setState(() { _count++; }) : null,
+              ),
+            ]),
+            const SizedBox(height: 6),
+            Text(
+              actual == 0
+                  ? 'No pādas available'
+                  : startId == endId
+                      ? 'Pāda $startId'
+                      : 'Pādas $startId – $endId  ($actual pādas)',
+              style: AT.garamond(12, color: AC.textSec, italic: true),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: actual > 0 ? () {
+                final selected = padas.sublist(_padaIdx, _padaIdx + actual);
+                final label    = actual == 1
+                    ? selected.first.id
+                    : '${selected.first.id}–${selected.last.id}';
+                widget.onAdd(_SetItem(label, selected));
+              } : null,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  color: actual > 0 ? AC.btnBg : AC.surfaceAlt,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(child: Text('Add to Set',
+                    style: AT.garamond(14,
+                        color: actual > 0 ? AC.btnText : AC.textMuted,
+                        weight: FontWeight.w600))),
+              ),
+            ),
+          ]),
+        ),
+      ]),
     );
   }
 }
