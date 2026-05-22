@@ -674,8 +674,19 @@ class _PracticeScreenState extends State<PracticeScreen> {
             ),
           ],
           Expanded(child: Center(
-            child: Text(_pada != null ? '${_pada!.id}' : '',
-                style: AT.garamond(13, color: AC.textSec, italic: true)),
+            child: Builder(builder: (ctx) {
+              // find the current varga name for orientation
+              String vname = '';
+              for (final k in _kandas) {
+                if (k.num != _selKandaNum) continue;
+                for (final v in k.vargas) {
+                  if (v.seq == _selVargaSeq) { vname = v.name; break; }
+                }
+              }
+              return Text(vname, style: const TextStyle(
+                  fontFamily: 'TiroDevanagarSanskrit',
+                  fontSize: 15, color: AC.textSec, height: 1.2));
+            }),
           )),
           // Desktop only: Practice Set toggle (mobile uses bottom tray instead)
           if (!isMobile)
@@ -1666,18 +1677,24 @@ class _PracticeScreenState extends State<PracticeScreen> {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: AC.borderLight),
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${p.id} ${p.padaNum == 1 ? "A" : "B"}',
-                style: AT.garamond(s.uiFontSize.toDouble(),
-                    color: AC.textMuted, italic: true)),
-            if (p.hasText) ...[
-              const SizedBox(height: 8),
-              Text(p.textDev,
-                  style: AT.devanagari(
-                      (s.devFontSize * 0.85).roundToDouble(),
-                      color: AC.textMuted, family: s.devFontFamily)),
-            ],
-          ]),
+          child: p.hasText
+              ? Text.rich(TextSpan(children: [
+                  TextSpan(
+                    text: '${p.id} ${p.padaNum == 1 ? "A" : "B"}  ',
+                    style: AT.garamond(
+                        (s.devFontSize * 0.52).clamp(10.0, 15.0),
+                        color: AC.textMuted, italic: true),
+                  ),
+                  TextSpan(
+                    text: p.textDev,
+                    style: AT.devanagari(
+                        (s.devFontSize * 0.85).roundToDouble(),
+                        color: AC.textMuted, family: s.devFontFamily),
+                  ),
+                ]))
+              : Text('${p.id} ${p.padaNum == 1 ? "A" : "B"}',
+                    style: AT.garamond(s.uiFontSize.toDouble(),
+                        color: AC.textMuted, italic: true)),
         ),
       ),
     );
@@ -1702,80 +1719,76 @@ class _PracticeScreenState extends State<PracticeScreen> {
   );
 
   Widget _buildPadaCard(Pada pada) {
+    final s   = AppSettings.instance;
     final pad = _isMobile ? 20.0 : 16.0;
+    final hasButtons = _setPlaying || _waitingForStep;
     return Container(
-    margin: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-    padding: EdgeInsets.all(pad),
-    decoration: AD.card(radius: 16),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Text('${pada.id}  ${pada.padaNum == 1 ? "A" : "B"}',
-            style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
-                color: AC.textSec, italic: true)),
-        const Spacer(),
-        if (_setPlaying || _waitingForStep) ...[
-          GestureDetector(
-            onTap: _replayCurrentPada,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AC.border)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
-                const SizedBox(width: 3),
-                Text('Replay', style: AT.garamond(
-                    (AppSettings.instance.uiFontSize - 1).toDouble(),
-                    color: AC.textMuted)),
-              ]),
-            ),
-          ),
-          if (_waitingForStep) ...[
-            const SizedBox(width: 6),
+      margin: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      padding: EdgeInsets.all(pad),
+      decoration: AD.card(radius: 16),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Replay / Next — only visible during set playback
+        if (hasButtons) ...[
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
             GestureDetector(
-              onTap: _stepNext,
+              onTap: _replayCurrentPada,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AC.accent,
-                  borderRadius: BorderRadius.circular(4)),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: AC.border)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text('Next', style: AT.garamond(
-                      (AppSettings.instance.uiFontSize - 1).toDouble(),
-                      color: Colors.white)),
+                  const Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
                   const SizedBox(width: 3),
-                  const Icon(Icons.arrow_forward_rounded, size: 12, color: Colors.white),
+                  Text('Replay', style: AT.garamond(
+                      (s.uiFontSize - 1).toDouble(), color: AC.textMuted)),
                 ]),
               ),
             ),
-          ],
+            if (_waitingForStep) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: _stepNext,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AC.accent, borderRadius: BorderRadius.circular(4)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('Next', style: AT.garamond(
+                        (s.uiFontSize - 1).toDouble(), color: Colors.white)),
+                    const SizedBox(width: 3),
+                    const Icon(Icons.arrow_forward_rounded, size: 12, color: Colors.white),
+                  ]),
+                ),
+              ),
+            ],
+          ]),
+          const SizedBox(height: 10),
         ],
+        // Sanskrit text with inline reference prefix
+        _buildPadaText(pada),
       ]),
-      const SizedBox(height: 10),
-      _buildPadaText(pada),
-    ]),
-  );
+    );
   }
 
   Widget _buildPadaText(Pada pada) {
-    return Container(
-      width: double.infinity, padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AC.surfaceAlt,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AC.borderLight)),
-      child: _devText(pada.textDev, !pada.hasText),
-    );
-  }
-
-  Widget _devText(String text, bool placeholder) {
     final s = AppSettings.instance;
-    return Text(
-      text,
-      style: placeholder
-          ? AT.garamond(12, color: AC.textMuted, italic: true)
-          : AT.devanagari(s.devFontSize.toDouble(),
-              family: s.devFontFamily),
-    );
+    if (!pada.hasText) {
+      return Text('[no text available]',
+          style: AT.garamond(12, color: AC.textMuted, italic: true));
+    }
+    return Text.rich(TextSpan(children: [
+      TextSpan(
+        text: '${pada.id} ${pada.padaNum == 1 ? "A" : "B"}  ',
+        style: AT.garamond(
+            (s.devFontSize * 0.52).clamp(10.0, 16.0),
+            color: AC.textMuted, italic: true),
+      ),
+      TextSpan(
+        text: pada.textDev,
+        style: AT.devanagari(s.devFontSize.toDouble(), family: s.devFontFamily),
+      ),
+    ]));
   }
 
   Widget _buildWordChips(Pada pada) {
@@ -1787,15 +1800,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
           onTap: () => setState(() => _showWords = !_showWords),
           child: Row(children: [
             Text('Words'.toUpperCase(),
-                style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
-                    color: AC.textSec, weight: AppSettings.instance.fontWeight,
-                    letterSpacing: 1.0)),
-            const SizedBox(width: 4),
+                style: AT.garamond(11, color: AC.textMuted, letterSpacing: 0.7)),
+            const SizedBox(width: 3),
+            Text('${pada.words.length}',
+                style: AT.garamond(11, color: AC.textMuted)),
+            const SizedBox(width: 2),
             Icon(_showWords ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                size: 14, color: AC.textSec),
-            const SizedBox(width: 6),
-            Text('${pada.words.length}', style: AT.garamond(
-                AppSettings.instance.uiFontSize.toDouble(), color: AC.textSec)),
+                size: 13, color: AC.textMuted),
           ]),
         ),
         if (_showWords) ...[
@@ -1907,43 +1918,48 @@ class _PracticeScreenState extends State<PracticeScreen> {
         IconButton(icon: const Icon(Icons.skip_next_rounded),
             color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _nextPada),
       ]),
-      const SizedBox(height: 2),
-      Row(mainAxisAlignment: MainAxisAlignment.center,
-          children: [0.5, 0.75, 1.0, 1.25, 1.5].map((s) {
-        final active = _speed == s;
-        return GestureDetector(
-          onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 2.5),
-            padding: const EdgeInsets.fromLTRB(6, 3, 6, 3),
-            decoration: BoxDecoration(
-              color: active ? AC.trackFill.withOpacity(0.13) : Colors.transparent,
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(color: active ? AC.trackFill : AC.borderLight)),
-            child: Text('${s}x', style: AT.garamond(13,
-                color: active ? AC.trackFill : AC.textMuted)),
+      const SizedBox(height: 4),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        child: Row(children: [
+          // Speed chips
+          ...[0.5, 0.75, 1.0, 1.25, 1.5].map((s) {
+            final active = _speed == s;
+            return GestureDetector(
+              onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
+              child: Container(
+                margin: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: active ? AC.trackFill.withOpacity(0.13) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: active ? AC.trackFill : AC.borderLight)),
+                child: Text('${s}x',
+                    style: AT.garamond(13, color: active ? AC.trackFill : AC.textMuted)),
+              ),
+            );
+          }),
+          const Spacer(),
+          // Auto-advance toggle
+          GestureDetector(
+            onTap: () => setState(() => _autoAdvance = !_autoAdvance),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: _autoAdvance ? AC.accent.withOpacity(0.10) : Colors.transparent,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: _autoAdvance ? AC.accent : AC.borderLight)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.fast_forward_rounded, size: 12,
+                    color: _autoAdvance ? AC.accent : AC.textMuted),
+                const SizedBox(width: 3),
+                Text('Auto', style: AT.garamond(12,
+                    color: _autoAdvance ? AC.accent : AC.textMuted)),
+              ]),
+            ),
           ),
-        );
-      }).toList()),
-      const SizedBox(height: 6),
-      GestureDetector(
-        onTap: () => setState(() => _autoAdvance = !_autoAdvance),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
-          decoration: BoxDecoration(
-            color: _autoAdvance ? AC.accent.withOpacity(0.10) : Colors.transparent,
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: _autoAdvance ? AC.accent : AC.borderLight)),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.fast_forward_rounded, size: 12,
-                color: _autoAdvance ? AC.accent : AC.textMuted),
-            const SizedBox(width: 4),
-            Text('Auto-advance', style: AT.garamond(12,
-                color: _autoAdvance ? AC.accent : AC.textMuted)),
-          ]),
-        ),
+        ]),
       ),
-      const SizedBox(height: 12),
     ]),
   );
   }
