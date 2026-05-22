@@ -43,6 +43,7 @@ class PracticeScreen extends StatefulWidget {
   final VoidCallback onBack;
   final int          initialSetIdx;   // activate this set after restore (0 = stored default)
   final bool         startWithNewSet; // add a fresh empty set after restore
+  final bool         showSetPanel;    // open set panel immediately on load
 
   const PracticeScreen({
     super.key,
@@ -50,6 +51,7 @@ class PracticeScreen extends StatefulWidget {
     required this.onBack,
     this.initialSetIdx   = 0,
     this.startWithNewSet = false,
+    this.showSetPanel    = false,
   });
 
   @override
@@ -185,7 +187,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           _showSetPanel = true;
         });
         _saveSet();
-      } else if (widget.initialSetIdx != 0) {
+      } else if (widget.initialSetIdx != 0 || widget.showSetPanel) {
         final idx = widget.initialSetIdx.clamp(0, _practiceSets.length - 1);
         setState(() { _activeSetIdx = idx; _showSetPanel = true; });
       }
@@ -688,27 +690,28 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   fontSize: 15, color: AC.textSec, height: 1.2));
             }),
           )),
-          // Desktop only: Practice Set toggle (mobile uses bottom tray instead)
-          if (!isMobile)
-            GestureDetector(
-              onTap: () => setState(() => _showSetPanel = !_showSetPanel),
-              child: Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _showSetPanel ? AC.accent.withOpacity(0.10) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: _showSetPanel ? AC.accent : AC.border)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(Icons.playlist_play_rounded, size: 14,
-                      color: _showSetPanel ? AC.accent : AC.textSec),
-                  const SizedBox(width: 4),
-                  Text('Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
-                      style: AT.garamond(12,
-                          color: _showSetPanel ? AC.accent : AC.textSec)),
-                ]),
-              ),
+          // Practice Set toggle — side panel on desktop, bottom sheet on mobile
+          GestureDetector(
+            onTap: isMobile
+                ? _showMobileSetSheet
+                : () => setState(() => _showSetPanel = !_showSetPanel),
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (!isMobile && _showSetPanel) ? AC.accent.withOpacity(0.10) : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: (!isMobile && _showSetPanel) ? AC.accent : AC.border)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.playlist_play_rounded, size: 14,
+                    color: (!isMobile && _showSetPanel) ? AC.accent : AC.textSec),
+                const SizedBox(width: 4),
+                Text('Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
+                    style: AT.garamond(12,
+                        color: (!isMobile && _showSetPanel) ? AC.accent : AC.textSec)),
+              ]),
             ),
+          ),
           // Display settings
           GestureDetector(
             onTap: _showDisplaySettings,
@@ -1654,49 +1657,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
       padding: const EdgeInsets.only(bottom: 44),
       child: Column(children: [
         _buildProgress(pada),
-        ...beforePadas.map((p) => _buildContextPada(p)),
-        _buildPadaCard(pada),
-        ...afterPadas.map((p) => _buildContextPada(p)),
+        _buildPadaBox(pada, beforePadas, afterPadas),
         _buildWordChips(pada),
         _buildPlayer(),
       ]),
-    );
-  }
-
-  Widget _buildContextPada(Pada p) {
-    final s = AppSettings.instance;
-    return GestureDetector(
-      onTap: () => _goTo(_selKandaNum, _selVargaSeq, _selSecSeq, p.seq),
-      child: Opacity(
-        opacity: 0.55,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(14, 6, 14, 0),
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-          decoration: BoxDecoration(
-            color: AC.surfaceAlt,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AC.borderLight),
-          ),
-          child: p.hasText
-              ? Text.rich(TextSpan(children: [
-                  TextSpan(
-                    text: '${p.id} ${p.padaNum == 1 ? "A" : "B"}  ',
-                    style: AT.garamond(
-                        (s.devFontSize * 0.52).clamp(10.0, 15.0),
-                        color: AC.textMuted, italic: true),
-                  ),
-                  TextSpan(
-                    text: p.textDev,
-                    style: AT.devanagari(
-                        (s.devFontSize * 0.85).roundToDouble(),
-                        color: AC.textMuted, family: s.devFontFamily),
-                  ),
-                ]))
-              : Text('${p.id} ${p.padaNum == 1 ? "A" : "B"}',
-                    style: AT.garamond(s.uiFontSize.toDouble(),
-                        color: AC.textMuted, italic: true)),
-        ),
-      ),
     );
   }
 
@@ -1718,9 +1682,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     ]),
   );
 
-  Widget _buildPadaCard(Pada pada) {
-    final s   = AppSettings.instance;
-    final pad = _isMobile ? 20.0 : 16.0;
+  Widget _buildPadaBox(Pada activePada, List<Pada> before, List<Pada> after) {
+    final s          = AppSettings.instance;
+    final pad        = _isMobile ? 16.0 : 14.0;
     final hasButtons = _setPlaying || _waitingForStep;
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 10, 14, 10),
@@ -1765,30 +1729,51 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ]),
           const SizedBox(height: 10),
         ],
-        // Sanskrit text with inline reference prefix
-        _buildPadaText(pada),
+        // All padas in one block: context (dimmed) → active (highlighted) → context (dimmed)
+        for (final p in before) _buildPadaRowInBox(p, isActive: false),
+        _buildPadaRowInBox(activePada, isActive: true),
+        for (final p in after) _buildPadaRowInBox(p, isActive: false),
       ]),
     );
   }
 
-  Widget _buildPadaText(Pada pada) {
+  Widget _buildPadaRowInBox(Pada p, {required bool isActive}) {
     final s = AppSettings.instance;
-    if (!pada.hasText) {
-      return Text('[no text available]',
+    Widget content;
+    if (!p.hasText) {
+      content = Text('[no text available]',
           style: AT.garamond(12, color: AC.textMuted, italic: true));
+    } else {
+      content = Text.rich(TextSpan(children: [
+        TextSpan(
+          text: '${p.id} ${p.padaNum == 1 ? "A" : "B"}  ',
+          style: AT.garamond(
+              (s.devFontSize * 0.52).clamp(10.0, 16.0),
+              color: AC.textMuted, italic: true),
+        ),
+        TextSpan(
+          text: p.textDev,
+          style: AT.devanagari(
+              isActive ? s.devFontSize.toDouble() : (s.devFontSize * 0.85).roundToDouble(),
+              color: isActive ? AC.text : AC.textMuted,
+              family: s.devFontFamily),
+        ),
+      ]));
     }
-    return Text.rich(TextSpan(children: [
-      TextSpan(
-        text: '${pada.id} ${pada.padaNum == 1 ? "A" : "B"}  ',
-        style: AT.garamond(
-            (s.devFontSize * 0.52).clamp(10.0, 16.0),
-            color: AC.textMuted, italic: true),
+    if (isActive) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        decoration: AD.activeLine(),
+        child: content,
+      );
+    }
+    return GestureDetector(
+      onTap: () => _goTo(_selKandaNum, _selVargaSeq, _selSecSeq, p.seq),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+        child: Opacity(opacity: 0.55, child: content),
       ),
-      TextSpan(
-        text: pada.textDev,
-        style: AT.devanagari(s.devFontSize.toDouble(), family: s.devFontFamily),
-      ),
-    ]));
+    );
   }
 
   Widget _buildWordChips(Pada pada) {

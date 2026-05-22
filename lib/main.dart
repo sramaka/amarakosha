@@ -70,6 +70,7 @@ class _AppShellState extends State<AppShell> {
       session: _defaultSession,
       onBack: _pop,
       initialSetIdx: setIdx,
+      showSetPanel: true,
     ));
   }
 

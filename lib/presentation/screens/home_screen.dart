@@ -45,18 +45,31 @@ class HomeScreen extends StatelessWidget {
 
         // ── Header ────────────────────────────────────────────────────────
         Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+          padding: const EdgeInsets.fromLTRB(20, 12, 16, 14),
           decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: AC.border))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('अमरकोशः', style: TextStyle(
-                fontFamily: 'TiroDevanagarSanskrit',
-                fontSize: 26, color: AC.text, height: 1.2)),
-            Text('Amarakosha Practice'.toUpperCase(),
-                style: AT.garamond(
-                    (fs - 2).clamp(10, 99),
-                    color: AC.textSec, letterSpacing: 1.0,
-                    weight: AppSettings.instance.fontWeight)),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('अमरकोशः', style: TextStyle(
+                  fontFamily: 'TiroDevanagarSanskrit',
+                  fontSize: 26, color: AC.text, height: 1.2)),
+              Text('Amarakosha Practice'.toUpperCase(),
+                  style: AT.garamond(
+                      (fs - 2).clamp(10, 99),
+                      color: AC.textSec, letterSpacing: 1.0,
+                      weight: AppSettings.instance.fontWeight)),
+            ])),
+            GestureDetector(
+              onTap: () => _openUrl('landing.html'),
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.info_outline_rounded, size: 14, color: AC.textMuted),
+                  const SizedBox(width: 4),
+                  Text('About', style: AT.garamond(12, color: AC.textMuted)),
+                ]),
+              ),
+            ),
           ]),
         ),
 
