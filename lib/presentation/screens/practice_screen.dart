@@ -1639,25 +1639,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final pada = _pada;
     if (pada == null) return const Center(child: CircularProgressIndicator(color: AC.accent));
 
-    final sec         = _currentSection;
-    final s           = AppSettings.instance;
-    final allPadas    = sec?.padas ?? <Pada>[];
-    final idx         = _selPadaSeq - 1; // 0-based
-
-    final beforePadas = s.contextBefore > 0 && allPadas.isNotEmpty
-        ? allPadas.sublist((idx - s.contextBefore).clamp(0, idx), idx)
-        : <Pada>[];
-    final afterPadas  = s.contextAfter > 0 && allPadas.isNotEmpty
-        ? allPadas.sublist(
-            (idx + 1).clamp(0, allPadas.length),
-            (idx + 1 + s.contextAfter).clamp(0, allPadas.length))
-        : <Pada>[];
-
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 44),
-      child: Column(children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _buildProgress(pada),
-        _buildPadaBox(pada, beforePadas, afterPadas),
+        _buildPadaBox(pada),
         _buildWordChips(pada),
         _buildPlayer(),
       ]),
@@ -1682,10 +1668,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
     ]),
   );
 
-  Widget _buildPadaBox(Pada activePada, List<Pada> before, List<Pada> after) {
+  Widget _buildPadaBox(Pada activePada) {
     final s          = AppSettings.instance;
     final pad        = _isMobile ? 16.0 : 14.0;
     final hasButtons = _setPlaying || _waitingForStep;
+    final entries    = _buildBoxEntries(activePada);
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       padding: EdgeInsets.all(pad),
@@ -1729,16 +1716,96 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ]),
           const SizedBox(height: 10),
         ],
-        // All padas in one block: context (dimmed) → active (highlighted) → context (dimmed)
-        for (final p in before) _buildPadaRowInBox(p, isActive: false),
-        _buildPadaRowInBox(activePada, isActive: true),
-        for (final p in after) _buildPadaRowInBox(p, isActive: false),
+        // Context + active padas with section/varga headings at boundaries
+        for (final entry in entries)
+          if (entry.isHeading)
+            _buildBoxHeading(entry)
+          else
+            _buildPadaRowInBox(entry),
       ]),
     );
   }
 
-  Widget _buildPadaRowInBox(Pada p, {required bool isActive}) {
+  Widget _buildBoxHeading(_BoxEntry entry) {
     final s = AppSettings.instance;
+    if (entry.isVargaHeading) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(2, 10, 2, 4),
+        child: Text(entry.headingText,
+            style: TextStyle(
+                fontFamily: 'TiroDevanagarSanskrit',
+                fontSize: (s.devFontSize * 0.75).clamp(12.0, 18.0),
+                color: AC.textSec, height: 1.4)),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 8, 2, 3),
+      child: Text(entry.headingText.toUpperCase(),
+          style: AT.garamond(10, color: AC.textMuted,
+              letterSpacing: 0.6, weight: FontWeight.w600)),
+    );
+  }
+
+  List<_BoxEntry> _buildBoxEntries(Pada activePada) {
+    // Flat list: all padas across all kandas/vargas/sections in order
+    final flat = <_FlatPadaRef>[];
+    for (final k in _kandas) {
+      for (final v in k.vargas) {
+        for (final sec in v.sections) {
+          for (final p in sec.padas) {
+            flat.add(_FlatPadaRef(k, v, sec, p));
+          }
+        }
+      }
+    }
+    final activeIdx = flat.indexWhere((e) => e.pada.id == activePada.id);
+    if (activeIdx < 0) {
+      return [_BoxEntry.pada(activePada,
+          isActive: true,
+          kandaNum: _selKandaNum,
+          vargaSeq: _selVargaSeq,
+          secSeq: _selSecSeq)];
+    }
+
+    final ctxBefore = AppSettings.instance.contextBefore;
+    final ctxAfter  = AppSettings.instance.contextAfter;
+    final start = (activeIdx - ctxBefore).clamp(0, flat.length - 1);
+    final end   = (activeIdx + ctxAfter).clamp(0, flat.length - 1);
+
+    final entries = <_BoxEntry>[];
+    // Init to active pada's keys so a heading appears when context crosses its boundary
+    final ae = flat[activeIdx];
+    var lastVKey = '${ae.kanda.num}_${ae.varga.seq}';
+    var lastSKey = '${ae.kanda.num}_${ae.varga.seq}_${ae.section.seq}';
+
+    for (int i = start; i <= end; i++) {
+      final e    = flat[i];
+      final vKey = '${e.kanda.num}_${e.varga.seq}';
+      final sKey = '${e.kanda.num}_${e.varga.seq}_${e.section.seq}';
+
+      if (vKey != lastVKey) {
+        entries.add(_BoxEntry.heading(e.varga.name, isVargaHeading: true));
+      }
+      if (sKey != lastSKey && e.section.titleEn.isNotEmpty) {
+        entries.add(_BoxEntry.heading(e.section.titleEn, isVargaHeading: false));
+      }
+
+      entries.add(_BoxEntry.pada(e.pada,
+          isActive: i == activeIdx,
+          kandaNum: e.kanda.num,
+          vargaSeq: e.varga.seq,
+          secSeq: e.section.seq));
+
+      lastVKey = vKey;
+      lastSKey = sKey;
+    }
+    return entries;
+  }
+
+  Widget _buildPadaRowInBox(_BoxEntry entry) {
+    final p        = entry.pada!;
+    final isActive = entry.isActive;
+    final s        = AppSettings.instance;
     Widget content;
     if (!p.hasText) {
       content = Text('[no text available]',
@@ -1762,16 +1829,21 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
     if (isActive) {
       return Container(
+        width: double.infinity,
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
         decoration: AD.activeLine(),
         child: content,
       );
     }
     return GestureDetector(
-      onTap: () => _goTo(_selKandaNum, _selVargaSeq, _selSecSeq, p.seq),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
-        child: Opacity(opacity: 0.55, child: content),
+      onTap: () => _goTo(entry.kandaNum, entry.vargaSeq, entry.secSeq, p.seq),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+          child: Opacity(opacity: 0.55, child: content),
+        ),
       ),
     );
   }
@@ -2224,6 +2296,58 @@ class _ImportSetDialogState extends State<_ImportSetDialog> {
       ],
     );
   }
+}
+
+// ─── Flat pada reference (used for cross-boundary context) ────────────────────
+class _FlatPadaRef {
+  final Kanda   kanda;
+  final Varga   varga;
+  final Section section;
+  final Pada    pada;
+  const _FlatPadaRef(this.kanda, this.varga, this.section, this.pada);
+}
+
+// ─── Unified pada-box entry (heading or pada row) ─────────────────────────────
+class _BoxEntry {
+  final bool   isHeading;
+  final String headingText;
+  final bool   isVargaHeading;
+  final Pada?  pada;
+  final bool   isActive;
+  final int    kandaNum;
+  final int    vargaSeq;
+  final int    secSeq;
+
+  const _BoxEntry._({
+    required this.isHeading,
+    required this.headingText,
+    required this.isVargaHeading,
+    required this.pada,
+    required this.isActive,
+    required this.kandaNum,
+    required this.vargaSeq,
+    required this.secSeq,
+  });
+
+  factory _BoxEntry.heading(String text, {required bool isVargaHeading}) =>
+      _BoxEntry._(
+        isHeading: true, headingText: text,
+        isVargaHeading: isVargaHeading,
+        pada: null, isActive: false,
+        kandaNum: 0, vargaSeq: 0, secSeq: 0,
+      );
+
+  factory _BoxEntry.pada(Pada p, {
+    required bool isActive,
+    required int  kandaNum,
+    required int  vargaSeq,
+    required int  secSeq,
+  }) => _BoxEntry._(
+        isHeading: false, headingText: '',
+        isVargaHeading: false,
+        pada: p, isActive: isActive,
+        kandaNum: kandaNum, vargaSeq: vargaSeq, secSeq: secSeq,
+      );
 }
 
 // ─── Range picker sheet ────────────────────────────────────────────────────────
