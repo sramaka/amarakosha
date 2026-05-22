@@ -12,7 +12,6 @@ import 'core/settings/app_settings.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/browse_screen.dart';
 import 'presentation/screens/practice_screen.dart';
-import 'presentation/screens/recording_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,34 +44,40 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int _tabIndex = 0;  // 0=Home 1=Browse 2=Record
+  int _tabIndex = 0;  // 0=Home  1=Browse
   final List<Widget> _stack = [];
 
-  // Default session used when opening Record tab standalone
   Session get _defaultSession {
-    final kanda = kBootstrapKandas.first;
-    final varga = kanda.vargas.first;
+    final kanda   = kBootstrapKandas.first;
+    final varga   = kanda.vargas.first;
     final section = varga.sections.first;
     return Session(kanda: kanda, varga: varga, section: section, repeatN: 1);
   }
-
-  // Session from last practice screen (so Record tab uses same varga)
-  Session? _lastSession;
 
   void _push(Widget w) => setState(() => _stack.add(w));
   void _pop()          => setState(() { if (_stack.isNotEmpty) _stack.removeLast(); });
 
   void _onSelectVarga(Kanda kanda, Varga varga) {
     final section = varga.sections.isNotEmpty ? varga.sections.first : kBootstrapSection;
-    final session = Session(kanda: kanda, varga: varga, section: section, repeatN: 1);
-    _lastSession = session;
-    _openPractice(session);
+    _push(PracticeScreen(
+      session: Session(kanda: kanda, varga: varga, section: section, repeatN: 1),
+      onBack: _pop,
+    ));
   }
 
-  void _openPractice(Session session) {
+  void _onContinuePractice(int setIdx) {
     _push(PracticeScreen(
-      session: session,
+      session: _defaultSession,
       onBack: _pop,
+      initialSetIdx: setIdx,
+    ));
+  }
+
+  void _onNewPracticeSet() {
+    _push(PracticeScreen(
+      session: _defaultSession,
+      onBack: _pop,
+      startWithNewSet: true,
     ));
   }
 
@@ -89,13 +94,14 @@ class _AppShellState extends State<AppShell> {
           Expanded(child: IndexedStack(
             index: _tabIndex,
             children: [
-              HomeScreen(onBrowse: () => setState(() => _tabIndex = 1)),
-              BrowseScreen(onBack: () => setState(() => _tabIndex = 0),
-                  onSelectVarga: _onSelectVarga),
-              // Record tab — uses last practiced session, or bootstrap
-              RecordingScreen(
-                session: _lastSession ?? _defaultSession,
+              HomeScreen(
+                onBrowse: () => setState(() => _tabIndex = 1),
+                onContinuePractice: _onContinuePractice,
+                onNewPracticeSet: _onNewPracticeSet,
+              ),
+              BrowseScreen(
                 onBack: () => setState(() => _tabIndex = 0),
+                onSelectVarga: _onSelectVarga,
               ),
             ],
           )),
@@ -121,12 +127,10 @@ class _TabBar extends StatelessWidget {
     child: SafeArea(
       top: false,
       child: Row(children: [
-        _Tab(icon: Icons.home_outlined,     iconActive: Icons.home_rounded,
+        _Tab(icon: Icons.home_outlined,      iconActive: Icons.home_rounded,
              label: 'Home',   active: current == 0, onTap: () => onTap(0)),
         _Tab(icon: Icons.menu_book_outlined, iconActive: Icons.menu_book_rounded,
              label: 'Browse', active: current == 1, onTap: () => onTap(1)),
-        _Tab(icon: Icons.mic_none_rounded,   iconActive: Icons.mic_rounded,
-             label: 'Record', active: current == 2, onTap: () => onTap(2)),
       ]),
     ),
   );

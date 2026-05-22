@@ -41,11 +41,15 @@ class _NamedSet {
 class PracticeScreen extends StatefulWidget {
   final Session      session;
   final VoidCallback onBack;
+  final int          initialSetIdx;   // activate this set after restore (0 = stored default)
+  final bool         startWithNewSet; // add a fresh empty set after restore
 
   const PracticeScreen({
     super.key,
     required this.session,
     required this.onBack,
+    this.initialSetIdx   = 0,
+    this.startWithNewSet = false,
   });
 
   @override
@@ -160,16 +164,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
           final idx = (prefs.getInt(_kActiveIdx) ?? 0).clamp(0, sets.length - 1);
           setState(() { _practiceSets = sets; _activeSetIdx = idx; });
         }
-        return;
-      }
-      // Migrate legacy single-set key
-      final legacy = prefs.getString(_kSetKey);
-      if (legacy != null && legacy.isNotEmpty) {
-        final items = _decodeItems(jsonDecode(legacy) as List<dynamic>);
-        if (mounted && items.isNotEmpty) {
-          setState(() { _practiceSets = [_NamedSet('Practice Set', items)]; _activeSetIdx = 0; });
-          _saveSet(); // persist in new format
+      } else {
+        // Migrate legacy single-set key
+        final legacy = prefs.getString(_kSetKey);
+        if (legacy != null && legacy.isNotEmpty) {
+          final items = _decodeItems(jsonDecode(legacy) as List<dynamic>);
+          if (mounted && items.isNotEmpty) {
+            setState(() { _practiceSets = [_NamedSet('Practice Set', items)]; _activeSetIdx = 0; });
+            _saveSet(); // persist in new format
+          }
         }
+      }
+      if (!mounted) return;
+      // Apply constructor overrides after restore
+      if (widget.startWithNewSet) {
+        final newName = 'Set ${_practiceSets.length + 1}';
+        setState(() {
+          _practiceSets.add(_NamedSet(newName));
+          _activeSetIdx = _practiceSets.length - 1;
+          _showSetPanel = true;
+        });
+        _saveSet();
+      } else if (widget.initialSetIdx != 0) {
+        final idx = widget.initialSetIdx.clamp(0, _practiceSets.length - 1);
+        setState(() { _activeSetIdx = idx; _showSetPanel = true; });
       }
     } catch (_) {}
   }
