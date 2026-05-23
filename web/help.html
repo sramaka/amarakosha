@@ -1,20 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="parchment">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Practice App Help — Amarakosha</title>
+  <script>document.documentElement.dataset.theme=localStorage.getItem('amara-theme')||'parchment';</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #EDE0C0; --surface: #F8F2E4; --surface-alt: #EAD9B2;
-      --text: #1E1208; --text-sec: #6A4618; --text-muted: #9C7848;
-      --accent: #7A3A10; --border: #C4A060; --border-lt: #DEC890;
-      --btn-bg: #7A3A10; --btn-text: #FFF4E4;
-      --green: #4A6A30; --green-bg: #E8F0D8;
-      --red: #C03020;
+    html[data-theme="parchment"] {
+      --bg:#EDE0C0; --surface:#F8F2E4; --surface-alt:#EAD9B2;
+      --text:#1E1208; --text-sec:#6A4618; --text-muted:#7A5428;
+      --accent:#7A3A10; --border:#C4A060; --border-lt:#DEC890;
+      --btn-bg:#7A3A10; --btn-text:#FFF4E4;
+      --green:#4A6A30; --green-bg:#E8F0D8; --red:#C03020;
     }
+    html[data-theme="night"] {
+      --bg:#1A1208; --surface:#221810; --surface-alt:#2C1E10;
+      --text:#F0E4C8; --text-sec:#C8A068; --text-muted:#8A6840;
+      --accent:#E8A840; --border:#4A3018; --border-lt:#3A2410;
+      --btn-bg:#E8A840; --btn-text:#1A1208;
+      --green:#60A040; --green-bg:#243018; --red:#E04030;
+    }
+    html[data-theme="slate"] {
+      --bg:#E2E6EC; --surface:#ECEEF2; --surface-alt:#D6DAE0;
+      --text:#1A1C20; --text-sec:#3C4450; --text-muted:#68727E;
+      --accent:#2C5898; --border:#A8B0BC; --border-lt:#BEC8D4;
+      --btn-bg:#2C5898; --btn-text:#F0F4F8;
+      --green:#2A7840; --green-bg:#D0E8D8; --red:#C02820;
+    }
+    html[data-theme="minimal"] {
+      --bg:#F4F4F5; --surface:#FFFFFF; --surface-alt:#EFEFF1;
+      --text:#18181B; --text-sec:#52525B; --text-muted:#A1A1AA;
+      --accent:#4F46E5; --border:#D4D4D8; --border-lt:#E4E4E7;
+      --btn-bg:#4F46E5; --btn-text:#FFFFFF;
+      --green:#059669; --green-bg:#D1FAE5; --red:#DC2626;
+    }
+    .theme-picker { display:flex; gap:5px; align-items:center; margin-left:auto; }
+    .theme-dot { width:16px; height:16px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
+    .theme-dot.active { border-color:var(--text); box-shadow:0 0 0 1px var(--bg); }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: var(--bg); color: var(--text);
@@ -87,10 +111,10 @@
       font-size: 15px; color: var(--text-sec);
     }
     .tip {
-      background: var(--green-bg); border: 1px solid rgba(74,106,48,.3);
+      background: var(--green-bg); border: 1px solid var(--green-bg);
       border-left: 3px solid var(--green);
       border-radius: 8px; padding: 12px 16px; margin: 16px 0;
-      font-size: 15px; color: #2E4A20;
+      font-size: 15px; color: var(--green);
     }
 
     /* ── Mode chips ── */
@@ -162,6 +186,12 @@
       <a href="landing.html">← Home</a>
       <span class="sep">·</span>
       <a href="recorder-help.html">Recording Studio Help</a>
+      <div class="theme-picker">
+        <button class="theme-dot" data-theme="parchment" style="background:#7A3A10" title="Parchment"></button>
+        <button class="theme-dot" data-theme="night"     style="background:#E8A840" title="Night"></button>
+        <button class="theme-dot" data-theme="slate"     style="background:#2C5898" title="Slate"></button>
+        <button class="theme-dot" data-theme="minimal"   style="background:#4F46E5" title="Minimal"></button>
+      </div>
     </div>
 
     <h1>Practice App Help</h1>
@@ -548,5 +578,16 @@
 
   </main>
 </div>
+<script>
+function applyTheme(id) {
+  document.documentElement.dataset.theme = id;
+  localStorage.setItem('amara-theme', id);
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.theme === id));
+}
+document.querySelectorAll('.theme-dot').forEach(d => {
+  d.classList.toggle('active', d.dataset.theme === (localStorage.getItem('amara-theme') || 'parchment'));
+  d.addEventListener('click', () => applyTheme(d.dataset.theme));
+});
+</script>
 </body>
 </html>

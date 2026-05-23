@@ -16,8 +16,6 @@ Key features:
 
 The primary deployment target is Flutter web (GitHub Pages). The recording and audio-set features are web-only due to IndexedDB / JS-interop dependencies.
 
-The primary deployment target is Flutter web (GitHub Pages). The recording and audio-set features are web-only due to IndexedDB / JS-interop dependencies.
-
 ## Commands
 
 ```bash
@@ -98,6 +96,26 @@ The web implementations use conditional imports: `_web.dart` files contain `dart
 
 No Riverpod in practice (listed in pubspec but unused). State is plain `StatefulWidget`. `AppSettings` is a `ChangeNotifier` singleton — screens subscribe via `addListener` / `ListenableBuilder`.
 
+### HTML web tools (recorder / editor / help)
+
+`web/recorder.html`, `tools/editor.html`, and `web/help.html` share the same four-theme CSS system as the Flutter app:
+
+- Theme is stored in `localStorage` under key `amara-theme` and applied via `html[data-theme="id"]` CSS attribute — no flash on load because a tiny `<script>` in `<head>` sets the attribute before any paint.
+- Four colored dot buttons in each page header switch and persist the theme.
+- CSS variables used: `--bg`, `--surface`, `--surface-alt`, `--text`, `--text-sec`, `--text-muted`, `--accent`, `--border`, `--border-lt`, `--btn-bg`, `--btn-text`, `--green`, `--green-bg`, `--red`/`--rec`, `--red-bg`.
+- The editor adds `--accent-lt`; the recorder uses `--rec` instead of `--red`.
+
+### Data pipeline (`tools/update_kanda1.py`)
+
+`update_kanda1.py` rebuilds Kanda 1 pādas in `amarakosha_v3.json` to match a reference PDF (`amarfin1.pdf`). Key steps:
+
+1. **PDF extraction** — PyMuPDF extracts Devanagari text; font-artifact character doubling is removed by regex passes (`_PAT3`, `_PAT2`, `_PAT_MATRA`, `_PAT_VSRG`).
+2. **Placeholder filtering** — JSON pādas whose `text_dev` is empty or mostly IAST are excluded from alignment but their `words` data is preserved for later recovery.
+3. **LCS similarity alignment** — greedy forward scan with `similarity()` (LCS-based, threshold 0.55) matches PDF pādas to JSON pādas; unmatched PDF pādas are inserted; JSON pādas absent from the PDF edition are skipped.
+4. **Word recovery** — after alignment, inserted pādas with no words are matched to filtered placeholders by word-overlap (≥ 2 words); matched words are transferred.
+
+`dryrun_align.py` runs the same logic and writes a report to `tools/dryrun_out.txt` without touching the JSON.
+
 ### Theme (`lib/core/theme/app_theme.dart`)
 
 Three token classes — never use raw colors or `TextStyle(...)` inline:
@@ -123,7 +141,10 @@ Sanskrit text always uses `TiroDevanagarSanskrit` (bundled TTF) or `NotoSerifDev
 - `web/recorder.html` — standalone recording studio (separate HTML page, links from Home screen)
 - `web/landing.html` — landing/about page, linked from the Home screen header
 - `web/help.html` — help page, linked from the Home screen
-- `web/editor.html` / `tools/strip_fields.py` — offline data editing utilities
+- `tools/editor.html` — offline JSON editor for the corpus data
+- `tools/strip_fields.py` — strips fields from the JSON for distribution
+- `tools/update_kanda1.py` — rebuilds Kanda 1 pādas in the JSON from `amarfin1.pdf` (see below)
+- `tools/dryrun_align.py` — dry-run of the Kanda 1 alignment without writing the JSON
 
 ### Responsive layout
 
