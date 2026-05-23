@@ -1,28 +1,37 @@
 import 'package:flutter/material.dart' show FontWeight;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart' show AppColorScheme, AppColorSchemes;
 
 class AppSettings extends ChangeNotifier {
   AppSettings._();
   static final instance = AppSettings._();
 
-  int    devFontSize     = 20;   // Sanskrit body text (14–72)
-  int    treeFontSize    = 13;   // Tree pane Devanagari + labels (10–20)
-  int    uiFontSize      = 13;   // UI labels / headings (11–22)
-  int    uiFontWeight    = 500;  // 400 / 500 / 600 / 700
-  String devFontFamily   = 'TiroDevanagarSanskrit';
-  int    contextBefore   = 1;    // padas shown above active pada (0–5)
-  int    contextAfter    = 1;    // padas shown below active pada (0–5)
-  int    reciteVolumePct = 10;   // volume % for repeat plays in Recite mode (2–20, step 2)
+  int    devFontSize              = 20;   // Sanskrit body text (14–72)
+  int    treeFontSize             = 13;   // Tree pane Devanagari + labels (10–20)
+  int    uiFontSize               = 14;   // UI labels / headings (11–22)
+  int    uiFontWeight             = 500;  // 400 / 500 / 600 / 700
+  String devFontFamily            = 'TiroDevanagarSanskrit';
+  int    contextBefore            = 1;    // padas shown above active pada in browse mode (0–5)
+  int    contextAfter             = 1;    // padas shown below active pada in browse mode (0–5)
+  int    setPlaylistContextBefore = 1;    // context padas before active pada during set playback (0–5)
+  int    setPlaylistContextAfter  = 1;    // context padas after active pada during set playback (0–5)
+  int    reciteVolumePct          = 10;   // volume % for repeat plays in Recite mode (2–20, step 2)
+  String themeId                  = 'parchment';
 
-  static const _kDevSize       = 'dev_font_size';
-  static const _kTreeSize      = 'tree_font_size';
-  static const _kUiSize        = 'ui_font_size';
-  static const _kUiWeight      = 'ui_font_weight';
-  static const _kDevFamily     = 'dev_font_family';
-  static const _kCtxBefore     = 'context_before';
-  static const _kCtxAfter      = 'context_after';
-  static const _kReciteVolume  = 'recite_volume_pct';
+  AppColorScheme get colors => AppColorSchemes.byId(themeId);
+
+  static const _kDevSize          = 'dev_font_size';
+  static const _kTreeSize         = 'tree_font_size';
+  static const _kUiSize           = 'ui_font_size';
+  static const _kUiWeight         = 'ui_font_weight';
+  static const _kDevFamily        = 'dev_font_family';
+  static const _kCtxBefore        = 'context_before';
+  static const _kCtxAfter         = 'context_after';
+  static const _kSetCtxBefore     = 'set_ctx_before';
+  static const _kSetCtxAfter      = 'set_ctx_after';
+  static const _kReciteVolume     = 'recite_volume_pct';
+  static const _kThemeId          = 'theme_id';
 
   FontWeight get fontWeight {
     switch (uiFontWeight) {
@@ -40,9 +49,12 @@ class AppSettings extends ChangeNotifier {
     uiFontSize    = p.getInt(_kUiSize)       ?? 13;
     uiFontWeight  = p.getInt(_kUiWeight)     ?? 500;
     devFontFamily = p.getString(_kDevFamily) ?? 'TiroDevanagarSanskrit';
-    contextBefore    = p.getInt(_kCtxBefore)      ?? 1;
-    contextAfter     = p.getInt(_kCtxAfter)       ?? 1;
-    reciteVolumePct  = p.getInt(_kReciteVolume)   ?? 10;
+    contextBefore            = p.getInt(_kCtxBefore)    ?? 1;
+    contextAfter             = p.getInt(_kCtxAfter)     ?? 1;
+    setPlaylistContextBefore = p.getInt(_kSetCtxBefore)    ?? 1;
+    setPlaylistContextAfter  = p.getInt(_kSetCtxAfter)     ?? 1;
+    reciteVolumePct          = p.getInt(_kReciteVolume)    ?? 10;
+    themeId                  = p.getString(_kThemeId)      ?? 'parchment';
     notifyListeners();
   }
 
@@ -86,6 +98,24 @@ class AppSettings extends ChangeNotifier {
     contextAfter = v.clamp(0, 5);
     notifyListeners();
     (await SharedPreferences.getInstance()).setInt(_kCtxAfter, contextAfter);
+  }
+
+  Future<void> setSetPlaylistContextBefore(int v) async {
+    setPlaylistContextBefore = v.clamp(0, 5);
+    notifyListeners();
+    (await SharedPreferences.getInstance()).setInt(_kSetCtxBefore, setPlaylistContextBefore);
+  }
+
+  Future<void> setSetPlaylistContextAfter(int v) async {
+    setPlaylistContextAfter = v.clamp(0, 5);
+    notifyListeners();
+    (await SharedPreferences.getInstance()).setInt(_kSetCtxAfter, setPlaylistContextAfter);
+  }
+
+  Future<void> setThemeId(String v) async {
+    themeId = v;
+    notifyListeners();
+    (await SharedPreferences.getInstance()).setString(_kThemeId, themeId);
   }
 
   Future<void> setReciteVolumePct(int v) async {

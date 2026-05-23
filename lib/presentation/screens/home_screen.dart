@@ -46,11 +46,11 @@ class HomeScreen extends StatelessWidget {
         // ── Header ────────────────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.fromLTRB(20, 12, 16, 14),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: AC.border))),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('अमरकोशः', style: TextStyle(
+              Text('अमरकोशः', style: TextStyle(
                   fontFamily: 'TiroDevanagarSanskrit',
                   fontSize: 26, color: AC.text, height: 1.2)),
               Text('Amarakosha Practice'.toUpperCase(),
@@ -62,10 +62,10 @@ class HomeScreen extends StatelessWidget {
             GestureDetector(
               onTap: () => _openUrl('landing.html'),
               child: Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: EdgeInsets.only(top: 6),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.info_outline_rounded, size: 14, color: AC.textMuted),
-                  const SizedBox(width: 4),
+                  Icon(Icons.info_outline_rounded, size: 14, color: AC.textMuted),
+                  SizedBox(width: 4),
                   Text('About', style: AT.garamond(12, color: AC.textMuted)),
                 ]),
               ),
@@ -164,14 +164,14 @@ class HomeScreen extends StatelessWidget {
           return Column(mainAxisSize: MainAxisSize.min, children: [
             Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 12),
+                margin: EdgeInsets.only(top: 8, bottom: 12),
                 width: 36, height: 4,
                 decoration: BoxDecoration(
                     color: AC.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text('Select Practice Set'.toUpperCase(),
@@ -180,7 +180,7 @@ class HomeScreen extends StatelessWidget {
             ),
             if (sets.isEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                padding: EdgeInsets.fromLTRB(20, 4, 20, 24),
                 child: Text(
                   'No practice sets yet. Browse the text and long-press a section or pāda to add it to a set.',
                   style: AT.garamond(14, color: AC.textMuted, italic: true, height: 1.5),
@@ -224,8 +224,8 @@ class _ActionTile extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        margin: EdgeInsets.only(bottom: 10),
+        padding: EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
           color: AC.surface,
           borderRadius: BorderRadius.circular(12),
@@ -233,7 +233,7 @@ class _ActionTile extends StatelessWidget {
         ),
         child: Row(children: [
           Icon(icon, size: 22, color: AC.accent),
-          const SizedBox(width: 14),
+          SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label, style: AT.garamond(fs, color: AC.text,
                 weight: FontWeight.w600)),
@@ -261,8 +261,8 @@ class _SetTile extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
+        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: EdgeInsets.fromLTRB(16, 13, 16, 13),
         decoration: BoxDecoration(
           color: AC.surfaceAlt,
           borderRadius: BorderRadius.circular(10),
@@ -293,7 +293,7 @@ class _StatCard extends StatelessWidget {
     final fs = AppSettings.instance.uiFontSize.toDouble();
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+        padding: EdgeInsets.fromLTRB(12, 11, 12, 11),
         decoration: BoxDecoration(
           color: AC.surface,
           borderRadius: BorderRadius.circular(12),
@@ -301,7 +301,7 @@ class _StatCard extends StatelessWidget {
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('$value', style: AT.stats28),
-          const SizedBox(height: 2),
+          SizedBox(height: 2),
           Text(label, style: AT.garamond((fs - 2).clamp(10, 99), color: AC.textSec)),
           Text(sub,   style: AT.garamond((fs - 3).clamp(9, 99),
               color: AC.textMuted, italic: true)),

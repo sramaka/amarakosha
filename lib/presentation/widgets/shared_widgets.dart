@@ -68,7 +68,7 @@ class AStepperWidget extends StatelessWidget {
         border: Border.all(color: AC.border),
       ),
       child: Center(
-        child: Text(label, style: const TextStyle(
+        child: Text(label, style: TextStyle(
             fontSize: 16, color: AC.textSec, fontFamily: 'system-ui')),
       ),
     ),
@@ -88,7 +88,7 @@ class RepDots extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ...List.generate(dots, (i) => Container(
-          margin: const EdgeInsets.only(right: 5),
+          margin: EdgeInsets.only(right: 5),
           width: i < cur ? 8 : 7,
           height: i < cur ? 8 : 7,
           decoration: BoxDecoration(
@@ -98,7 +98,7 @@ class RepDots extends StatelessWidget {
         )),
         if (total > 8)
           Text('+${total - 8}',
-              style: const TextStyle(color: AC.textMuted, fontSize: 11)),
+              style: TextStyle(color: AC.textMuted, fontSize: 11)),
       ],
     );
   }
@@ -176,7 +176,7 @@ class AOutlineButton extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
         color: AC.surface,
         borderRadius: BorderRadius.circular(8),
@@ -185,7 +185,7 @@ class AOutlineButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (leading != null) ...[leading!, const SizedBox(width: 5)],
+          if (leading != null) ...[leading!, SizedBox(width: 5)],
           Text(label, style: AT.garamond(fontSize, color: AC.textSec)),
         ],
       ),
@@ -209,7 +209,7 @@ class ANavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       border: Border(bottom: BorderSide(color: AC.border)),
     ),
     child: Row(
@@ -221,7 +221,7 @@ class ANavBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const _ChevLeft(),
-                const SizedBox(width: 5),
+                SizedBox(width: 5),
                 Text(backLabel!,
                     style: AT.garamond(15, color: AC.accent)),
               ],
@@ -256,24 +256,24 @@ class _ChevLeft extends StatelessWidget {
 }
 
 class AChevRight extends StatelessWidget {
-  final Color color;
-  const AChevRight({super.key, this.color = AC.textSec});
+  final Color? color;
+  const AChevRight({super.key, this.color});
   @override
   Widget build(BuildContext context) => CustomPaint(
-    size: const Size(7, 13),
-    painter: _ChevPainter(right: true, color: color),
+    size: Size(7, 13),
+    painter: _ChevPainter(right: true, color: color ?? AC.textSec),
   );
 }
 
 class _ChevPainter extends CustomPainter {
   final bool right;
-  final Color color;
-  const _ChevPainter({required this.right, this.color = AC.accent});
+  final Color? color;
+  const _ChevPainter({required this.right, this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
     final p = Paint()
-      ..color = color
+      ..color = color ?? AC.accent
       ..strokeWidth = 2.2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -302,7 +302,7 @@ class SheetHandle extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Container(
       width: 36, height: 4,
-      margin: const EdgeInsets.symmetric(vertical: 12),
+      margin: EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: AC.border,
         borderRadius: BorderRadius.circular(2),
@@ -315,7 +315,7 @@ class SheetHandle extends StatelessWidget {
 class ABreadcrumb extends StatelessWidget {
   final int kandaNum;
   final int vargaSeq;
-  const ABreadcrumb({super.key, required this.kandaNum, required this.vargaSeq});
+  ABreadcrumb({super.key, required this.kandaNum, required this.vargaSeq});
 
   @override
   Widget build(BuildContext context) => Text(
@@ -342,7 +342,7 @@ class ASettingChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: active ? AC.accent.withOpacity(0.10) : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
@@ -369,11 +369,11 @@ class SettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 13),
+    padding: EdgeInsets.symmetric(vertical: 13),
     decoration: BoxDecoration(
       border: last
           ? null
-          : const Border(bottom: BorderSide(color: AC.borderLight)),
+          : Border(bottom: BorderSide(color: AC.borderLight)),
     ),
     child: Row(
       children: [
@@ -406,8 +406,9 @@ void showDisplaySettingsSheet(BuildContext context) {
       listenable: AppSettings.instance,
       builder: (ctx, __) {
         final s = AppSettings.instance;
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, 0, 20,
+              40 + MediaQuery.of(ctx).viewInsets.bottom),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const SheetHandle(),
             Text('Display Settings',
@@ -444,12 +445,26 @@ void showDisplaySettingsSheet(BuildContext context) {
             SettingRow(
               label: 'Context lines after',
               sub: 'Pādas shown below the active pada',
-              last: true,
               trailing: AStepperWidget(
                   value: s.contextAfter, min: 0, max: 5,
                   onChanged: s.setContextAfter),
             ),
-            const Divider(height: 24),
+            SettingRow(
+              label: 'Set context before',
+              sub: 'Context pādas above active pada during set playback',
+              trailing: AStepperWidget(
+                  value: s.setPlaylistContextBefore, min: 0, max: 5,
+                  onChanged: s.setSetPlaylistContextBefore),
+            ),
+            SettingRow(
+              label: 'Set context after',
+              sub: 'Context pādas below active pada during set playback',
+              last: true,
+              trailing: AStepperWidget(
+                  value: s.setPlaylistContextAfter, min: 0, max: 5,
+                  onChanged: s.setSetPlaylistContextAfter),
+            ),
+            Divider(height: 24),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Text weight', style: AT.garamond(14, color: AC.text)),
               Text('UI label weight',
@@ -469,7 +484,7 @@ void showDisplaySettingsSheet(BuildContext context) {
                     onTap: () => s.setUiFontWeight(700)),
               ]),
             ]),
-            const Divider(height: 24),
+            Divider(height: 24),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Sanskrit font', style: AT.garamond(14, color: AC.text)),
               const SizedBox(height: 10),
@@ -482,6 +497,51 @@ void showDisplaySettingsSheet(BuildContext context) {
                     active: s.devFontFamily == 'NotoSerifDevanagari',
                     onTap: () => s.setDevFontFamily('NotoSerifDevanagari')),
               ]),
+            ]),
+            Divider(height: 24),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Theme', style: AT.garamond(14, color: AC.text)),
+              const SizedBox(height: 12),
+              Row(children: AppColorSchemes.all.map((theme) {
+                final active = s.themeId == theme.id;
+                return GestureDetector(
+                  onTap: () => s.setThemeId(theme.id),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(children: [
+                      Container(
+                        width: 44, height: 44,
+                        decoration: BoxDecoration(
+                          color: theme.bg,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: active ? AC.accent : AC.border,
+                            width: active ? 2.5 : 1.5,
+                          ),
+                          boxShadow: active ? [BoxShadow(
+                            color: AC.accent.withValues(alpha: 0.3),
+                            blurRadius: 6, offset: const Offset(0, 2),
+                          )] : null,
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 18, height: 18,
+                            decoration: BoxDecoration(
+                              color: theme.accent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 5),
+                      Text(theme.label,
+                          style: AT.garamond(11,
+                              color: active ? AC.accent : AC.textMuted,
+                              weight: active ? FontWeight.w600 : FontWeight.w400)),
+                    ]),
+                  ),
+                );
+              }).toList()),
             ]),
           ]),
         );

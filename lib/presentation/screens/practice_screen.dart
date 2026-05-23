@@ -77,7 +77,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   bool _showWords      = false;
   bool _reciteMode     = false; // Guided Practice: model at full vol, then student recites
-  int  _reciteCount    = 1;    // 1 or 2 student recitations per pada
+  int  _modelCount     = 1;    // how many times the model plays per pada (cycles)
+  int  _reciteCount    = 1;    // how many times the student recites per model play
   int  _reciteGapSec   = 1;    // pause (seconds) between consecutive student recitations
   bool _stepMode       = false; // pause between padas; student presses Next to advance
   bool _waitingForStep = false; // true after a pada's repeats complete in step mode
@@ -431,13 +432,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void _showSetToast(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: AT.garamond(13, color: Colors.white)),
-      duration: const Duration(seconds: 2),
+      duration: Duration(seconds: 2),
       backgroundColor: AC.accent,
       behavior: SnackBarBehavior.floating,
     ));
   }
 
-  int get _playsPerPada => _reciteMode ? 1 + _reciteCount : _padaRepeat;
+  int get _playsPerPada => _reciteMode ? _modelCount * (1 + _reciteCount) : _padaRepeat;
   int get _totalSetPadas =>
       _setItems.fold(0, (n, i) => n + i.padas.length) * _playsPerPada * _setRepeat;
 
@@ -516,7 +517,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
     _scrollToCurrentPlaylistPada();
 
-    final isRepeatPlay = _reciteMode && _setCurPadaRep > 0;
+    // cycle position within [model, student×_reciteCount]: 0 = model, 1.._reciteCount = student
+    final cyclePos = _reciteMode ? _setCurPadaRep % (1 + _reciteCount) : 0;
+    final isRepeatPlay = _reciteMode && cyclePos > 0;
     final vol = isRepeatPlay ? AppSettings.instance.reciteVolumePct / 100.0 : 1.0;
     final hasAudio = await _audio.playPada(pada.id,
         speed: _speed, volume: vol, setId: _activeSetId);
@@ -532,9 +535,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
           _setCompletionSub?.cancel();
           _setCompletionSub = null;
           if (!_setPlaying) return;
-          // Gap between consecutive student recitations (not after model, not after last)
+          // Gap between consecutive student recitations within a cycle (not after model, not after last student)
           final needsGap = _reciteMode && _reciteGapSec > 0
-              && _setCurPadaRep > 0 && _setCurPadaRep < _reciteCount;
+              && cyclePos > 0 && cyclePos < _reciteCount;
           if (needsGap) {
             _setTimer = Timer(Duration(seconds: _reciteGapSec), _advanceSetPada);
           } else {
@@ -549,10 +552,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _setTimer?.cancel();
     if (!_setPlaying) return;
     // "all plays done" depends on mode:
-    //   Guided: rep 0 = model, reps 1.._reciteCount = student → done when rep == _reciteCount
-    //   Normal: repeat _padaRepeat times → done when rep + 1 == _padaRepeat
+    //   Guided: _modelCount cycles of [model play + _reciteCount student plays]
+    //   Normal: repeat _padaRepeat times
     final allDone = _reciteMode
-        ? _setCurPadaRep >= _reciteCount
+        ? _setCurPadaRep + 1 >= _modelCount * (1 + _reciteCount)
         : _setCurPadaRep + 1 >= _padaRepeat;
     if (!allDone) {
       setState(() => _setCurPadaRep++);
@@ -641,7 +644,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    if (_pada == null) return const Center(child: CircularProgressIndicator(color: AC.accent));
+    if (_pada == null) return Center(child: CircularProgressIndicator(color: AC.accent));
     final isMobile = _isMobile;
     return Stack(
       fit: StackFit.expand,
@@ -672,14 +675,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
   Widget _buildNav() {
     final isMobile = _isMobile;
     return Container(
-      padding: const EdgeInsets.fromLTRB(6, 6, 12, 8),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
+      padding: EdgeInsets.fromLTRB(6, 6, 12, 8),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
       child: Column(children: [
         Row(children: [
           GestureDetector(
             onTap: widget.onBack,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.chevron_left, color: AC.accent, size: 18),
+              Icon(Icons.chevron_left, color: AC.accent, size: 18),
               Text('Back', style: AT.garamond(15, color: AC.accent)),
             ]),
           ),
@@ -689,13 +692,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
             GestureDetector(
               onTap: () => setState(() => _mobileTreeOpen = true),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(color: AC.border)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.menu_book_outlined, size: 13, color: AC.textSec),
-                  const SizedBox(width: 4),
+                  Icon(Icons.menu_book_outlined, size: 13, color: AC.textSec),
+                  SizedBox(width: 4),
                   Text('Contents', style: AT.garamond(12, color: AC.textSec)),
                 ]),
               ),
@@ -711,7 +714,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   if (v.seq == _selVargaSeq) { vname = v.name; break; }
                 }
               }
-              return Text(vname, style: const TextStyle(
+              return Text(vname, style: TextStyle(
                   fontFamily: 'TiroDevanagarSanskrit',
                   fontSize: 15, color: AC.textSec, height: 1.2));
             }),
@@ -722,8 +725,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 ? _showMobileSetSheet
                 : () => setState(() => _showSetPanel = !_showSetPanel),
             child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: EdgeInsets.only(right: 8),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: (!isMobile && _showSetPanel) ? AC.accent.withOpacity(0.10) : Colors.transparent,
                 borderRadius: BorderRadius.circular(6),
@@ -731,7 +734,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.playlist_play_rounded, size: 14,
                     color: (!isMobile && _showSetPanel) ? AC.accent : AC.textSec),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text('Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
                     style: AT.garamond(12,
                         color: (!isMobile && _showSetPanel) ? AC.accent : AC.textSec)),
@@ -742,12 +745,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
           GestureDetector(
             onTap: _showDisplaySettings,
             child: Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              margin: EdgeInsets.only(left: 8),
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: AC.border)),
-              child: const Icon(Icons.text_fields_rounded, size: 14, color: AC.textSec),
+              child: Icon(Icons.text_fields_rounded, size: 14, color: AC.textSec),
             ),
           ),
         ]),
@@ -761,15 +764,15 @@ class _PracticeScreenState extends State<PracticeScreen> {
     color: AC.sidebar,
     child: Column(children: [
       Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        decoration: const BoxDecoration(
+        padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+        decoration: BoxDecoration(
           color: AC.sidebarHdr,
           border: Border(bottom: BorderSide(color: AC.sidebarBorder))),
         child: Row(children: [
           Text('Contents'.toUpperCase(),
               style: AT.garamond(11, color: AC.sidebarText, letterSpacing: 1.2,
                   weight: FontWeight.w700)),
-          const Spacer(),
+          Spacer(),
           Text('Long-press → Set',
               style: AT.garamond(10, color: AC.sidebarMuted, italic: true)),
         ]),
@@ -787,12 +790,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
           else     _expandedKandas.add(k.num);
         }),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(8, 9, 10, 9),
+          padding: EdgeInsets.fromLTRB(8, 9, 10, 9),
           color: Colors.transparent,
           child: Row(children: [
             Icon(exp ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_right_rounded,
                 size: 16, color: AC.sidebarSel),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Expanded(child: Text(k.name, style: AT.devanagari(
                 AppSettings.instance.treeFontSize.toDouble(),
                 color: AC.sidebarText, height: 1.4,
@@ -816,12 +819,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
           _selKandaNum = k.num; _selVargaSeq = v.seq;
         }),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 6, 10, 6),
+          padding: EdgeInsets.fromLTRB(20, 6, 10, 6),
           color: sel ? AC.sidebarSel.withOpacity(0.14) : Colors.transparent,
           child: Row(children: [
             Icon(exp ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_right_rounded,
                 size: 14, color: sel ? AC.sidebarSel : AC.sidebarMuted),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Expanded(child: Text(v.name, style: AT.devanagari(
                 AppSettings.instance.treeFontSize.toDouble(),
                 color: sel ? AC.sidebarSel : AC.sidebarText,
@@ -842,23 +845,23 @@ class _PracticeScreenState extends State<PracticeScreen> {
         onTap:      () => _goTo(k.num, v.seq, sec.seq, 1),
         onLongPress: () => _addSectionToSet(sec),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(32, 6, 10, 6),
+          padding: EdgeInsets.fromLTRB(32, 6, 10, 6),
           decoration: BoxDecoration(
             color: sel ? AC.sidebarSel.withOpacity(0.16) : Colors.transparent,
-            border: sel ? const Border(left: BorderSide(color: AC.sidebarSel, width: 2)) : null),
+            border: sel ? Border(left: BorderSide(color: AC.sidebarSel, width: 2)) : null),
           child: Row(children: [
             Expanded(child: Text(sec.titleEn,
                 style: AT.garamond(AppSettings.instance.treeFontSize.toDouble(),
                     color: sel ? AC.sidebarSel : AC.sidebarText,
                     weight: AppSettings.instance.fontWeight))),
             if (inSet)
-              Container(margin: const EdgeInsets.only(right: 4),
-                child: const Icon(Icons.playlist_add_check_rounded,
+              Container(margin: EdgeInsets.only(right: 4),
+                child: Icon(Icons.playlist_add_check_rounded,
                     size: 10, color: AC.sidebarSel)),
             if (sec.hasText)
               Container(width: 5, height: 5,
-                  decoration: const BoxDecoration(color: AC.loopActive, shape: BoxShape.circle)),
-            const SizedBox(width: 3),
+                  decoration: BoxDecoration(color: AC.loopActive, shape: BoxShape.circle)),
+            SizedBox(width: 3),
             Text('${sec.padaCount}', style: AT.garamond(AppSettings.instance.treeFontSize.toDouble(),
                 color: AC.sidebarMuted)),
           ]),
@@ -877,30 +880,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
       onTap:       () => _goTo(k.num, v.seq, sec.seq, p.seq),
       onLongPress: () => _addPadaToSet(p),
       child: Container(
-        padding: const EdgeInsets.fromLTRB(44, 4, 10, 4),
+        padding: EdgeInsets.fromLTRB(44, 4, 10, 4),
         decoration: BoxDecoration(
           color: sel ? AC.sidebarSel.withOpacity(0.12) : Colors.transparent,
-          border: sel ? const Border(left: BorderSide(color: AC.sidebarSel, width: 2)) : null),
+          border: sel ? Border(left: BorderSide(color: AC.sidebarSel, width: 2)) : null),
         child: Row(children: [
           Text('P${p.padaNum}',
               style: AT.garamond((AppSettings.instance.treeFontSize - 1).toDouble(),
                   color: sel ? AC.sidebarSel : AC.sidebarMuted)),
-          const SizedBox(width: 5),
+          SizedBox(width: 5),
           Expanded(child: Text(p.id,
               style: AT.garamond(AppSettings.instance.treeFontSize.toDouble(),
                   color: sel ? AC.sidebarSel : AC.sidebarText))),
           if (hasAudio)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(left: 3),
               child: Icon(Icons.volume_up_rounded, size: 9, color: AC.loopActive)),
           if (inSet)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(left: 3),
               child: Icon(Icons.playlist_add_check_rounded, size: 10, color: AC.sidebarSel)),
           if (p.hasText)
-            Container(margin: const EdgeInsets.only(left: 3),
+            Container(margin: EdgeInsets.only(left: 3),
               child: Container(width: 4, height: 4,
-                  decoration: const BoxDecoration(color: AC.loopActive, shape: BoxShape.circle))),
+                  decoration: BoxDecoration(color: AC.loopActive, shape: BoxShape.circle))),
         ]),
       ),
     );
@@ -908,7 +911,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   // ── Set selector strip ────────────────────────────────────────────────────
   Widget _buildSetSelectorStrip({VoidCallback? setSheet}) => Container(
-    decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
+    decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
     child: Row(children: [
       Expanded(
         child: SingleChildScrollView(
@@ -925,9 +928,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
         child: Container(
           width: 34, height: 34,
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
               border: Border(left: BorderSide(color: AC.border))),
-          child: const Icon(Icons.add_rounded, size: 16, color: AC.textMuted),
+          child: Icon(Icons.add_rounded, size: 16, color: AC.textMuted),
         ),
       ),
     ]),
@@ -946,11 +949,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
           style: AT.garamond(12, color: AC.text),
           decoration: InputDecoration(
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AC.accent)),
+                borderSide: BorderSide(color: AC.accent)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AC.accent)),
+                borderSide: BorderSide(color: AC.accent)),
           ),
         ),
       );
@@ -963,7 +966,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         setSheet?.call();
       },
       child: Container(
-        margin: const EdgeInsets.only(right: 4),
+        margin: EdgeInsets.only(right: 4),
         padding: EdgeInsets.fromLTRB(8, 3, _practiceSets.length > 1 ? 4 : 8, 3),
         decoration: BoxDecoration(
           color: active ? AC.accent : AC.chipBg,
@@ -973,7 +976,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           Text(_practiceSets[idx].name,
               style: AT.garamond(12, color: active ? Colors.white : AC.text)),
           if (_practiceSets.length > 1) ...[
-            const SizedBox(width: 3),
+            SizedBox(width: 3),
             GestureDetector(
               onTap: () { _deletePracticeSet(idx); setSheet?.call(); },
               child: Icon(Icons.close_rounded, size: 11,
@@ -991,12 +994,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
     child: Column(children: [
       // Header
       Container(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-        decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
+        padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
+        decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
         child: Row(children: [
           Text('Practice Sets'.toUpperCase(),
               style: AT.garamond(12, color: AC.textMuted, letterSpacing: 1.0)),
-          const Spacer(),
+          Spacer(),
           if (_setItems.isNotEmpty)
             GestureDetector(
               onTap: () { setState(() => _setItems.clear()); _saveSet(); },
@@ -1010,7 +1013,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       Expanded(child: _setItems.isEmpty
           ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: Text(
                   'Long-press a Section or Pada in the tree to add it here.',
                   style: AT.garamond(12, color: AC.textMuted, italic: true, height: 1.5),
@@ -1020,15 +1023,15 @@ class _PracticeScreenState extends State<PracticeScreen> {
               GestureDetector(
                 onTap: _showRangeSheet,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: AC.surfaceAlt,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AC.border),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.format_list_numbered_rounded, size: 14, color: AC.accent),
-                    const SizedBox(width: 6),
+                    Icon(Icons.format_list_numbered_rounded, size: 14, color: AC.accent),
+                    SizedBox(width: 6),
                     Text('Add by position',
                         style: AT.garamond(12, color: AC.accent, weight: FontWeight.w600)),
                   ]),
@@ -1050,7 +1053,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 return ListTile(
                   key: ValueKey(i),
                   dense: true,
-                  contentPadding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
+                  contentPadding: EdgeInsets.fromLTRB(10, 0, 4, 0),
                   leading: Container(
                     width: 24, height: 24,
                     decoration: BoxDecoration(
@@ -1067,7 +1070,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                       style: AT.garamond(12, color: AC.textMuted)),
                   trailing: GestureDetector(
                     onTap: () => _removeFromSet(i),
-                    child: const Icon(Icons.close_rounded, size: 14, color: AC.textMuted),
+                    child: Icon(Icons.close_rounded, size: 14, color: AC.textMuted),
                   ),
                 );
               }).toList(),
@@ -1077,12 +1080,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
       GestureDetector(
         onTap: _showRangeSheet,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-          decoration: const BoxDecoration(
+          padding: EdgeInsets.fromLTRB(12, 6, 12, 6),
+          decoration: BoxDecoration(
               border: Border(top: BorderSide(color: AC.border))),
           child: Row(children: [
-            const Icon(Icons.add_rounded, size: 13, color: AC.textSec),
-            const SizedBox(width: 4),
+            Icon(Icons.add_rounded, size: 13, color: AC.textSec),
+            SizedBox(width: 4),
             Text('Add range', style: AT.garamond(12, color: AC.textSec)),
           ]),
         ),
@@ -1090,7 +1093,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
       // Repeat settings
       Container(
-        decoration: const BoxDecoration(border: Border(top: BorderSide(color: AC.border))),
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: AC.border))),
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         child: Column(children: [
           // Pada repeat / recite count
@@ -1106,20 +1109,32 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 onInc: _padaRepeat < 20 ? () => setState(() => _padaRepeat++) : null,
               ),
             ]),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
           ] else ...[
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Recite times', style: AT.garamond(12, color: AC.text)),
-                Text('student recitations per pada', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                Text('Teacher plays', style: AT.garamond(12, color: AC.text)),
+                Text('cycles of model + student', style: AT.garamond(12, color: AC.textMuted, italic: true)),
               ])),
-              _TwoOptionPicker(
-                value: _reciteCount,
-                options: const [1, 2],
-                onSelect: (v) => setState(() => _reciteCount = v),
+              _SmallStepper(
+                value: _modelCount,
+                onDec: _modelCount > 1 ? () => setState(() => _modelCount--) : null,
+                onInc: _modelCount < 5 ? () => setState(() => _modelCount++) : null,
               ),
             ]),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Student recites', style: AT.garamond(12, color: AC.text)),
+                Text('times per teacher play', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+              ])),
+              _SmallStepper(
+                value: _reciteCount,
+                onDec: _reciteCount > 1 ? () => setState(() => _reciteCount--) : null,
+                onInc: _reciteCount < 5 ? () => setState(() => _reciteCount++) : null,
+              ),
+            ]),
+            SizedBox(height: 8),
           ],
           // Set repeat
           Row(children: [
@@ -1134,7 +1149,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             ),
           ]),
           if (_setItems.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text('$_totalSetPadas total pādas',
                 style: AT.garamond(13, color: AC.textMuted, italic: true)),
           ],
@@ -1166,9 +1181,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ]),
           ),
           if (_reciteMode) ...[
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Row(children: [
-              Expanded(child: Text('Repeat volume',
+              Expanded(child: Text('Student volume',
                   style: AT.garamond(12, color: AC.textMuted, italic: true))),
               _SmallStepper(
                 value: AppSettings.instance.reciteVolumePct,
@@ -1184,7 +1199,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               ),
             ]),
             if (_reciteCount > 1) ...[
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               Row(children: [
                 Expanded(child: Text('Gap between recitations',
                     style: AT.garamond(12, color: AC.textMuted, italic: true))),
@@ -1198,7 +1213,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             ],
           ],
           if (_reciteMode) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             GestureDetector(
               onTap: () => setState(() => _stepMode = !_stepMode),
               child: Row(children: [
@@ -1235,7 +1250,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               opacity: _setItems.isEmpty ? 0.4 : 1.0,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _setPlaying ? AC.recRed : AC.btnBg,
                   borderRadius: BorderRadius.circular(10),
@@ -1243,7 +1258,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(_setPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
                       color: AC.btnText, size: 16),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(_setPlaying ? 'Stop Set' : 'Play Set',
                       style: AT.garamond(14, color: AC.btnText)),
                 ]),
@@ -1260,10 +1275,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
     onTap: _showMobileSetSheet,
     child: Container(
       height: 52,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AC.surface,
         border: Border(top: BorderSide(color: AC.border))),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
         Icon(Icons.playlist_play_rounded, size: 18,
             color: _setItems.isEmpty ? AC.textMuted : AC.accent),
@@ -1284,15 +1299,15 @@ class _PracticeScreenState extends State<PracticeScreen> {
         )),
         if (_setPlaying)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            margin: const EdgeInsets.only(right: 8),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            margin: EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: AC.recRed.withOpacity(0.1),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: AC.recRed)),
             child: Text('Playing', style: AT.garamond(12, color: AC.recRed)),
           ),
-        const Icon(Icons.expand_less_rounded, color: AC.textMuted, size: 18),
+        Icon(Icons.expand_less_rounded, color: AC.textMuted, size: 18),
       ]),
     ),
   );
@@ -1310,14 +1325,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
           child: Column(children: [
             Center(
               child: Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 4),
+                margin: EdgeInsets.only(top: 8, bottom: 4),
                 width: 36, height: 4,
                 decoration: BoxDecoration(
                     color: AC.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              padding: EdgeInsets.fromLTRB(16, 6, 16, 0),
               child: Row(children: [
                 Text('Practice Sets'.toUpperCase(),
                     style: AT.garamond(12, color: AC.textMuted, letterSpacing: 1.0)),
@@ -1338,7 +1353,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             Expanded(child: _setItems.isEmpty
               ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                    padding: EdgeInsets.fromLTRB(20, 0, 20, 14),
                     child: Text(
                       'Long-press a Section or Pada in the tree to add it here.',
                       style: AT.garamond(13, color: AC.textMuted, italic: true, height: 1.5),
@@ -1348,15 +1363,15 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   GestureDetector(
                     onTap: () => _showRangeSheet(onDone: () => setSheet(() {})),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: AC.surfaceAlt,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AC.border),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.format_list_numbered_rounded, size: 14, color: AC.accent),
-                        const SizedBox(width: 6),
+                        Icon(Icons.format_list_numbered_rounded, size: 14, color: AC.accent),
+                        SizedBox(width: 6),
                         Text('Add by position',
                             style: AT.garamond(13, color: AC.accent, weight: FontWeight.w600)),
                       ]),
@@ -1378,7 +1393,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     return ListTile(
                       key: ValueKey(i),
                       dense: true,
-                      contentPadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                      contentPadding: EdgeInsets.fromLTRB(16, 0, 8, 0),
                       leading: Container(
                         width: 26, height: 26,
                         decoration: BoxDecoration(
@@ -1396,7 +1411,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                           style: AT.garamond(12, color: AC.textMuted)),
                       trailing: GestureDetector(
                         onTap: () { _removeFromSet(i); setSheet(() {}); },
-                        child: const Icon(Icons.close_rounded,
+                        child: Icon(Icons.close_rounded,
                             size: 16, color: AC.textMuted),
                       ),
                     );
@@ -1406,18 +1421,18 @@ class _PracticeScreenState extends State<PracticeScreen> {
             GestureDetector(
               onTap: () => _showRangeSheet(onDone: () => setSheet(() {})),
               child: Container(
-                padding: const EdgeInsets.fromLTRB(16, 7, 16, 7),
-                decoration: const BoxDecoration(
+                padding: EdgeInsets.fromLTRB(16, 7, 16, 7),
+                decoration: BoxDecoration(
                     border: Border(top: BorderSide(color: AC.border))),
                 child: Row(children: [
-                  const Icon(Icons.add_rounded, size: 13, color: AC.textSec),
-                  const SizedBox(width: 5),
+                  Icon(Icons.add_rounded, size: 13, color: AC.textSec),
+                  SizedBox(width: 5),
                   Text('Add range', style: AT.garamond(13, color: AC.textSec)),
                 ]),
               ),
             ),
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                   border: Border(top: BorderSide(color: AC.border))),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
               child: Column(children: [
@@ -1444,14 +1459,29 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     Expanded(child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Recite times', style: AT.garamond(13, color: AC.text)),
-                          Text('student recitations per pada',
+                          Text('Teacher plays', style: AT.garamond(13, color: AC.text)),
+                          Text('cycles of model + student',
                               style: AT.garamond(12, color: AC.textMuted, italic: true)),
                         ])),
-                    _TwoOptionPicker(
+                    _SmallStepper(
+                      value: _modelCount,
+                      onDec: _modelCount > 1 ? () { setState(() => _modelCount--); setSheet(() {}); } : null,
+                      onInc: _modelCount < 5 ? () { setState(() => _modelCount++); setSheet(() {}); } : null,
+                    ),
+                  ]),
+                  SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Student recites', style: AT.garamond(13, color: AC.text)),
+                          Text('times per teacher play',
+                              style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                        ])),
+                    _SmallStepper(
                       value: _reciteCount,
-                      options: const [1, 2],
-                      onSelect: (v) { setState(() => _reciteCount = v); setSheet(() {}); },
+                      onDec: _reciteCount > 1 ? () { setState(() => _reciteCount--); setSheet(() {}); } : null,
+                      onInc: _reciteCount < 5 ? () { setState(() => _reciteCount++); setSheet(() {}); } : null,
                     ),
                   ]),
                   const SizedBox(height: 10),
@@ -1473,7 +1503,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   ),
                 ]),
                 if (_setItems.isNotEmpty) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text('$_totalSetPadas total pādas',
                       style: AT.garamond(13, color: AC.textMuted, italic: true)),
                 ],
@@ -1508,9 +1538,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     ]),
                 ),
                 if (_reciteMode) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Row(children: [
-                    Expanded(child: Text('Repeat volume',
+                    Expanded(child: Text('Student volume',
                         style: AT.garamond(12, color: AC.textMuted, italic: true))),
                     _SmallStepper(
                       value: AppSettings.instance.reciteVolumePct,
@@ -1528,7 +1558,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     ),
                   ]),
                   if (_reciteCount > 1) ...[
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6),
                     Row(children: [
                       Expanded(child: Text('Gap between recitations',
                           style: AT.garamond(12, color: AC.textMuted, italic: true))),
@@ -1589,7 +1619,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     opacity: _setItems.isEmpty ? 0.4 : 1.0,
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
                         color: _setPlaying ? AC.recRed : AC.btnBg,
                         borderRadius: BorderRadius.circular(12),
@@ -1599,7 +1629,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         Icon(
                           _setPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
                           color: AC.btnText, size: 20),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(_setPlaying ? 'Stop Set' : 'Play Set',
                             style: AT.garamond(16, color: AC.btnText,
                                 weight: FontWeight.w600)),
@@ -1630,22 +1660,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
               color: AC.sidebar,
               child: Column(children: [
                 Container(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                  decoration: const BoxDecoration(
+                  padding: EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  decoration: BoxDecoration(
                     color: AC.sidebarHdr,
                     border: Border(bottom: BorderSide(color: AC.sidebarBorder))),
                   child: Row(children: [
                     Text('Contents'.toUpperCase(),
                         style: AT.garamond(12, color: AC.sidebarText,
                             letterSpacing: 1.2, weight: FontWeight.w700)),
-                    const Spacer(),
+                    Spacer(),
                     Text('Long-press → Set',
                         style: AT.garamond(10, color: AC.sidebarMuted,
                             italic: true)),
                     const SizedBox(width: 12),
                     GestureDetector(
                       onTap: () => setState(() => _mobileTreeOpen = false),
-                      child: const Icon(Icons.close_rounded,
+                      child: Icon(Icons.close_rounded,
                           color: AC.sidebarText, size: 20),
                     ),
                   ]),
@@ -1663,7 +1693,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   // ── Practice pane ─────────────────────────────────────────────────────────
   Widget _buildPracticePane() {
     final pada = _pada;
-    if (pada == null) return const Center(child: CircularProgressIndicator(color: AC.accent));
+    if (pada == null) return Center(child: CircularProgressIndicator(color: AC.accent));
 
     if (_setPlaying || _waitingForStep) return _buildSetPlaylistView(pada);
 
@@ -1687,13 +1717,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
         GestureDetector(
           onTap: _prevPada,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AC.border)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.arrow_back_rounded, size: 14, color: AC.textSec),
-              const SizedBox(width: 4),
+              Icon(Icons.arrow_back_rounded, size: 14, color: AC.textSec),
+              SizedBox(width: 4),
               Text('Prev', style: AT.garamond(13, color: AC.textSec)),
             ]),
           ),
@@ -1702,14 +1732,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
         GestureDetector(
           onTap: _nextPada,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AC.border)),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Text('Next', style: AT.garamond(13, color: AC.textSec)),
-              const SizedBox(width: 4),
-              const Icon(Icons.arrow_forward_rounded, size: 14, color: AC.textSec),
+              SizedBox(width: 4),
+              Icon(Icons.arrow_forward_rounded, size: 14, color: AC.textSec),
             ]),
           ),
         ),
@@ -1726,10 +1756,12 @@ class _PracticeScreenState extends State<PracticeScreen> {
     // Build item-heading + pada-row list
     int fi = 0;
     final listChildren = <Widget>[];
+    final ctxBefore = s.setPlaylistContextBefore;
+    final ctxAfter  = s.setPlaylistContextAfter;
     for (final item in _setItems) {
       if (item.label.isNotEmpty) {
         listChildren.add(Padding(
-          padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+          padding: EdgeInsets.fromLTRB(0, 10, 0, 4),
           child: Text(item.label.toUpperCase(),
               style: AT.garamond(10, color: AC.textMuted,
                   letterSpacing: 0.6, weight: FontWeight.w600)),
@@ -1737,9 +1769,25 @@ class _PracticeScreenState extends State<PracticeScreen> {
       }
       for (final p in item.padas) {
         final isActive = fi == flatIdx;
-        listChildren.add(_buildPlaylistPadaRow(p,
-            isActive: isActive,
-            key: isActive ? _activePadaPlaylistKey : null));
+        if (isActive && (ctxBefore > 0 || ctxAfter > 0)) {
+          // Insert context padas from the corpus around the active pada
+          final entries = _buildBoxEntries(p,
+              ctxBeforeOverride: ctxBefore,
+              ctxAfterOverride: ctxAfter);
+          for (final entry in entries) {
+            if (entry.isHeading) continue; // skip section/varga headings in playlist
+            if (entry.isActive) {
+              listChildren.add(_buildPlaylistPadaRow(p,
+                  isActive: true, key: _activePadaPlaylistKey));
+            } else {
+              listChildren.add(_buildContextPadaInPlaylist(entry.pada!));
+            }
+          }
+        } else {
+          listChildren.add(_buildPlaylistPadaRow(p,
+              isActive: isActive,
+              key: isActive ? _activePadaPlaylistKey : null));
+        }
         fi++;
       }
     }
@@ -1747,7 +1795,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return Column(children: [
       // Header: set name · current/total  +  Replay / Next (step mode)
       Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+        padding: EdgeInsets.fromLTRB(14, 8, 14, 4),
         child: Row(children: [
           Expanded(child: Text(
             '${_practiceSets[_activeSetIdx].name}  ·  ${flatIdx + 1} / $total',
@@ -1757,13 +1805,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
           GestureDetector(
             onTap: _replayCurrentPada,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: AC.border)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
-                const SizedBox(width: 3),
+                Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
+                SizedBox(width: 3),
                 Text('Replay', style: AT.garamond(
                     (s.uiFontSize - 1).toDouble(), color: AC.textMuted)),
               ]),
@@ -1774,7 +1822,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             GestureDetector(
               onTap: _stepNext,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: AC.accent, borderRadius: BorderRadius.circular(4)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1818,8 +1866,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
         TextSpan(
           text: p.textDev,
           style: AT.devanagari(
-              isActive ? s.devFontSize.toDouble() : (s.devFontSize * 0.72).roundToDouble(),
-              color: isActive ? AC.text : AC.textMuted,
+              s.devFontSize.toDouble(),
+              color: isActive ? AC.text : AC.textSec,
               family: s.devFontFamily),
         ),
       ]));
@@ -1837,10 +1885,37 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return Padding(
       key: key,
       padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Opacity(
-        opacity: 0.45,
-        child: SizedBox(width: double.infinity, child: content),
-      ),
+      child: SizedBox(width: double.infinity, child: content),
+    );
+  }
+
+  // Context pada shown in playlist — dimmer than non-active set padas
+  Widget _buildContextPadaInPlaylist(Pada p) {
+    final s = AppSettings.instance;
+    Widget content;
+    if (!p.hasText) {
+      content = Text('[no text]',
+          style: AT.garamond(11, color: AC.textMuted, italic: true));
+    } else {
+      content = Text.rich(TextSpan(children: [
+        TextSpan(
+          text: '${p.id} ${p.padaNum == 1 ? "A" : "B"}  ',
+          style: AT.garamond(
+              (s.devFontSize * 0.52).clamp(10.0, 16.0),
+              color: AC.textMuted, italic: true),
+        ),
+        TextSpan(
+          text: p.textDev,
+          style: AT.devanagari(
+              s.devFontSize.toDouble(),
+              color: AC.textMuted,
+              family: s.devFontFamily),
+        ),
+      ]));
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: SizedBox(width: double.infinity, child: content),
     );
   }
 
@@ -1878,13 +1953,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
             GestureDetector(
               onTap: _replayCurrentPada,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: AC.border)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
-                  const SizedBox(width: 3),
+                  Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
+                  SizedBox(width: 3),
                   Text('Replay', style: AT.garamond(
                       (s.uiFontSize - 1).toDouble(), color: AC.textMuted)),
                 ]),
@@ -1895,7 +1970,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               GestureDetector(
                 onTap: _stepNext,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: AC.accent, borderRadius: BorderRadius.circular(4)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1924,7 +1999,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final s = AppSettings.instance;
     if (entry.isVargaHeading) {
       return Padding(
-        padding: const EdgeInsets.fromLTRB(2, 10, 2, 4),
+        padding: EdgeInsets.fromLTRB(2, 10, 2, 4),
         child: Text(entry.headingText,
             style: TextStyle(
                 fontFamily: 'TiroDevanagarSanskrit',
@@ -1933,14 +2008,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
       );
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 8, 2, 3),
+      padding: EdgeInsets.fromLTRB(2, 8, 2, 3),
       child: Text(entry.headingText.toUpperCase(),
           style: AT.garamond(10, color: AC.textMuted,
               letterSpacing: 0.6, weight: FontWeight.w600)),
     );
   }
 
-  List<_BoxEntry> _buildBoxEntries(Pada activePada) {
+  List<_BoxEntry> _buildBoxEntries(Pada activePada, {int? ctxBeforeOverride, int? ctxAfterOverride}) {
     // Flat list: all padas across all kandas/vargas/sections in order
     final flat = <_FlatPadaRef>[];
     for (final k in _kandas) {
@@ -1961,8 +2036,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
           secSeq: _selSecSeq)];
     }
 
-    final ctxBefore = AppSettings.instance.contextBefore;
-    final ctxAfter  = AppSettings.instance.contextAfter;
+    final ctxBefore = ctxBeforeOverride ?? AppSettings.instance.contextBefore;
+    final ctxAfter  = ctxAfterOverride  ?? AppSettings.instance.contextAfter;
     final start = (activeIdx - ctxBefore).clamp(0, flat.length - 1);
     final end   = (activeIdx + ctxAfter).clamp(0, flat.length - 1);
 
@@ -2015,8 +2090,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
         TextSpan(
           text: p.textDev,
           style: AT.devanagari(
-              isActive ? s.devFontSize.toDouble() : (s.devFontSize * 0.85).roundToDouble(),
-              color: isActive ? AC.text : AC.textMuted,
+              s.devFontSize.toDouble(),
+              color: isActive ? AC.text : AC.textSec,
               family: s.devFontFamily),
         ),
       ]));
@@ -2036,7 +2111,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         width: double.infinity,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
-          child: Opacity(opacity: 0.55, child: content),
+          child: content,
         ),
       ),
     );
@@ -2052,10 +2127,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
           child: Row(children: [
             Text('Words'.toUpperCase(),
                 style: AT.garamond(11, color: AC.textMuted, letterSpacing: 0.7)),
-            const SizedBox(width: 3),
+            SizedBox(width: 3),
             Text('${pada.words.length}',
                 style: AT.garamond(11, color: AC.textMuted)),
-            const SizedBox(width: 2),
+            SizedBox(width: 2),
             Icon(_showWords ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                 size: 13, color: AC.textMuted),
           ]),
@@ -2066,7 +2141,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             return GestureDetector(
               onLongPress: () => GrammarSheet.show(context, w),
               child: Container(
-                padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+                padding: EdgeInsets.fromLTRB(10, 5, 10, 5),
                 decoration: BoxDecoration(color: AC.chipBg,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AC.border)),
@@ -2124,13 +2199,13 @@ class _PracticeScreenState extends State<PracticeScreen> {
               onTap: _importAudioSet,
               child: Container(
                 margin: const EdgeInsets.only(left: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AC.border)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.add_rounded, size: 12, color: AC.textMuted),
-                  const SizedBox(width: 3),
+                  Icon(Icons.add_rounded, size: 12, color: AC.textMuted),
+                  SizedBox(width: 3),
                   Text('Import', style: AT.garamond(12, color: AC.textMuted)),
                 ]),
               ),
@@ -2140,33 +2215,33 @@ class _PracticeScreenState extends State<PracticeScreen> {
       ),
       // Progress bar
       Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+        padding: EdgeInsets.fromLTRB(14, 8, 14, 0),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
             value: _progress, backgroundColor: AC.trackBg, minHeight: 3,
-            valueColor: const AlwaysStoppedAnimation<Color>(AC.trackFill)),
+            valueColor: AlwaysStoppedAnimation<Color>(AC.trackFill)),
         ),
       ),
       const SizedBox(height: 4),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        IconButton(icon: const Icon(Icons.skip_previous_rounded),
+        IconButton(icon: Icon(Icons.skip_previous_rounded),
             color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _prevPada),
         GestureDetector(onTap: _stopPlay, child: Container(
           width: mob ? 36 : 32, height: mob ? 36 : 32,
           decoration: BoxDecoration(color: AC.surfaceAlt, shape: BoxShape.circle,
               border: Border.all(color: AC.border)),
           child: Icon(Icons.stop_rounded, color: AC.textSec, size: mob ? 16 : 14))),
-        const SizedBox(width: 6),
+        SizedBox(width: 6),
         GestureDetector(onTap: _togglePlay, child: Container(
           width: mob ? 50 : 46, height: mob ? 50 : 46,
           decoration: BoxDecoration(color: AC.btnBg, shape: BoxShape.circle,
             boxShadow: [BoxShadow(color: AC.trackFill.withOpacity(0.33),
-                blurRadius: 10, offset: const Offset(0, 3))]),
+                blurRadius: 10, offset: Offset(0, 3))]),
           child: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
               color: AC.btnText, size: mob ? 24 : 22))),
         const SizedBox(width: 6),
-        IconButton(icon: const Icon(Icons.skip_next_rounded),
+        IconButton(icon: Icon(Icons.skip_next_rounded),
             color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _nextPada),
       ]),
       const SizedBox(height: 4),
@@ -2179,8 +2254,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
             return GestureDetector(
               onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
               child: Container(
-                margin: const EdgeInsets.only(right: 4),
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                margin: EdgeInsets.only(right: 4),
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: active ? AC.trackFill.withOpacity(0.13) : Colors.transparent,
                   borderRadius: BorderRadius.circular(5),
@@ -2195,7 +2270,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           GestureDetector(
             onTap: () => setState(() => _autoAdvance = !_autoAdvance),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: _autoAdvance ? AC.accent.withOpacity(0.10) : Colors.transparent,
                 borderRadius: BorderRadius.circular(5),
@@ -2203,7 +2278,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.fast_forward_rounded, size: 12,
                     color: _autoAdvance ? AC.accent : AC.textMuted),
-                const SizedBox(width: 3),
+                SizedBox(width: 3),
                 Text('Auto', style: AT.garamond(12,
                     color: _autoAdvance ? AC.accent : AC.textMuted)),
               ]),
@@ -2246,7 +2321,7 @@ class _TreeTab extends StatelessWidget {
             color: open ? AC.sidebarSel : AC.accent,
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: 6),
         RotatedBox(
           quarterTurns: 1,
           child: Text('Tree',
@@ -2275,7 +2350,7 @@ class _SmallStepper extends StatelessWidget {
         decoration: BoxDecoration(color: AC.surfaceAlt,
             borderRadius: BorderRadius.circular(6), border: Border.all(color: AC.border)),
         child: Center(child: Opacity(opacity: onDec != null ? 1 : 0.3,
-            child: const Icon(Icons.remove_rounded, size: 12, color: AC.textSec))),
+            child: Icon(Icons.remove_rounded, size: 12, color: AC.textSec))),
       ),
     ),
     Container(
@@ -2289,45 +2364,12 @@ class _SmallStepper extends StatelessWidget {
         decoration: BoxDecoration(color: AC.surfaceAlt,
             borderRadius: BorderRadius.circular(6), border: Border.all(color: AC.border)),
         child: Center(child: Opacity(opacity: onInc != null ? 1 : 0.3,
-            child: const Icon(Icons.add_rounded, size: 12, color: AC.textSec))),
+            child: Icon(Icons.add_rounded, size: 12, color: AC.textSec))),
       ),
     ),
   ]);
 }
 
-// ─── Two-option picker (1 | 2) ────────────────────────────────────────────────
-class _TwoOptionPicker extends StatelessWidget {
-  final int value;
-  final List<int> options;
-  final ValueChanged<int> onSelect;
-  const _TwoOptionPicker({required this.value, required this.options, required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6), border: Border.all(color: AC.border)),
-      clipBehavior: Clip.antiAlias,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        for (int i = 0; i < options.length; i++) ...[
-          if (i > 0) Container(width: 1, height: 26, color: AC.border),
-          GestureDetector(
-            onTap: () => onSelect(options[i]),
-            child: Container(
-              width: 32, height: 26,
-              color: options[i] == value ? AC.btnBg : Colors.transparent,
-              alignment: Alignment.center,
-              child: Text('${options[i]}',
-                  style: AT.garamond(13,
-                      color: options[i] == value ? AC.btnText : AC.text,
-                      weight: FontWeight.w600)),
-            ),
-          ),
-        ],
-      ]),
-    );
-  }
-}
 
 // ─── Audio set chip ────────────────────────────────────────────────────────────
 class _AudioSetChip extends StatelessWidget {
@@ -2344,7 +2386,7 @@ class _AudioSetChip extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     child: Container(
-      margin: const EdgeInsets.only(right: 6),
+      margin: EdgeInsets.only(right: 6),
       padding: EdgeInsets.fromLTRB(10, 4, active && onDelete != null ? 4 : 10, 4),
       decoration: BoxDecoration(
         color: active ? AC.accent.withOpacity(0.10) : AC.surfaceAlt,
@@ -2354,10 +2396,10 @@ class _AudioSetChip extends StatelessWidget {
         Text(label, style: AT.garamond(12,
             color: active ? AC.accent : AC.textSec)),
         if (active && onDelete != null) ...[
-          const SizedBox(width: 4),
+          SizedBox(width: 4),
           GestureDetector(
             onTap: onDelete,
-            child: const Icon(Icons.close_rounded, size: 12, color: AC.textMuted),
+            child: Icon(Icons.close_rounded, size: 12, color: AC.textMuted),
           ),
         ],
       ]),
@@ -2413,7 +2455,7 @@ class _ImportSetDialogState extends State<_ImportSetDialog> {
             style: AT.garamond(14, color: widget.wavCount > 0 ? AC.text : AC.recRed),
           ),
           if (widget.wavCount > 0) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             if (widget.existingSets.isNotEmpty)
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 RadioListTile<bool>(
@@ -2431,28 +2473,28 @@ class _ImportSetDialogState extends State<_ImportSetDialog> {
                   onChanged: (v) => setState(() => _updating = true),
                 ),
               ]),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             if (!_updating) ...[
               Text('Set name', style: AT.garamond(13, color: AC.textSec)),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               TextField(
                 controller: _nameCtrl,
                 onChanged: (_) => setState(() {}),
                 style: AT.garamond(14, color: AC.text),
                 decoration: InputDecoration(
                   filled: true, fillColor: AC.surfaceAlt,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AC.border)),
+                    borderSide: BorderSide(color: AC.border)),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AC.border)),
+                    borderSide: BorderSide(color: AC.border)),
                 ),
               ),
             ] else ...[
               Text('Select set to update', style: AT.garamond(13, color: AC.textSec)),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               DropdownButton<String>(
                 value: _updateId,
                 isExpanded: true,
@@ -2622,14 +2664,14 @@ class _RangeSheetState extends State<_RangeSheet> {
       child: Column(children: [
         // Drag handle
         Center(child: Container(
-          margin: const EdgeInsets.only(top: 8, bottom: 10),
+          margin: EdgeInsets.only(top: 8, bottom: 10),
           width: 36, height: 4,
           decoration: BoxDecoration(color: AC.border, borderRadius: BorderRadius.circular(2)),
         )),
 
         // Title
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text('Add Range to Set'.toUpperCase(),
@@ -2639,7 +2681,7 @@ class _RangeSheetState extends State<_RangeSheet> {
 
         // Kanda pills
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: Row(children: [
             Text('Kāṇḍa ', style: AT.garamond(12, color: AC.textMuted)),
             ...widget.kandas.asMap().entries.map((e) {
@@ -2647,8 +2689,8 @@ class _RangeSheetState extends State<_RangeSheet> {
               return GestureDetector(
                 onTap: () => _selectKanda(e.key),
                 child: Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  margin: EdgeInsets.only(right: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: active ? AC.accent : AC.chipBg,
                     borderRadius: BorderRadius.circular(12),
@@ -2684,8 +2726,8 @@ class _RangeSheetState extends State<_RangeSheet> {
               return GestureDetector(
                 onTap: () => _selectVarga(i),
                 child: Container(
-                  margin: const EdgeInsets.only(right: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  margin: EdgeInsets.only(right: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                   decoration: BoxDecoration(
                     color: active ? AC.accent : AC.chipBg,
                     borderRadius: BorderRadius.circular(10),
@@ -2701,8 +2743,8 @@ class _RangeSheetState extends State<_RangeSheet> {
             },
           ),
         ),
-        const SizedBox(height: 8),
-        const Divider(height: 1, color: AC.border),
+        SizedBox(height: 8),
+        Divider(height: 1, color: AC.border),
 
         // Pada list
         Expanded(
@@ -2716,7 +2758,7 @@ class _RangeSheetState extends State<_RangeSheet> {
                     final entry = entries[i];
                     if (entry.isHeader) {
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 3),
+                        padding: EdgeInsets.fromLTRB(16, 10, 16, 3),
                         child: Text(entry.headerTitle.toUpperCase(),
                             style: AT.garamond(10, color: AC.textMuted, letterSpacing: 0.6)),
                       );
@@ -2734,7 +2776,7 @@ class _RangeSheetState extends State<_RangeSheet> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                         child: Row(children: [
                           AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
+                            duration: Duration(milliseconds: 150),
                             width: 9, height: 9,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
@@ -2743,13 +2785,13 @@ class _RangeSheetState extends State<_RangeSheet> {
                                   color: isStart ? AC.accent : AC.border, width: 1.5),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: 10),
                           Text(entry.pada!.id,
                               style: AT.garamond(11, color: AC.textMuted)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(entry.pada!.textDev,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontFamily: 'TiroDevanagarSanskrit',
                                     fontSize: 13, color: AC.text),
                                 overflow: TextOverflow.ellipsis),
@@ -2760,7 +2802,7 @@ class _RangeSheetState extends State<_RangeSheet> {
                   },
                 ),
         ),
-        const Divider(height: 1, color: AC.border),
+        Divider(height: 1, color: AC.border),
 
         // Footer: count stepper + summary + button
         Padding(
@@ -2796,7 +2838,7 @@ class _RangeSheetState extends State<_RangeSheet> {
               } : null,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 13),
+                padding: EdgeInsets.symmetric(vertical: 13),
                 decoration: BoxDecoration(
                   color: actual > 0 ? AC.btnBg : AC.surfaceAlt,
                   borderRadius: BorderRadius.circular(10),

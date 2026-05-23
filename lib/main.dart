@@ -28,11 +28,14 @@ void main() async {
 class AmarakoshaApp extends StatelessWidget {
   const AmarakoshaApp({super.key});
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'अमरकोश',
-    debugShowCheckedModeBanner: false,
-    theme: AppTheme.theme,
-    home: const AppShell(),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: AppSettings.instance,
+    builder: (_, __) => MaterialApp(
+      title: 'अमरकोश',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.theme,
+      home: const AppShell(),
+    ),
   );
 }
 
@@ -46,6 +49,20 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;  // 0=Home  1=Browse
   final List<Widget> _stack = [];
+
+  @override
+  void initState() {
+    super.initState();
+    AppSettings.instance.addListener(_onSettings);
+  }
+
+  @override
+  void dispose() {
+    AppSettings.instance.removeListener(_onSettings);
+    super.dispose();
+  }
+
+  void _onSettings() => setState(() {});
 
   Session get _defaultSession {
     final kanda   = kBootstrapKandas.first;
@@ -121,7 +138,7 @@ class _TabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       color: AC.surface,
       border: Border(top: BorderSide(color: AC.border)),
     ),

@@ -135,18 +135,22 @@
       <a href="#overview">Overview</a>
       <a href="#home">Home Screen</a>
       <a href="#browsing">Browsing the Text</a>
-      <a href="#modes">Practice Modes</a>
-      <a class="sub" href="#listen">Listen</a>
-      <a class="sub" href="#recite">Recite</a>
-      <a class="sub" href="#guided">Guided</a>
+      <a class="sub" href="#tree">Tree pane</a>
+      <a class="sub" href="#practice-pane">Practice pane</a>
+      <a class="sub" href="#context">Context lines</a>
       <a href="#audio">Audio Playback</a>
       <a class="sub" href="#sources">Audio Sources</a>
       <a class="sub" href="#speed">Speed &amp; Auto-advance</a>
-      <a href="#set">Practice Set</a>
+      <a href="#set">Practice Sets</a>
+      <a class="sub" href="#set-adding">Adding items</a>
+      <a class="sub" href="#set-managing">Managing sets</a>
+      <a class="sub" href="#set-playback">Playing a set</a>
+      <a class="sub" href="#guided">Guided Practice</a>
       <a href="#teacher-sets">Teacher Audio Sets</a>
       <a href="#recording">Recording Your Voice</a>
       <a href="#words">Word Analysis</a>
       <a href="#display">Display Settings</a>
+      <a class="sub" href="#themes">Themes</a>
       <a href="#mobile">Mobile Tips</a>
     </div>
   </nav>
@@ -161,15 +165,15 @@
     </div>
 
     <h1>Practice App Help</h1>
-    <p class="subtitle">Study and recite the Amarakosha with Listen, Recite, and Guided modes.</p>
+    <p class="subtitle">Study and recite the Amarakosha with audio playback, practice sets, and guided drilling.</p>
 
     <!-- ── Overview ── -->
     <h2 id="overview">Overview</h2>
     <p>
       The Amarakosha Practice App lets you work through the pādas of the
       <em>Nāmaliṅgānuśāsana</em> at your own pace. You can listen to reference
-      audio, recite from memory, study word-by-word, and build custom practice
-      playlists called <strong>Practice Sets</strong>.
+      audio, study word-by-word, and build custom practice playlists called
+      <strong>Practice Sets</strong>.
     </p>
     <p>
       The text is organised as: <strong>Kāṇḍa → Varga → Section → Pāda</strong>.
@@ -183,10 +187,12 @@
     <p>
       The home screen shows a <strong>resume card</strong> for your current position,
       three quick stats (total pādas, sections, vargas), and a list of all Kāṇḍas
-      with pada counts.
+      with pāda counts.
     </p>
     <ul>
-      <li>Tap <strong>Continue Practice</strong> or any Kāṇḍa row to go to the Browse screen.</li>
+      <li>Tap <strong>Continue Practice</strong> to return to your last position, opening the
+          Practice Set panel immediately if you had a set in progress.</li>
+      <li>Tap any <strong>Kāṇḍa row</strong> to go to the Browse screen for that Kāṇḍa.</li>
       <li>The Browse screen lets you pick a Varga to enter the Practice screen.</li>
     </ul>
 
@@ -204,54 +210,42 @@
           your curated playlist.</li>
     </ul>
 
-    <h3>Tree pane navigation</h3>
+    <h3 id="tree">Tree pane</h3>
     <ul>
       <li>Tap a <strong>Kāṇḍa</strong> row to expand or collapse it.</li>
       <li>Tap a <strong>Varga</strong> row to expand it and see its Sections.</li>
       <li>Tap a <strong>Section</strong> to jump to its first Pāda.</li>
       <li>When a Section is selected, its individual Pādas appear below it — tap any to go directly to it.</li>
-      <li>A small speaker icon (🔊) next to a Pāda means audio is available for it.</li>
+      <li>A small speaker icon next to a Pāda indicates audio is available for it.</li>
       <li>A small dot (●) means Devanagari text is available.</li>
     </ul>
 
     <div class="note">
-      <strong>Long-press</strong> a Section or Pāda in the tree to add it to your Practice Set.
-      A checkmark icon (✓) appears on items already in the set.
+      <strong>Long-press</strong> a Section or Pāda in the tree to add it to your active
+      Practice Set. A checkmark icon appears on items already in the set.
     </div>
 
-    <h3>Practice pane navigation</h3>
-    <p>Use the <strong>← → skip buttons</strong> in the audio player to move to the previous or
-    next pāda within the current section. Navigation wraps across section boundaries.</p>
-    <p>The progress bar and "Pāda N of M" label at the top show your position within the current section.</p>
-
-    <!-- ── Modes ── -->
-    <h2 id="modes">Practice Modes</h2>
-    <p>Three modes are available via the segmented control at the top of the practice pane:</p>
-
-    <div class="mode-row">
-      <span class="chip active">Listen</span>
-      <span class="chip">Recite</span>
-      <span class="chip">Guided</span>
-    </div>
-
-    <h3 id="listen">Listen</h3>
+    <h3 id="practice-pane">Practice pane</h3>
     <p>
-      The full Devanagari text is always visible. Use this mode to read along while
-      audio plays, or to familiarise yourself with the pāda before memorising it.
-      Audio plays on demand — tap the play button.
+      The practice pane shows the active pāda's Devanagari text in a highlighted box.
+      The pāda's GRETIL reference (e.g. <code>1.1.11 A</code>) appears inline before the text.
+      A progress bar and "Pāda N of M · Section name" label at the top show your position
+      within the current section.
+    </p>
+    <p>
+      Use the <strong>Prev</strong> and <strong>Next</strong> buttons below the pāda box to
+      move linearly through the corpus. Navigation wraps across section and varga boundaries.
     </p>
 
-    <h3 id="recite">Recite</h3>
+    <h3 id="context">Context lines</h3>
     <p>
-      The Devanagari text is <strong>hidden</strong> initially, asking you to recite the pāda
-      from memory. Tap <strong>Reveal</strong> (or the hidden text area) to uncover it and
-      check your recitation. Use audio playback before or after revealing to hear the correct form.
+      You can display neighbouring pādas above and below the active one for context.
+      Context pādas are shown in a smaller, dimmer style; tapping one navigates to it.
+      The number of context lines is controlled in <a href="#display">Display Settings</a>.
     </p>
-
-    <h3 id="guided">Guided</h3>
     <p>
-      The text is hidden but can be toggled on and off with a tap — useful for a prompt-then-reveal
-      study method. Tap the shaded area to reveal; tap again to hide.
+      Section and Varga headings appear automatically when the context window crosses a
+      boundary, so you always know which section each pāda belongs to.
     </p>
 
     <!-- ── Audio ── -->
@@ -278,13 +272,13 @@
 
     <ul>
       <li><strong>Play/Pause</strong> — starts or pauses audio for the current pāda.</li>
-      <li><strong>Stop</strong> — stops playback and resets the progress bar to the beginning.</li>
+      <li><strong>Stop</strong> — stops playback and resets the progress bar.</li>
       <li><strong>Skip buttons</strong> — navigate to the previous or next pāda.</li>
-      <li><strong>Speed chips</strong> (0.5× – 1.5×) — adjust playback rate without re-loading.</li>
+      <li><strong>Speed chips</strong> (0.5× – 1.5×) — adjust playback rate without reloading.</li>
     </ul>
 
     <h3 id="sources">Audio Sources</h3>
-    <p>Below the progress bar is a <strong>Source</strong> row with chips for each available audio source:</p>
+    <p>Above the progress bar is a row of chips for each available audio source:</p>
 
     <div class="ui-box">
       <div class="ui-row">
@@ -295,62 +289,87 @@
     </div>
 
     <ul>
-      <li><strong>Built-in</strong> — the reference recordings bundled with the app (where available).</li>
-      <li><strong>Named sets</strong> — teacher recordings you have imported from a ZIP file.
-          Tap a set chip to activate it; the × button removes the set from the app.</li>
+      <li><strong>Built-in</strong> — the reference recordings bundled with the app.</li>
+      <li><strong>Named sets</strong> — teacher recordings imported from a ZIP file.
+          Tap a chip to activate it; the × removes the set.</li>
       <li><strong>+ Import</strong> — opens the import dialog (see <a href="#teacher-sets">Teacher Audio Sets</a>).</li>
     </ul>
 
     <p>
-      The active source chip is highlighted. If the selected source has no recording for the
-      current pāda, the app automatically falls through to the next available source.
+      If the active source has no recording for the current pāda, the app automatically
+      falls back to the next available source.
     </p>
 
     <h3 id="speed">Auto-advance</h3>
     <p>
-      The <strong>Auto-advance</strong> toggle (below the speed chips) makes the app automatically
-      move to the next pāda and begin playing as soon as the current pāda finishes. Useful for
-      continuous listening without touching the screen.
+      The <strong>Auto</strong> toggle (bottom-right of the audio card) makes the app
+      automatically move to the next pāda and begin playing as soon as the current pāda
+      finishes — useful for continuous listening without touching the screen.
     </p>
 
-    <!-- ── Practice Set ── -->
-    <h2 id="set">Practice Set</h2>
+    <!-- ── Practice Sets ── -->
+    <h2 id="set">Practice Sets</h2>
     <p>
-      A Practice Set is a curated playlist of Sections and/or individual Pādas that you want to
-      drill. It persists across sessions (saved locally in the browser).
+      A Practice Set is a curated playlist of Sections and/or individual Pādas you want to
+      drill. You can have multiple named sets, and they persist across sessions.
     </p>
 
-    <h3>Adding items</h3>
+    <h3 id="set-adding">Adding items</h3>
     <ul>
       <li><strong>Long-press a Section</strong> in the tree → adds all pādas in that section.</li>
       <li><strong>Long-press a Pāda</strong> in the tree → adds just that pāda.</li>
-      <li>Tap the <strong>+ Set</strong> button on the pāda card → adds the current pāda.</li>
+      <li>Tap <strong>Add range</strong> (at the bottom of the set panel) → opens a picker
+          to add pādas by Kāṇḍa / Varga / Section position.</li>
     </ul>
 
-    <h3>Managing the set</h3>
+    <h3 id="set-managing">Managing sets</h3>
     <p>
-      On <strong>desktop</strong>, tap the <kbd>Set (N)</kbd> button in the nav bar to open the
-      Practice Set panel on the right. On <strong>mobile</strong>, tap the set tray bar at the
-      bottom of the screen.
+      On <strong>desktop</strong>, tap <kbd>Set (N)</kbd> in the nav bar to open the Practice
+      Set panel. On <strong>mobile</strong>, tap the tray bar at the bottom of the screen.
+    </p>
+    <p>
+      The tab strip at the top of the panel shows all your named sets. Tap a tab to switch
+      to it. Tap <strong>+</strong> to create a new set.
     </p>
     <ul>
-      <li>Drag items to reorder them.</li>
-      <li>Tap × on an item to remove it.</li>
-      <li>Tap <strong>Clear</strong> to remove all items.</li>
+      <li><strong>Long-press a set tab</strong> to rename it.</li>
+      <li>Tap the <strong>×</strong> on a tab to delete that set (kept as long as at least one set exists).</li>
+      <li>Drag items in the list to reorder them.</li>
+      <li>Tap <strong>×</strong> on an item row to remove it from the set.</li>
+      <li>Tap <strong>Clear</strong> to remove all items from the active set.</li>
     </ul>
 
-    <h3>Repeat settings</h3>
-    <ul>
-      <li><strong>Each Pāda</strong> — how many times each pāda is repeated before advancing.</li>
-      <li><strong>Full Set</strong> — how many times the entire set is cycled through.</li>
-      <li>The total pāda count is shown below the steppers.</li>
-    </ul>
-
-    <h3>Playing the set</h3>
+    <h3 id="set-playback">Playing a set</h3>
     <p>
-      Tap <strong>Play Set</strong> to begin sequential playback through all items. The practice
-      pane navigates automatically to the current pāda as the set plays. Tap <strong>Stop Set</strong>
-      (red button) to end playback at any time.
+      Tap <strong>Play Set</strong> to begin sequential playback through all items.
+      Tap <strong>Stop Set</strong> (red) to end playback at any time.
+    </p>
+    <p>
+      While a set is playing, the practice pane switches to a <strong>playlist view</strong>:
+      a scrollable list of every pāda in the set. The currently playing pāda is highlighted;
+      the others appear in a smaller, muted style. The view auto-scrolls to keep the active
+      pāda in view.
+    </p>
+    <p>
+      Depending on your <a href="#display">Set context</a> settings, the playlist also shows
+      a few neighbouring pādas from the full corpus immediately before and after the active
+      pāda — displayed even smaller and more muted to distinguish them from set items.
+      This gives you reading context without cluttering the playlist.
+    </p>
+
+    <div class="ui-box" style="font-size:13px">
+      <div style="color:var(--text-muted);margin-bottom:6px;font-size:12px">PLAYLIST DURING SET PLAYBACK</div>
+      <div style="color:var(--text-muted);font-size:12px;margin-bottom:4px">… context pada (smaller, dimmer) …</div>
+      <div style="background:#FFEEC8;border:1.5px solid #C89840;border-radius:6px;padding:6px 10px;margin-bottom:4px">
+        <strong>1.1.4 A &nbsp;</strong><span class="dev">active pāda text here</span>
+      </div>
+      <div style="color:var(--text-muted);font-size:12px;margin-top:4px">… context pada (smaller, dimmer) …</div>
+      <div style="color:var(--text-sec);margin-top:8px">1.1.7 A &nbsp;<span class="dev" style="font-size:13px">next set pāda</span></div>
+    </div>
+
+    <p>
+      A <kbd>Replay</kbd> button re-plays the current pāda from the beginning without advancing.
+      In step mode (see below), a <kbd>Next →</kbd> button appears to advance manually.
     </p>
 
     <div class="tip">
@@ -358,11 +377,56 @@
       teacher set before tapping Play Set to drill with the teacher's voice.
     </div>
 
+    <h3 id="guided">Guided Practice</h3>
+    <p>
+      Enable the <strong>Guided Practice</strong> toggle in the set panel to alternate
+      between a model play and your own recitation for each pāda.
+    </p>
+
+    <div class="ui-box" style="font-size:14px">
+      <div class="ui-row">
+        <strong>Teacher plays</strong>
+        <span style="color:var(--text-muted)">— cycles of model&nbsp;+&nbsp;student</span>
+      </div>
+      <div class="ui-row">
+        <strong>Student recites</strong>
+        <span style="color:var(--text-muted)">— times per teacher play</span>
+      </div>
+    </div>
+
+    <p>
+      For each pāda, the sequence is: model play at full volume, then the set number of
+      student recitations at low volume, repeated for the set number of teacher cycles.
+      For example, with <em>Teacher plays = 2, Student recites = 2</em>:
+    </p>
+    <ol>
+      <li>Model (full volume)</li>
+      <li>Student recitation (low volume)</li>
+      <li>Student recitation (low volume)</li>
+      <li>Model (full volume) — second cycle</li>
+      <li>Student recitation (low volume)</li>
+      <li>Student recitation (low volume)</li>
+    </ol>
+
+    <ul>
+      <li><strong>Student volume</strong> — how quietly audio plays during student recitation slots
+          (0–20%). At 0%, the audio is silent so you recite unaided.</li>
+      <li><strong>Gap between recitations</strong> — pause in seconds inserted between consecutive
+          student recitations within a cycle (0–5 s). Only shown when Student recites &gt; 1.</li>
+      <li><strong>Step through pādas</strong> — when on, playback pauses after each pāda's full
+          repetition cycle and waits for you to tap <kbd>Next →</kbd> before moving on.</li>
+    </ul>
+
+    <div class="note">
+      The <strong>Full Set</strong> stepper (visible in both normal and Guided mode) repeats
+      the entire set N times. The total pāda-play count is shown below the steppers.
+    </div>
+
     <!-- ── Teacher Sets ── -->
     <h2 id="teacher-sets">Teacher Audio Sets</h2>
     <p>
       A teacher can record pādas in the <a href="recorder.html">Recording Studio</a> and export
-      them as a ZIP file. You can import that ZIP here as a named Audio Set.
+      them as a ZIP file. You can import that ZIP as a named Audio Set.
     </p>
 
     <h3>Importing a ZIP</h3>
@@ -375,8 +439,8 @@
     </ol>
 
     <h3>Using a set</h3>
-    <p>Tap the set's chip in the Source row to activate it. All playback (individual pādas and
-    Practice Set) will now use the teacher's recordings where available, falling back to Built-in
+    <p>Tap the set's chip in the Source row to activate it. All playback — individual pādas and
+    Practice Set — will use the teacher's recordings where available, falling back to Built-in
     for any pādas not covered by the import.</p>
 
     <h3>Removing a set</h3>
@@ -391,29 +455,22 @@
     <!-- ── Recording ── -->
     <h2 id="recording">Recording Your Own Voice</h2>
     <p>
-      Tap the <strong>🎙 Record</strong> button in the nav bar (or in the Audio card) to open
-      the Recording screen for the current pāda.
+      The <a href="recorder.html">Recording Studio</a> (accessible from the home screen) lets
+      you record your own recitations pāda by pāda and export them as a ZIP file.
     </p>
     <p>
-      The Recording screen uses your device's microphone to capture a recitation. Recordings
-      are saved locally and appear as a source option in the Audio card. This is useful for
-      self-assessment — record your recitation, then compare it to the reference.
+      Recordings you make in the studio can then be re-imported as a named Audio Set so you
+      can play back and compare your voice against the reference recordings. See
+      <a href="recorder-help.html">Recording Studio Help</a> for a full walkthrough.
     </p>
-    <div class="note">
-      For creating and distributing recordings to students, use the dedicated
-      <a href="recorder.html">Recording Studio</a> instead — it has export features and a
-      full varga-level workflow.
-    </div>
 
     <!-- ── Words ── -->
     <h2 id="words">Word Analysis</h2>
     <p>
-      Where word analysis data is available, a <strong>Words</strong> section appears below the
-      pāda card. Tap the "Words N" heading to expand it.
+      Where word data is available, a <strong>Words</strong> section appears below the pāda
+      box. Tap the "Words N" heading to expand it.
     </p>
-    <p>
-      Each word chip shows:
-    </p>
+    <p>Each word chip shows:</p>
     <ul>
       <li>The Devanagari form of the word</li>
       <li>A brief meaning or grammatical label</li>
@@ -427,15 +484,42 @@
     <!-- ── Display ── -->
     <h2 id="display">Display Settings</h2>
     <p>
-      Tap the <strong>⊞</strong> (font/text) icon in the top-right of the nav bar to open
-      Display Settings. You can adjust:
+      Tap the <strong>⊞</strong> icon in the top-right of the nav bar to open Display Settings.
+    </p>
+
+    <h3>Text sizes</h3>
+    <ul>
+      <li><strong>Sanskrit text size</strong> — size of Devanagari text in the pāda box (14–72).</li>
+      <li><strong>UI text size</strong> — size of English labels, annotations, and section titles (11–22).</li>
+      <li><strong>Navigation text size</strong> — size of text in the tree pane (10–20).</li>
+    </ul>
+
+    <h3>Context lines</h3>
+    <ul>
+      <li><strong>Context lines before / after</strong> — neighbouring pādas shown above and below
+          the active pāda while browsing (0–5 each). These are tappable to navigate.</li>
+      <li><strong>Set context before / after</strong> — context pādas shown in the playlist view
+          while a Practice Set is playing (0–5 each). These come from the full corpus and appear
+          smaller and more muted than the set's own pādas.</li>
+    </ul>
+
+    <h3>Text weight &amp; font</h3>
+    <ul>
+      <li><strong>Text weight</strong> — choose Normal, Medium, Bold, or Heavy for UI labels.</li>
+      <li><strong>Sanskrit font</strong> — switch between <em>Tiro Devanagari Sanskrit</em>
+          (bundled, recommended) and <em>Noto Serif Devanagari</em> (via Google Fonts).</li>
+    </ul>
+
+    <h3 id="themes">Themes</h3>
+    <p>
+      Four colour themes are available. Tap a circle swatch in Display Settings to switch instantly;
+      the choice is saved across sessions.
     </p>
     <ul>
-      <li><strong>Devanagari font size</strong> — the size of Sanskrit text in the pāda card.</li>
-      <li><strong>UI font size</strong> — the size of English labels and section titles.</li>
-      <li><strong>Devanagari font</strong> — choose between bundled fonts for optimal rendering.</li>
-      <li><strong>Context lines</strong> — show 0–3 neighbouring pādas (greyed out) above and
-          below the current one for contextual reading.</li>
+      <li><strong>Parchment</strong> — warm cream and terracotta. The default.</li>
+      <li><strong>Night</strong> — dark warm background with amber accents. Easier on the eyes in low light.</li>
+      <li><strong>Slate</strong> — cool grey-blue with steel-blue accents.</li>
+      <li><strong>Minimal</strong> — clean white and light grey with indigo accents. A modern, undecorated look.</li>
     </ul>
 
     <!-- ── Mobile ── -->
@@ -443,11 +527,10 @@
     <p>On small screens the layout adapts:</p>
     <ul>
       <li>The tree pane is hidden by default. Tap <strong>Contents</strong> in the nav bar to
-          open a full-screen slide-in tree. Tap outside it (or the × button) to close.</li>
+          open a full-screen slide-in tree. Tap outside it (or ×) to close.</li>
       <li>The Practice Set panel becomes a bottom sheet. Tap the <strong>Practice Set</strong>
           tray bar at the bottom to open it.</li>
       <li>Audio controls are slightly larger for easier tapping.</li>
-      <li>The Set toggle button in the nav bar is hidden — use the bottom tray instead.</li>
     </ul>
 
     <div class="tip">

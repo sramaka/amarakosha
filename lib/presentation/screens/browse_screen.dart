@@ -64,17 +64,17 @@ class _BrowseScreenState extends State<BrowseScreen> {
               _expandedKanda = isOpen ? null : kanda.num),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.fromLTRB(16, 13, 16, 13),
+            padding: EdgeInsets.fromLTRB(16, 13, 16, 13),
             decoration: BoxDecoration(
               color: isOpen ? AC.surfaceAlt : AC.surface,
               borderRadius: isOpen
-                  ? const BorderRadius.vertical(top: Radius.circular(12))
+                  ? BorderRadius.vertical(top: Radius.circular(12))
                   : BorderRadius.circular(12),
               border: Border.all(color: AC.border),
             ),
             child: Row(children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: Duration(milliseconds: 200),
                 width: 38, height: 38,
                 decoration: BoxDecoration(
                   color: isOpen ? AC.btnBg : AC.surfaceAlt,
@@ -87,7 +87,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Text(kanda.name, style: const TextStyle(
+                  Text(kanda.name, style: TextStyle(
                       fontFamily: 'TiroDevanagarSanskrit', fontSize: 16, color: AC.text)),
                   Text('${kanda.totalPadas} pādas',
                       style: AT.garamond(
@@ -103,8 +103,8 @@ class _BrowseScreenState extends State<BrowseScreen> {
               const SizedBox(width: 8),
               AnimatedRotation(
                 turns: isOpen ? 0.5 : 0,
-                duration: const Duration(milliseconds: 200),
-                child: const Icon(Icons.keyboard_arrow_down, color: AC.textSec, size: 20),
+                duration: Duration(milliseconds: 200),
+                child: Icon(Icons.keyboard_arrow_down, color: AC.textSec, size: 20),
               ),
             ]),
           ),
@@ -115,8 +115,8 @@ class _BrowseScreenState extends State<BrowseScreen> {
           Container(
             decoration: BoxDecoration(
               color: AC.surface,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-              border: const Border(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
+              border: Border(
                 left: BorderSide(color: AC.border), right: BorderSide(color: AC.border),
                 bottom: BorderSide(color: AC.border)),
             ),
@@ -128,23 +128,23 @@ class _BrowseScreenState extends State<BrowseScreen> {
               return GestureDetector(
                 onTap: () => widget.onSelectVarga(kanda, varga),
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+                  padding: EdgeInsets.fromLTRB(20, 12, 16, 12),
                   decoration: BoxDecoration(border: isLast
                       ? null
-                      : const Border(bottom: BorderSide(color: AC.borderLight))),
+                      : Border(bottom: BorderSide(color: AC.borderLight))),
                   child: Row(children: [
                     Container(
                       width: 24, height: 24,
                       decoration: BoxDecoration(color: AC.surfaceAlt,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AC.border)),
-                      child: Center(child: Text('${varga.seq}', style: const TextStyle(
+                      child: Center(child: Text('${varga.seq}', style: TextStyle(
                           fontSize: 11, color: AC.textSec, fontFamily: 'system-ui'))),
                     ),
                     const SizedBox(width: 12),
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text(varga.name, style: const TextStyle(
+                        Text(varga.name, style: TextStyle(
                             fontFamily: 'TiroDevanagarSanskrit', fontSize: 15, color: AC.text)),
                         Text('${varga.totalPadas} pādas',
                             style: AT.garamond(

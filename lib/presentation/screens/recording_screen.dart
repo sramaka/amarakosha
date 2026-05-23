@@ -279,7 +279,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
           const SizedBox(height: 20),
           if (secKeys.isEmpty && allKeys.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: 12),
               child: Text('No recordings yet.',
                   style: AT.garamond(13, color: AC.textMuted, italic: true)),
             ),
@@ -315,18 +315,18 @@ class _RecordingScreenState extends State<RecordingScreen> {
   }) => GestureDetector(
     onTap: onTap,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(color: AC.surfaceAlt,
           borderRadius: BorderRadius.circular(8), border: Border.all(color: AC.border)),
       child: Row(children: [
-        const Icon(Icons.download_rounded, size: 16, color: AC.accent),
-        const SizedBox(width: 10),
+        Icon(Icons.download_rounded, size: 16, color: AC.accent),
+        SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: AT.garamond(14, color: AC.text)),
           Text('$count pāda${count == 1 ? "" : "s"}',
               style: AT.garamond(12, color: AC.textMuted, italic: true)),
         ])),
-        const Icon(Icons.chevron_right, size: 16, color: AC.textMuted),
+        Icon(Icons.chevron_right, size: 16, color: AC.textMuted),
       ]),
     ),
   );
@@ -335,7 +335,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(color: AC.accent));
+      return Center(child: CircularProgressIndicator(color: AC.accent));
     }
     final sec  = _currentSection;
     final pada = _currentPada;
@@ -353,12 +353,12 @@ class _RecordingScreenState extends State<RecordingScreen> {
       // ── Nav bar ──────────────────────────────────────────────────────────
       Container(
         padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
             border: Border(bottom: BorderSide(color: AC.border))),
         child: Row(children: [
           GestureDetector(onTap: widget.onBack, child: Row(
             mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.chevron_left, color: AC.accent, size: 18),
+              Icon(Icons.chevron_left, color: AC.accent, size: 18),
               Text('Back', style: AT.garamond(
                   AppSettings.instance.uiFontSize.toDouble(), color: AC.accent)),
             ])),
@@ -375,7 +375,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
             GestureDetector(
               onTap: () => showDisplaySettingsSheet(context),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: AC.border)),
@@ -387,13 +387,13 @@ class _RecordingScreenState extends State<RecordingScreen> {
               GestureDetector(
                 onTap: _showDownloadSheet,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: AC.border)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.download_rounded, size: 13, color: AC.textMuted),
-                    const SizedBox(width: 4),
+                    Icon(Icons.download_rounded, size: 13, color: AC.textMuted),
+                    SizedBox(width: 4),
                     Text('ZIP', style: AT.garamond(12, color: AC.textMuted)),
                   ]),
                 ),
@@ -410,13 +410,13 @@ class _RecordingScreenState extends State<RecordingScreen> {
           // Storage info banner
           Padding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+              padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
               decoration: BoxDecoration(
                 color: AC.surfaceAlt,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AC.borderLight)),
               child: Row(children: [
-                const Icon(Icons.info_outline_rounded, size: 13, color: AC.textMuted),
+                Icon(Icons.info_outline_rounded, size: 13, color: AC.textMuted),
                 const SizedBox(width: 8),
                 Expanded(child: Text(
                   kIsWeb
@@ -435,7 +435,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
           Padding(padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Container(
-                padding: const EdgeInsets.fromLTRB(11, 3, 11, 3),
+                padding: EdgeInsets.fromLTRB(11, 3, 11, 3),
                 decoration: BoxDecoration(color: AC.chipBg,
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(color: AC.border)),
@@ -457,12 +457,12 @@ class _RecordingScreenState extends State<RecordingScreen> {
                 onTap: _hasPrev ? _prevPada : null,
                 child: Opacity(opacity: _hasPrev ? 1.0 : 0.35,
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+                    padding: EdgeInsets.fromLTRB(14, 7, 14, 7),
                     decoration: BoxDecoration(color: AC.surface,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AC.border)),
                     child: Row(children: [
-                      const Icon(Icons.chevron_left, color: AC.textSec, size: 16),
+                      Icon(Icons.chevron_left, color: AC.textSec, size: 16),
                       Text('Prev', style: AT.garamond(
                           AppSettings.instance.uiFontSize.toDouble(),
                           color: AC.textSec)),
@@ -488,14 +488,14 @@ class _RecordingScreenState extends State<RecordingScreen> {
                 onTap: _hasNext ? _nextPada : null,
                 child: Opacity(opacity: _hasNext ? 1.0 : 0.35,
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+                    padding: EdgeInsets.fromLTRB(14, 7, 14, 7),
                     decoration: BoxDecoration(color: AC.btnBg,
                         borderRadius: BorderRadius.circular(8)),
                     child: Row(children: [
                       Text('Next', style: AT.garamond(
                           AppSettings.instance.uiFontSize.toDouble(),
                           color: AC.btnText)),
-                      const Icon(Icons.chevron_right, color: AC.btnText, size: 16),
+                      Icon(Icons.chevron_right, color: AC.btnText, size: 16),
                     ]),
                   ),
                 ),
@@ -505,7 +505,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
 
           // ── Pada recording card ──────────────────────────────────────────
           Container(
-            margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            margin: EdgeInsets.fromLTRB(16, 14, 16, 0),
             decoration: BoxDecoration(color: AC.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AC.border)),
@@ -514,7 +514,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
               // Header row
               Container(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     border: Border(bottom: BorderSide(color: AC.borderLight))),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Text('Pāda ${pada.padaNum == 1 ? "A" : "B"}  ·  ${pada.shlokaId}'.toUpperCase(),
@@ -566,7 +566,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
                     GestureDetector(
                       onTap: isRec ? _stopRec : _startRec,
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                        duration: Duration(milliseconds: 200),
                         width: 40, height: 40,
                         decoration: BoxDecoration(
                           color: isRec ? AC.recRed : AC.surface,
@@ -579,32 +579,32 @@ class _RecordingScreenState extends State<RecordingScreen> {
                               blurRadius: 8, spreadRadius: 2)] : null,
                         ),
                         child: Center(child: isRec
-                            ? const Icon(Icons.stop_rounded, color: Colors.white, size: 18)
+                            ? Icon(Icons.stop_rounded, color: Colors.white, size: 18)
                             : Icon(Icons.mic_outlined,
                                 color: AC.recRed.withOpacity(0.8), size: 18)),
                       ),
                     ),
                     // Delete button
                     if (hasRec && !isRec) ...[
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       GestureDetector(
                         onTap: _deleteRec,
                         child: Container(width: 28, height: 28,
                           decoration: BoxDecoration(shape: BoxShape.circle,
                               border: Border.all(color: AC.border)),
-                          child: const Center(child: Text('×',
+                          child: Center(child: Text('×',
                               style: TextStyle(color: AC.textMuted, fontSize: 14)))),
                       ),
                     ],
                     // Download button (web only)
                     if (hasRec && !isRec && kIsWeb) ...[
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       GestureDetector(
                         onTap: () => RecordingStore.instance.downloadRecording(k),
                         child: Container(width: 28, height: 28,
                           decoration: BoxDecoration(shape: BoxShape.circle,
                               border: Border.all(color: AC.border)),
-                          child: const Center(child: Icon(Icons.download_rounded,
+                          child: Center(child: Icon(Icons.download_rounded,
                               color: AC.textMuted, size: 14))),
                       ),
                     ],
@@ -614,14 +614,14 @@ class _RecordingScreenState extends State<RecordingScreen> {
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: double.infinity,
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                    padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
                     decoration: BoxDecoration(
-                      color: isRec ? const Color(0xFFFFF0EE)
+                      color: isRec ? Color(0xFFFFF0EE)
                           : isPlaying ? AC.lineHl
                           : AC.surfaceAlt,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: isRec ? const Color(0xFFF0C0B8)
+                          color: isRec ? Color(0xFFF0C0B8)
                               : isPlaying ? AC.lineBorder
                               : AC.borderLight),
                     ),
@@ -637,15 +637,15 @@ class _RecordingScreenState extends State<RecordingScreen> {
                     const SizedBox(height: 10),
                     Row(children: [
                       Container(width: 6, height: 6,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                               color: AC.recRed, shape: BoxShape.circle)),
-                      const SizedBox(width: 6),
+                      SizedBox(width: 6),
                       Text('Recording…', style: AT.garamond(
                           AppSettings.instance.uiFontSize.toDouble(),
                           color: AC.recRed, italic: true)),
                       const SizedBox(width: 8),
                       ...List.generate(24, (i) => Container(
-                        margin: const EdgeInsets.only(right: 1.5),
+                        margin: EdgeInsets.only(right: 1.5),
                         width: 3,
                         height: 6.0 + math.sin(i * 0.7) * 5,
                         decoration: BoxDecoration(
@@ -660,7 +660,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
           ),
 
           // ── Section overview (dots for each pada) ───────────────────────
-          Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          Padding(padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('${sec.titleEn}  ·  ${sec.padaCount} pādas',
                   style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
@@ -693,7 +693,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
           ),
 
           // ── Varga progress bar ─────────────────────────────────────────
-          Padding(padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          Padding(padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text('Varga progress',
@@ -703,7 +703,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
                     style: AT.garamond(AppSettings.instance.uiFontSize.toDouble(),
                         color: AC.textMuted)),
               ]),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               AProgressBar(
                   value: _totalPadas > 0 ? _totalRecorded / _totalPadas : 0,
                   fillColor: AC.loopActive),

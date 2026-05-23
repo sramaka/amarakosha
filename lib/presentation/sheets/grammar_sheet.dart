@@ -8,7 +8,7 @@ import '../widgets/shared_widgets.dart';
 // ─── Grammar Bottom Sheet ────────────────────────────────────────────────────
 class GrammarSheet extends StatelessWidget {
   final AWord word;
-  const GrammarSheet({super.key, required this.word});
+  GrammarSheet({super.key, required this.word});
 
   static Future<void> show(BuildContext context, AWord word) {
     return showModalBottomSheet(
@@ -50,7 +50,7 @@ class GrammarSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(word.w, style: AT.grammarWord),
-                      const SizedBox(height: 2),
+                      SizedBox(height: 2),
                       Text(word.m,
                           style: AT.garamond(15,
                               color: AC.textSec, italic: true)),
@@ -95,7 +95,7 @@ class GrammarSheet extends StatelessWidget {
                 Text('Note'.toUpperCase(),
                     style: AT.garamond(10,
                         color: AC.textMuted, letterSpacing: 0.8)),
-                const SizedBox(height: 6),
+                SizedBox(height: 6),
                 Text(word.note,
                     style: AT.garamond(14,
                         color: AC.textSec, italic: true, height: 1.6)),
@@ -142,7 +142,7 @@ class _Grid2x2 extends StatelessWidget {
               Text(label.toUpperCase(),
                   style: AT.garamond(10,
                       color: AC.textMuted, letterSpacing: 0.8)),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(value,
                   style: isDevanagari
                       ? AT.grammarStem
@@ -207,7 +207,7 @@ class AudioSetPicker extends StatelessWidget {
 
           // Title row
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -231,7 +231,7 @@ class AudioSetPicker extends StatelessWidget {
               },
               child: Container(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
                       bottom: BorderSide(color: AC.borderLight)),
                 ),
@@ -248,7 +248,7 @@ class AudioSetPicker extends StatelessWidget {
                         color: isActive ? AC.accent : Colors.transparent,
                       ),
                       child: isActive
-                          ? const Center(
+                          ? Center(
                               child: CircleAvatar(
                                   radius: 4,
                                   backgroundColor: AC.btnText))
@@ -269,7 +269,7 @@ class AudioSetPicker extends StatelessWidget {
                     ),
                     if (badge != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 9, vertical: 2),
                         decoration: BoxDecoration(
                           color: AC.loopActiveBg,
@@ -278,7 +278,7 @@ class AudioSetPicker extends StatelessWidget {
                               color: AC.loopActive.withOpacity(0.27)),
                         ),
                         child: Text('$badge',
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 11,
                                 color: AC.loopActive)),
                       ),
@@ -298,7 +298,7 @@ class AudioSetPicker extends StatelessWidget {
               },
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: AC.accent, width: 1.5),
@@ -306,9 +306,9 @@ class AudioSetPicker extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.mic_outlined,
+                    Icon(Icons.mic_outlined,
                         color: AC.accent, size: 16),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     Text('Record your own pādas',
                         style: AT.garamond(15, color: AC.accent)),
                   ],
@@ -351,7 +351,7 @@ class RepeatPanel extends StatelessWidget {
               _ModeBtn('Verse Set', LoopMode.verseSet, config, onChanged),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Verse mode
           if (config.mode == LoopMode.verse) ...[
@@ -407,7 +407,7 @@ class RepeatPanel extends StatelessWidget {
                     onChanged: (v) => onChanged(config.copyWith(setRepN: v)))),
             const SizedBox(height: 10),
             Container(
-              padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
+              padding: EdgeInsets.fromLTRB(10, 7, 10, 7),
               decoration: BoxDecoration(
                 color: AC.surface,
                 borderRadius: BorderRadius.circular(8),
@@ -427,7 +427,7 @@ class RepeatPanel extends StatelessWidget {
 
   Widget _Row(String label, Widget trailing) => Container(
     padding: const EdgeInsets.symmetric(vertical: 8),
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       border: Border(bottom: BorderSide(color: AC.borderLight)),
     ),
     child: Row(
@@ -456,7 +456,7 @@ class _ModeBtn extends StatelessWidget {
       child: GestureDetector(
         onTap: () => onChanged(config.copyWith(mode: mode)),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 7),
+          padding: EdgeInsets.symmetric(vertical: 7),
           decoration: BoxDecoration(
             color: active ? AC.btnBg : AC.surface,
             borderRadius: BorderRadius.circular(7),
@@ -505,7 +505,7 @@ class AudioSetManagerSheet extends StatelessWidget {
       builder: (_, __) => Column(children: [
         const SheetHandle(),
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+          padding: EdgeInsets.fromLTRB(20, 4, 20, 16),
           child: Text('Audio', style: AT.garamond(18, color: AC.text,
               weight: FontWeight.w600)),
         ),
@@ -520,17 +520,17 @@ class AudioSetManagerSheet extends StatelessWidget {
             },
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
                 color: AC.btnBg,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [BoxShadow(
                     color: AC.trackFill.withOpacity(0.25),
-                    blurRadius: 12, offset: const Offset(0, 3))],
+                    blurRadius: 12, offset: Offset(0, 3))],
               ),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.mic_outlined, color: AC.btnText, size: 18),
-                const SizedBox(width: 8),
+                Icon(Icons.mic_outlined, color: AC.btnText, size: 18),
+                SizedBox(width: 8),
                 Text('Open Recording Studio',
                     style: AT.garamond(16, color: AC.btnText)),
               ]),
@@ -539,7 +539,7 @@ class AudioSetManagerSheet extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20),
           child: Text(
             'Record your own voice for any pāda. '
             'Recordings are saved locally in this browser session.',
