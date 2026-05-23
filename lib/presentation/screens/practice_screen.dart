@@ -737,13 +737,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     fontFamily: 'TiroDevanagarSanskrit',
                     fontSize: 11, color: AC.textMuted, height: 1.2)),
                 const SizedBox(height: 1),
-                RichText(text: TextSpan(children: [
-                  TextSpan(text: 'K$_selKandaNum  ·  ',
-                      style: AT.garamond(13, color: AC.textSec)),
-                  TextSpan(text: vname, style: TextStyle(
-                      fontFamily: 'TiroDevanagarSanskrit',
-                      fontSize: 14, color: AC.textSec, height: 1.2)),
-                ])),
+                Text(vname, style: TextStyle(
+                    fontFamily: 'TiroDevanagarSanskrit',
+                    fontSize: 14, color: AC.textSec, height: 1.2)),
               ]);
             }),
           )),
