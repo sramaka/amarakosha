@@ -31,7 +31,7 @@ class AmarakoshaApp extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: AppSettings.instance,
     builder: (_, __) => MaterialApp(
-      title: 'अमरकोश',
+      title: 'अमरकोशः',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
       home: const AppShell(),
