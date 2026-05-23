@@ -411,17 +411,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
   // ── Practice Set ──────────────────────────────────────────────────────────
   void _addSectionToSet(Section sec) {
     if (_setItems.any((i) => i.label == sec.titleEn && i.padas == sec.padas)) return;
-    setState(() => _setItems.add(_SetItem(sec.titleEn, sec.padas)));
+    final withAudio = sec.padas.where((p) => AudioService.instance.hasAudio(p.id)).toList();
+    if (withAudio.isEmpty) {
+      _showSetToast('No audio available in "${sec.titleEn}"', error: true);
+      return;
+    }
+    setState(() => _setItems.add(_SetItem(sec.titleEn, withAudio)));
     _saveSet();
-    _showSetToast('Section "${sec.titleEn}" added to Practice Set');
+    final skipped = sec.padas.length - withAudio.length;
+    final msg = skipped > 0
+        ? '"${sec.titleEn}" added (${withAudio.length} pādas; $skipped skipped — no audio)'
+        : 'Section "${sec.titleEn}" added to Practice Set';
+    _showSetToast(msg);
   }
 
   void _addPadaToSet(Pada pada) {
+    if (!AudioService.instance.hasAudio(pada.id)) {
+      _showSetToast('No audio for pāda ${pada.id}', error: true);
+      return;
+    }
     final label = pada.id;
     if (_setItems.any((i) => i.label == label)) return;
     setState(() => _setItems.add(_SetItem(label, [pada])));
     _saveSet();
-    _showSetToast('Pada ${pada.id} added to Practice Set');
+    _showSetToast('Pāda ${pada.id} added to Practice Set');
   }
 
   void _removeFromSet(int idx) {
@@ -429,11 +442,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _saveSet();
   }
 
-  void _showSetToast(String msg) {
+  void _showSetToast(String msg, {bool error = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg, style: AT.garamond(13, color: Colors.white)),
       duration: Duration(seconds: 2),
-      backgroundColor: AC.accent,
+      backgroundColor: error ? AC.recRed : AC.accent,
       behavior: SnackBarBehavior.floating,
     ));
   }
@@ -682,8 +695,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
           GestureDetector(
             onTap: widget.onBack,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.chevron_left, color: AC.accent, size: 18),
-              Text('Back', style: AT.garamond(15, color: AC.accent)),
+              Icon(Icons.home_outlined, color: AC.accent, size: 16),
+              SizedBox(width: 3),
+              Text('Home', style: AT.garamond(15, color: AC.accent)),
             ]),
           ),
           // Mobile: Contents button opens tree overlay
@@ -706,7 +720,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ],
           Expanded(child: Center(
             child: Builder(builder: (ctx) {
-              // find the current varga name for orientation
               String vname = '';
               for (final k in _kandas) {
                 if (k.num != _selKandaNum) continue;
@@ -714,9 +727,24 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   if (v.seq == _selVargaSeq) { vname = v.name; break; }
                 }
               }
-              return Text(vname, style: TextStyle(
-                  fontFamily: 'TiroDevanagarSanskrit',
-                  fontSize: 15, color: AC.textSec, height: 1.2));
+              if (isMobile) {
+                return Text(vname, style: TextStyle(
+                    fontFamily: 'TiroDevanagarSanskrit',
+                    fontSize: 15, color: AC.textSec, height: 1.2));
+              }
+              return Column(mainAxisSize: MainAxisSize.min, children: [
+                Text('अमरकोशः', style: TextStyle(
+                    fontFamily: 'TiroDevanagarSanskrit',
+                    fontSize: 11, color: AC.textMuted, height: 1.2)),
+                const SizedBox(height: 1),
+                RichText(text: TextSpan(children: [
+                  TextSpan(text: 'K$_selKandaNum  ·  ',
+                      style: AT.garamond(13, color: AC.textSec)),
+                  TextSpan(text: vname, style: TextStyle(
+                      fontFamily: 'TiroDevanagarSanskrit',
+                      fontSize: 14, color: AC.textSec, height: 1.2)),
+                ])),
+              ]);
             }),
           )),
           // Practice Set toggle — side panel on desktop, bottom sheet on mobile
@@ -1099,10 +1127,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           // Pada repeat / recite count
           if (!_reciteMode) ...[
             Row(children: [
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Each Pāda', style: AT.garamond(12, color: AC.text)),
-                Text('repeat × per pada', style: AT.garamond(12, color: AC.textMuted, italic: true)),
-              ])),
+              Expanded(child: Text('Each Pāda', style: AT.garamond(13, color: AC.text))),
               _SmallStepper(
                 value: _padaRepeat,
                 onDec: _padaRepeat > 1 ? () => setState(() => _padaRepeat--) : null,
@@ -1113,8 +1138,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ] else ...[
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Teacher plays', style: AT.garamond(12, color: AC.text)),
-                Text('cycles of model + student', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                Text('Teacher plays', style: AT.garamond(13, color: AC.text)),
+                Text('model + student cycles', style: AT.garamond(11, color: AC.textSec)),
               ])),
               _SmallStepper(
                 value: _modelCount,
@@ -1125,8 +1150,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
             SizedBox(height: 8),
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Student recites', style: AT.garamond(12, color: AC.text)),
-                Text('times per teacher play', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                Text('Student recites', style: AT.garamond(13, color: AC.text)),
+                Text('times per teacher play', style: AT.garamond(11, color: AC.textSec)),
               ])),
               _SmallStepper(
                 value: _reciteCount,
@@ -1138,10 +1163,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ],
           // Set repeat
           Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Full Set', style: AT.garamond(12, color: AC.text)),
-              Text('repeat entire set', style: AT.garamond(12, color: AC.textMuted, italic: true)),
-            ])),
+            Expanded(child: Text('Full Set', style: AT.garamond(13, color: AC.text))),
             _SmallStepper(
               value: _setRepeat,
               onDec: _setRepeat > 1 ? () => setState(() => _setRepeat--) : null,
@@ -1151,7 +1173,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           if (_setItems.isNotEmpty) ...[
             SizedBox(height: 4),
             Text('$_totalSetPadas total pādas',
-                style: AT.garamond(13, color: AC.textMuted, italic: true)),
+                style: AT.garamond(12, color: AC.textSec)),
           ],
           const SizedBox(height: 8),
           // Guided Practice toggle
@@ -1159,8 +1181,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
             onTap: () => setState(() => _reciteMode = !_reciteMode),
             child: Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Guided Practice', style: AT.garamond(12, color: AC.text)),
-                  Text('play model, then student recites', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                  Text('Guided Practice', style: AT.garamond(13, color: AC.text)),
+                  Text('model plays, then student recites', style: AT.garamond(11, color: AC.textSec)),
                 ])),
                 Container(
                   width: 36, height: 20,
@@ -1184,7 +1206,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             SizedBox(height: 6),
             Row(children: [
               Expanded(child: Text('Student volume',
-                  style: AT.garamond(12, color: AC.textMuted, italic: true))),
+                  style: AT.garamond(13, color: AC.text))),
               _SmallStepper(
                 value: AppSettings.instance.reciteVolumePct,
                 label: '${AppSettings.instance.reciteVolumePct}%',
@@ -1202,7 +1224,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               SizedBox(height: 6),
               Row(children: [
                 Expanded(child: Text('Gap between recitations',
-                    style: AT.garamond(12, color: AC.textMuted, italic: true))),
+                    style: AT.garamond(13, color: AC.text))),
                 _SmallStepper(
                   value: _reciteGapSec,
                   label: '${_reciteGapSec}s',
@@ -1218,8 +1240,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
               onTap: () => setState(() => _stepMode = !_stepMode),
               child: Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Step through pādas', style: AT.garamond(12, color: AC.text)),
-                  Text('press Next to advance', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                  Text('Step through pādas', style: AT.garamond(13, color: AC.text)),
+                  Text('press Next to advance', style: AT.garamond(11, color: AC.textSec)),
                 ])),
                 Container(
                   width: 36, height: 20,
@@ -1438,13 +1460,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               child: Column(children: [
                 if (!_reciteMode) ...[
                   Row(children: [
-                    Expanded(child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Each Pāda', style: AT.garamond(13, color: AC.text)),
-                          Text('repeat × per pada',
-                              style: AT.garamond(12, color: AC.textMuted, italic: true)),
-                        ])),
+                    Expanded(child: Text('Each Pāda', style: AT.garamond(13, color: AC.text))),
                     _SmallStepper(
                       value: _padaRepeat,
                       onDec: _padaRepeat > 1
@@ -1460,8 +1476,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Teacher plays', style: AT.garamond(13, color: AC.text)),
-                          Text('cycles of model + student',
-                              style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                          Text('model + student cycles',
+                              style: AT.garamond(11, color: AC.textSec)),
                         ])),
                     _SmallStepper(
                       value: _modelCount,
@@ -1476,7 +1492,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                         children: [
                           Text('Student recites', style: AT.garamond(13, color: AC.text)),
                           Text('times per teacher play',
-                              style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                              style: AT.garamond(11, color: AC.textSec)),
                         ])),
                     _SmallStepper(
                       value: _reciteCount,
@@ -1487,13 +1503,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   const SizedBox(height: 10),
                 ],
                 Row(children: [
-                  Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Full Set', style: AT.garamond(13, color: AC.text)),
-                        Text('repeat entire set',
-                            style: AT.garamond(12, color: AC.textMuted, italic: true)),
-                      ])),
+                  Expanded(child: Text('Full Set', style: AT.garamond(13, color: AC.text))),
                   _SmallStepper(
                     value: _setRepeat,
                     onDec: _setRepeat > 1
@@ -1505,7 +1515,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 if (_setItems.isNotEmpty) ...[
                   SizedBox(height: 6),
                   Text('$_totalSetPadas total pādas',
-                      style: AT.garamond(13, color: AC.textMuted, italic: true)),
+                      style: AT.garamond(12, color: AC.textSec)),
                 ],
                 const SizedBox(height: 10),
                 // Guided Practice toggle
@@ -1517,7 +1527,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   child: Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('Guided Practice', style: AT.garamond(13, color: AC.text)),
-                        Text('play model, then student recites', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                        Text('model plays, then student recites', style: AT.garamond(11, color: AC.textSec)),
                       ])),
                       Container(
                         width: 36, height: 20,
@@ -1541,7 +1551,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                   SizedBox(height: 6),
                   Row(children: [
                     Expanded(child: Text('Student volume',
-                        style: AT.garamond(12, color: AC.textMuted, italic: true))),
+                        style: AT.garamond(13, color: AC.text))),
                     _SmallStepper(
                       value: AppSettings.instance.reciteVolumePct,
                       label: '${AppSettings.instance.reciteVolumePct}%',
@@ -1561,7 +1571,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     SizedBox(height: 6),
                     Row(children: [
                       Expanded(child: Text('Gap between recitations',
-                          style: AT.garamond(12, color: AC.textMuted, italic: true))),
+                          style: AT.garamond(13, color: AC.text))),
                       _SmallStepper(
                         value: _reciteGapSec,
                         label: '${_reciteGapSec}s',
@@ -1583,7 +1593,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                     child: Row(children: [
                       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('Step through pādas', style: AT.garamond(13, color: AC.text)),
-                        Text('press Next to advance', style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                        Text('press Next to advance', style: AT.garamond(11, color: AC.textSec)),
                       ])),
                       Container(
                         width: 36, height: 20,
@@ -2830,24 +2840,36 @@ class _RangeSheetState extends State<_RangeSheet> {
             const SizedBox(height: 12),
             GestureDetector(
               onTap: actual > 0 ? () {
-                final selected = padas.sublist(_padaIdx, _padaIdx + actual);
-                final label    = actual == 1
+                final slice    = padas.sublist(_padaIdx, _padaIdx + actual);
+                final selected = slice.where((p) => AudioService.instance.hasAudio(p.id)).toList();
+                if (selected.isEmpty) return;
+                final label    = selected.length == 1
                     ? selected.first.id
                     : '${selected.first.id}–${selected.last.id}';
                 widget.onAdd(_SetItem(label, selected));
               } : null,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 13),
-                decoration: BoxDecoration(
-                  color: actual > 0 ? AC.btnBg : AC.surfaceAlt,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(child: Text('Add to Set',
+              child: Builder(builder: (ctx) {
+                final slice     = actual > 0 ? padas.sublist(_padaIdx, _padaIdx + actual) : <Pada>[];
+                final withAudio = slice.where((p) => AudioService.instance.hasAudio(p.id)).length;
+                final canAdd    = withAudio > 0;
+                return Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 13),
+                  decoration: BoxDecoration(
+                    color: canAdd ? AC.btnBg : AC.surfaceAlt,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Center(child: Text(
+                    canAdd
+                        ? (withAudio < actual
+                            ? 'Add $withAudio pādas (${actual - withAudio} no audio)'
+                            : 'Add to Set')
+                        : 'No audio in range',
                     style: AT.garamond(14,
-                        color: actual > 0 ? AC.btnText : AC.textMuted,
+                        color: canAdd ? AC.btnText : AC.textMuted,
                         weight: FontWeight.w600))),
-              ),
+                );
+              }),
             ),
           ]),
         ),

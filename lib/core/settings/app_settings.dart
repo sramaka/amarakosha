@@ -7,13 +7,13 @@ class AppSettings extends ChangeNotifier {
   AppSettings._();
   static final instance = AppSettings._();
 
-  int    devFontSize              = 20;   // Sanskrit body text (14–72)
-  int    treeFontSize             = 13;   // Tree pane Devanagari + labels (10–20)
+  int    devFontSize              = 36;   // Sanskrit body text (14–72)
+  int    treeFontSize             = 14;   // Tree pane Devanagari + labels (10–20)
   int    uiFontSize               = 14;   // UI labels / headings (11–22)
-  int    uiFontWeight             = 500;  // 400 / 500 / 600 / 700
+  int    uiFontWeight             = 700;  // 400 / 500 / 600 / 700
   String devFontFamily            = 'TiroDevanagarSanskrit';
-  int    contextBefore            = 1;    // padas shown above active pada in browse mode (0–5)
-  int    contextAfter             = 1;    // padas shown below active pada in browse mode (0–5)
+  int    contextBefore            = 2;    // padas shown above active pada in browse mode (0–5)
+  int    contextAfter             = 2;    // padas shown below active pada in browse mode (0–5)
   int    setPlaylistContextBefore = 1;    // context padas before active pada during set playback (0–5)
   int    setPlaylistContextAfter  = 1;    // context padas after active pada during set playback (0–5)
   int    reciteVolumePct          = 10;   // volume % for repeat plays in Recite mode (2–20, step 2)
@@ -44,13 +44,13 @@ class AppSettings extends ChangeNotifier {
 
   Future<void> load() async {
     final p = await SharedPreferences.getInstance();
-    devFontSize   = p.getInt(_kDevSize)      ?? 20;
-    treeFontSize  = p.getInt(_kTreeSize)     ?? 13;
-    uiFontSize    = p.getInt(_kUiSize)       ?? 13;
-    uiFontWeight  = p.getInt(_kUiWeight)     ?? 500;
+    devFontSize   = p.getInt(_kDevSize)      ?? 36;
+    treeFontSize  = p.getInt(_kTreeSize)     ?? 14;
+    uiFontSize    = p.getInt(_kUiSize)       ?? 14;
+    uiFontWeight  = p.getInt(_kUiWeight)     ?? 700;
     devFontFamily = p.getString(_kDevFamily) ?? 'TiroDevanagarSanskrit';
-    contextBefore            = p.getInt(_kCtxBefore)    ?? 1;
-    contextAfter             = p.getInt(_kCtxAfter)     ?? 1;
+    contextBefore            = p.getInt(_kCtxBefore)    ?? 2;
+    contextAfter             = p.getInt(_kCtxAfter)     ?? 2;
     setPlaylistContextBefore = p.getInt(_kSetCtxBefore)    ?? 1;
     setPlaylistContextAfter  = p.getInt(_kSetCtxAfter)     ?? 1;
     reciteVolumePct          = p.getInt(_kReciteVolume)    ?? 10;

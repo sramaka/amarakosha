@@ -199,7 +199,44 @@ class AppColorSchemes {
     genderNeut:  Color(0xFF059669),
   );
 
-  static const List<AppColorScheme> all = [parchment, night, slate, minimal];
+  static const forest = AppColorScheme(
+    id: 'forest', label: 'Forest',
+    bg:          Color(0xFFE4EADE),
+    surface:     Color(0xFFEEF3E8),
+    surfaceAlt:  Color(0xFFD8E4D0),
+    surfaceDim:  Color(0xFFCCDBCA),
+    text:        Color(0xFF1C2418),
+    textSec:     Color(0xFF3A5030),
+    textMuted:   Color(0xFF6A8058),
+    accent:      Color(0xFF3A6820),
+    accentBright:Color(0xFF4A8028),
+    border:      Color(0xFFA0BA88),
+    borderLight: Color(0xFFBBCFA8),
+    btnBg:       Color(0xFF3A6820),
+    btnText:     Color(0xFFF0F5EB),
+    trackBg:     Color(0xFFA0BA88),
+    trackFill:   Color(0xFF3A6820),
+    dot:         Color(0xFF5A9040),
+    chipBg:      Color(0xFFD8E4D0),
+    chipText:    Color(0xFF1C2418),
+    loopActive:  Color(0xFF5A9040),
+    loopActiveBg:Color(0xFFD0EAC0),
+    lineHl:      Color(0xFFE0EDD4),
+    lineBorder:  Color(0xFF7AAA5A),
+    dangerBg:    Color(0xFFF0EAE4),
+    recRed:      Color(0xFFB03020),
+    sidebar:     Color(0xFF142018),
+    sidebarHdr:  Color(0xFF0E1812),
+    sidebarText: Color(0xFFD0EABB),
+    sidebarMuted:Color(0xFF7AAA5A),
+    sidebarSel:  Color(0xFFAADE78),
+    sidebarBorder:Color(0xFF243428),
+    genderMasc:  Color(0xFF3A6820),
+    genderFem:   Color(0xFF6A3070),
+    genderNeut:  Color(0xFF286A5A),
+  );
+
+  static const List<AppColorScheme> all = [parchment, night, slate, minimal, forest];
 
   static AppColorScheme byId(String id) =>
       all.firstWhere((t) => t.id == id, orElse: () => parchment);

@@ -44,6 +44,15 @@ html[data-theme="minimal"] {
   --green:#059669; --green-bg:#D1FAE5;
   --red:#DC2626; --red-bg:#FEF2F2;
 }
+html[data-theme="forest"] {
+  --bg:#E4EADE; --surface:#EEF3E8; --surface-alt:#D8E4D0;
+  --text:#1C2418; --text-sec:#3A5030; --text-muted:#6A8058;
+  --accent:#3A6820; --accent-lt:#4A8028;
+  --border:#A0BA88; --border-lt:#BBCFA8;
+  --btn-bg:#3A6820; --btn-text:#F0F5EB;
+  --green:#5A9040; --green-bg:#D0EAC0;
+  --red:#B03020; --red-bg:#F0EAE4;
+}
 .theme-picker { display:flex; gap:5px; align-items:center; }
 .theme-dot { width:16px; height:16px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
 .theme-dot.active { border-color:var(--text); box-shadow:0 0 0 1px var(--bg); }
@@ -291,6 +300,7 @@ hr.divider { border: none; border-top: 1px solid var(--border-lt); margin: 12px 
     <button class="theme-dot" data-theme="night"     style="background:#E8A840" title="Night"></button>
     <button class="theme-dot" data-theme="slate"     style="background:#2C5898" title="Slate"></button>
     <button class="theme-dot" data-theme="minimal"   style="background:#4F46E5" title="Minimal"></button>
+    <button class="theme-dot" data-theme="forest"    style="background:#3A6820" title="Forest"></button>
   </div>
 </div>
 

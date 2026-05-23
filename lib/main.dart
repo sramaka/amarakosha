@@ -91,6 +91,13 @@ class _AppShellState extends State<AppShell> {
     ));
   }
 
+  void _onBrowse() {
+    _push(PracticeScreen(
+      session: _defaultSession,
+      onBack: _pop,
+    ));
+  }
+
   void _onNewPracticeSet() {
     _push(PracticeScreen(
       session: _defaultSession,
@@ -113,7 +120,7 @@ class _AppShellState extends State<AppShell> {
             index: _tabIndex,
             children: [
               HomeScreen(
-                onBrowse: () => setState(() => _tabIndex = 1),
+                onBrowse: _onBrowse,
                 onContinuePractice: _onContinuePractice,
                 onNewPracticeSet: _onNewPracticeSet,
               ),
@@ -123,7 +130,13 @@ class _AppShellState extends State<AppShell> {
               ),
             ],
           )),
-          _TabBar(current: _tabIndex, onTap: (i) => setState(() => _tabIndex = i)),
+          _TabBar(
+            current: _tabIndex,
+            onTap: (i) {
+              if (i == 1) { _onBrowse(); }
+              else { setState(() => _tabIndex = i); }
+            },
+          ),
         ]),
       ),
     );
