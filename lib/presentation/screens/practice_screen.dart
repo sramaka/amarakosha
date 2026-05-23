@@ -104,6 +104,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   StreamSubscription<PlayerState>? _setCompletionSub;
   bool _advancing = false; // prevents double-fire on auto-advance
   bool _mobileTreeOpen = false;
+  final GlobalKey _activePadaPlaylistKey = GlobalKey();
 
   // ── Audio sets ────────────────────────────────────────────────────────────
   List<AudioSetMeta> _audioSets  = [];
@@ -440,6 +441,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
   int get _totalSetPadas =>
       _setItems.fold(0, (n, i) => n + i.padas.length) * _playsPerPada * _setRepeat;
 
+  int get _setTotalPadasFlat =>
+      _setItems.fold(0, (n, item) => n + item.padas.length);
+
+  int get _setCurFlatIdx {
+    if (_setItems.isEmpty) return 0;
+    int idx = 0;
+    final ci = _setCurItem.clamp(0, _setItems.length - 1);
+    for (int i = 0; i < ci; i++) idx += _setItems[i].padas.length;
+    if (_setItems[ci].padas.isEmpty) return idx;
+    return idx + _setCurPada.clamp(0, _setItems[ci].padas.length - 1);
+  }
+
+  void _scrollToCurrentPlaylistPada() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _activePadaPlaylistKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            duration: const Duration(milliseconds: 250),
+            alignment: 0.3,
+            curve: Curves.easeInOut);
+      }
+    });
+  }
+
   // Set playback: steps through items → padas → pada-repeats → set-repeats
   void _startSetPlayback() {
     if (_setItems.isEmpty) return;
@@ -489,6 +514,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             _currentSecSeqForPada(pada) ?? _selSecSeq,
             pada.seq);
     }
+    _scrollToCurrentPlaylistPada();
 
     final isRepeatPlay = _reciteMode && _setCurPadaRep > 0;
     final vol = isRepeatPlay ? AppSettings.instance.reciteVolumePct / 100.0 : 1.0;
@@ -1639,14 +1665,182 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final pada = _pada;
     if (pada == null) return const Center(child: CircularProgressIndicator(color: AC.accent));
 
+    if (_setPlaying || _waitingForStep) return _buildSetPlaylistView(pada);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 44),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         _buildProgress(pada),
         _buildPadaBox(pada),
+        _buildPrevNext(),
         _buildWordChips(pada),
         _buildPlayer(),
       ]),
+    );
+  }
+
+  // ── Prev / Next navigation (normal browse mode) ───────────────────────────
+  Widget _buildPrevNext() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
+      child: Row(children: [
+        GestureDetector(
+          onTap: _prevPada,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AC.border)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(Icons.arrow_back_rounded, size: 14, color: AC.textSec),
+              const SizedBox(width: 4),
+              Text('Prev', style: AT.garamond(13, color: AC.textSec)),
+            ]),
+          ),
+        ),
+        const Spacer(),
+        GestureDetector(
+          onTap: _nextPada,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AC.border)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('Next', style: AT.garamond(13, color: AC.textSec)),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_forward_rounded, size: 14, color: AC.textSec),
+            ]),
+          ),
+        ),
+      ]),
+    );
+  }
+
+  // ── Playlist view (set playing / waiting for step) ────────────────────────
+  Widget _buildSetPlaylistView(Pada activePada) {
+    final s       = AppSettings.instance;
+    final flatIdx = _setCurFlatIdx;
+    final total   = _setTotalPadasFlat;
+
+    // Build item-heading + pada-row list
+    int fi = 0;
+    final listChildren = <Widget>[];
+    for (final item in _setItems) {
+      if (item.label.isNotEmpty) {
+        listChildren.add(Padding(
+          padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
+          child: Text(item.label.toUpperCase(),
+              style: AT.garamond(10, color: AC.textMuted,
+                  letterSpacing: 0.6, weight: FontWeight.w600)),
+        ));
+      }
+      for (final p in item.padas) {
+        final isActive = fi == flatIdx;
+        listChildren.add(_buildPlaylistPadaRow(p,
+            isActive: isActive,
+            key: isActive ? _activePadaPlaylistKey : null));
+        fi++;
+      }
+    }
+
+    return Column(children: [
+      // Header: set name · current/total  +  Replay / Next (step mode)
+      Padding(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+        child: Row(children: [
+          Expanded(child: Text(
+            '${_practiceSets[_activeSetIdx].name}  ·  ${flatIdx + 1} / $total',
+            style: AT.garamond(s.uiFontSize.toDouble(), color: AC.textSec),
+            overflow: TextOverflow.ellipsis,
+          )),
+          GestureDetector(
+            onTap: _replayCurrentPada,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: AC.border)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.replay_rounded, size: 12, color: AC.textMuted),
+                const SizedBox(width: 3),
+                Text('Replay', style: AT.garamond(
+                    (s.uiFontSize - 1).toDouble(), color: AC.textMuted)),
+              ]),
+            ),
+          ),
+          if (_waitingForStep) ...[
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: _stepNext,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AC.accent, borderRadius: BorderRadius.circular(4)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('Next', style: AT.garamond(
+                      (s.uiFontSize - 1).toDouble(), color: Colors.white)),
+                  const SizedBox(width: 3),
+                  const Icon(Icons.arrow_forward_rounded, size: 12, color: Colors.white),
+                ]),
+              ),
+            ),
+          ],
+        ]),
+      ),
+      // Scrollable pada list
+      Expanded(child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: listChildren,
+        ),
+      )),
+      // Audio player
+      _buildPlayer(),
+    ]);
+  }
+
+  Widget _buildPlaylistPadaRow(Pada p, {required bool isActive, Key? key}) {
+    final s = AppSettings.instance;
+    Widget content;
+    if (!p.hasText) {
+      content = Text('[no text available]',
+          style: AT.garamond(12, color: AC.textMuted, italic: true));
+    } else {
+      content = Text.rich(TextSpan(children: [
+        TextSpan(
+          text: '${p.id} ${p.padaNum == 1 ? "A" : "B"}  ',
+          style: AT.garamond(
+              (s.devFontSize * 0.52).clamp(10.0, 16.0),
+              color: AC.textMuted, italic: true),
+        ),
+        TextSpan(
+          text: p.textDev,
+          style: AT.devanagari(
+              isActive ? s.devFontSize.toDouble() : (s.devFontSize * 0.72).roundToDouble(),
+              color: isActive ? AC.text : AC.textMuted,
+              family: s.devFontFamily),
+        ),
+      ]));
+    }
+    if (isActive) {
+      return Container(
+        key: key,
+        width: double.infinity,
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        decoration: AD.activeLine(),
+        child: content,
+      );
+    }
+    return Padding(
+      key: key,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Opacity(
+        opacity: 0.45,
+        child: SizedBox(width: double.infinity, child: content),
+      ),
     );
   }
 
