@@ -383,8 +383,7 @@ class SettingRow extends StatelessWidget {
             children: [
               Text(label, style: AT.body15),
               if (sub != null)
-                Text(sub!, style: AT.garamond(12,
-                    color: AC.textMuted, italic: true)),
+                Text(sub!, style: AT.garamond(13, color: AC.textSec)),
             ],
           ),
         ),
@@ -468,7 +467,7 @@ void showDisplaySettingsSheet(BuildContext context) {
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Text weight', style: AT.garamond(14, color: AC.text)),
               Text('UI label weight',
-                  style: AT.garamond(12, color: AC.textMuted, italic: true)),
+                  style: AT.garamond(13, color: AC.textSec)),
               const SizedBox(height: 10),
               Row(children: [
                 ASettingChip(label: 'Normal', active: s.uiFontWeight == 400,
@@ -535,14 +534,64 @@ void showDisplaySettingsSheet(BuildContext context) {
                       ),
                       SizedBox(height: 5),
                       Text(theme.label,
-                          style: AT.garamond(11,
-                              color: active ? AC.accent : AC.textMuted,
+                          style: AT.garamond(12,
+                              color: active ? AC.accent : AC.textSec,
                               weight: active ? FontWeight.w600 : FontWeight.w400)),
                     ]),
                   ),
                 );
               }).toList()),
             ]),
+            Divider(height: 24),
+            SettingRow(
+              label: 'Auto-play on navigation',
+              sub: 'Play audio when selecting a pāda',
+              trailing: GestureDetector(
+                onTap: () => s.setAutoPlayBrowse(!s.autoPlayBrowse),
+                child: Container(
+                  width: 36, height: 20,
+                  decoration: BoxDecoration(
+                    color: s.autoPlayBrowse ? AC.accent : AC.border,
+                    borderRadius: BorderRadius.circular(10)),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: s.autoPlayBrowse
+                        ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      width: 16, height: 16,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: const BoxDecoration(
+                          color: Colors.white, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SettingRow(
+              label: 'Show speed controls',
+              sub: 'Speed buttons in the audio player',
+              last: true,
+              trailing: GestureDetector(
+                onTap: () => s.setShowSpeedButtons(!s.showSpeedButtons),
+                child: Container(
+                  width: 36, height: 20,
+                  decoration: BoxDecoration(
+                    color: s.showSpeedButtons ? AC.accent : AC.border,
+                    borderRadius: BorderRadius.circular(10)),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 150),
+                    alignment: s.showSpeedButtons
+                        ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      width: 16, height: 16,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: const BoxDecoration(
+                          color: Colors.white, shape: BoxShape.circle),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ]),
         );
       },

@@ -3,366 +3,350 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Amarakosha JSON Editor</title>
+<title>Amarakosha Editor</title>
 <script>document.documentElement.dataset.theme=localStorage.getItem('amara-theme')||'parchment';</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 html[data-theme="parchment"] {
-  --bg:#EDE0C0; --surface:#F8F2E4; --surface-alt:#EAD9B2;
-  --text:#1E1208; --text-sec:#6A4618; --text-muted:#7A5428;
-  --accent:#7A3A10; --accent-lt:#9A5020;
-  --border:#C4A060; --border-lt:#DEC890;
-  --btn-bg:#7A3A10; --btn-text:#FFF4E4;
-  --green:#4A6A30; --green-bg:#E8F0D8;
-  --red:#C03020; --red-bg:#F8EDE0;
+  --bg:#EDE0C0;--surface:#F8F2E4;--surface-alt:#EAD9B2;
+  --text:#1E1208;--text-sec:#6A4618;--text-muted:#7A5428;
+  --accent:#7A3A10;--accent-lt:#9A5020;
+  --border:#C4A060;--border-lt:#DEC890;
+  --btn-bg:#7A3A10;--btn-text:#FFF4E4;
+  --green:#4A6A30;--green-bg:#E8F0D8;
+  --red:#C03020;--red-bg:#FDF0EE;
 }
 html[data-theme="night"] {
-  --bg:#1A1208; --surface:#221810; --surface-alt:#2C1E10;
-  --text:#F0E4C8; --text-sec:#C8A068; --text-muted:#8A6840;
-  --accent:#E8A840; --accent-lt:#F0C060;
-  --border:#4A3018; --border-lt:#3A2410;
-  --btn-bg:#E8A840; --btn-text:#1A1208;
-  --green:#60A040; --green-bg:#243018;
-  --red:#E04030; --red-bg:#2A1A10;
+  --bg:#1A1208;--surface:#221810;--surface-alt:#2C1E10;
+  --text:#F0E4C8;--text-sec:#C8A068;--text-muted:#8A6840;
+  --accent:#E8A840;--accent-lt:#F0C060;
+  --border:#4A3018;--border-lt:#3A2410;
+  --btn-bg:#E8A840;--btn-text:#1A1208;
+  --green:#60A040;--green-bg:#243018;
+  --red:#E04030;--red-bg:#2A1810;
 }
 html[data-theme="slate"] {
-  --bg:#E2E6EC; --surface:#ECEEF2; --surface-alt:#D6DAE0;
-  --text:#1A1C20; --text-sec:#3C4450; --text-muted:#68727E;
-  --accent:#2C5898; --accent-lt:#3A68A8;
-  --border:#A8B0BC; --border-lt:#BEC8D4;
-  --btn-bg:#2C5898; --btn-text:#F0F4F8;
-  --green:#2A7840; --green-bg:#D0E8D8;
-  --red:#C02820; --red-bg:#F4ECED;
+  --bg:#E2E6EC;--surface:#ECEEF2;--surface-alt:#D6DAE0;
+  --text:#1A1C20;--text-sec:#3C4450;--text-muted:#68727E;
+  --accent:#2C5898;--accent-lt:#3A68A8;
+  --border:#A8B0BC;--border-lt:#BEC8D4;
+  --btn-bg:#2C5898;--btn-text:#F0F4F8;
+  --green:#2A7840;--green-bg:#D0E8D8;
+  --red:#C02820;--red-bg:#F8ECED;
 }
 html[data-theme="minimal"] {
-  --bg:#F4F4F5; --surface:#FFFFFF; --surface-alt:#EFEFF1;
-  --text:#18181B; --text-sec:#52525B; --text-muted:#A1A1AA;
-  --accent:#4F46E5; --accent-lt:#6366F1;
-  --border:#D4D4D8; --border-lt:#E4E4E7;
-  --btn-bg:#4F46E5; --btn-text:#FFFFFF;
-  --green:#059669; --green-bg:#D1FAE5;
-  --red:#DC2626; --red-bg:#FEF2F2;
+  --bg:#F4F4F5;--surface:#FFFFFF;--surface-alt:#EFEFF1;
+  --text:#18181B;--text-sec:#52525B;--text-muted:#A1A1AA;
+  --accent:#4F46E5;--accent-lt:#6366F1;
+  --border:#D4D4D8;--border-lt:#E4E4E7;
+  --btn-bg:#4F46E5;--btn-text:#FFFFFF;
+  --green:#059669;--green-bg:#D1FAE5;
+  --red:#DC2626;--red-bg:#FEF2F2;
 }
 html[data-theme="forest"] {
-  --bg:#E4EADE; --surface:#EEF3E8; --surface-alt:#D8E4D0;
-  --text:#1C2418; --text-sec:#3A5030; --text-muted:#6A8058;
-  --accent:#3A6820; --accent-lt:#4A8028;
-  --border:#A0BA88; --border-lt:#BBCFA8;
-  --btn-bg:#3A6820; --btn-text:#F0F5EB;
-  --green:#5A9040; --green-bg:#D0EAC0;
-  --red:#B03020; --red-bg:#F0EAE4;
+  --bg:#E4EADE;--surface:#EEF3E8;--surface-alt:#D8E4D0;
+  --text:#1C2418;--text-sec:#3A5030;--text-muted:#6A8058;
+  --accent:#3A6820;--accent-lt:#4A8028;
+  --border:#A0BA88;--border-lt:#BBCFA8;
+  --btn-bg:#3A6820;--btn-text:#F0F5EB;
+  --green:#5A9040;--green-bg:#D0EAC0;
+  --red:#B03020;--red-bg:#F5EDEB;
 }
-.theme-picker { display:flex; gap:5px; align-items:center; }
-.theme-dot { width:16px; height:16px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
-.theme-dot.active { border-color:var(--text); box-shadow:0 0 0 1px var(--bg); }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'EB Garamond', Georgia, serif; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text); }
-.dev { font-family: 'Tiro Devanagari Sanskrit', serif; }
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'EB Garamond',Georgia,serif;height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--text);overflow:hidden;}
+.dev{font-family:'Tiro Devanagari Sanskrit',serif;}
+button{font-family:inherit;cursor:pointer;}
 
 /* ── Header ── */
-#header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 14px; background: var(--surface); border-bottom: 1px solid var(--border);
-  flex-shrink: 0; color: var(--text);
-}
-#header h1 { font-size: 1rem; font-weight: 600; flex: 1; color: var(--accent); }
-#dirtyBadge {
-  background: var(--accent); color: var(--btn-text); padding: 2px 9px;
-  border-radius: 10px; font-size: 0.72rem; font-weight: 600; display: none;
-}
-#header button {
-  padding: 5px 13px; border: 1px solid var(--border); border-radius: 5px;
-  cursor: pointer; font-size: 0.82rem; font-weight: 500; font-family: inherit;
-  background: var(--surface-alt); color: var(--text-sec);
-}
-#header button:hover { background: var(--bg); color: var(--accent); border-color: var(--accent); }
-#btnLoad   { }
-#btnExport { background: var(--btn-bg); color: var(--btn-text); border-color: var(--accent); }
-#btnExport:hover { background: var(--accent-lt); }
-#btnExport:disabled { background: var(--surface-alt); color: var(--text-muted); border-color: var(--border-lt); cursor: default; opacity: 0.6; }
+#hdr{display:flex;align-items:center;gap:8px;padding:7px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+#hdr h1{font-size:0.95rem;font-weight:600;color:var(--accent);}
+#dirtyBadge{background:var(--accent);color:var(--btn-text);padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600;display:none;}
+.hbtn{padding:5px 12px;border:1px solid var(--border);border-radius:5px;background:var(--surface-alt);color:var(--text-sec);font-size:0.8rem;font-weight:500;}
+.hbtn:hover{background:var(--bg);color:var(--accent);border-color:var(--accent);}
+#btnExport{background:var(--btn-bg);color:var(--btn-text);border-color:var(--accent);}
+#btnExport:hover{background:var(--accent-lt);}
+#btnExport:disabled{background:var(--surface-alt);color:var(--text-muted);border-color:var(--border-lt);cursor:default;opacity:.6;}
+.spacer{flex:1;}
+.theme-picker{display:flex;gap:4px;align-items:center;}
+.tdot{width:15px;height:15px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;}
+.tdot.active{border-color:var(--text);}
 
-.view-toggle { display: flex; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
-.view-toggle button {
-  padding: 4px 12px; background: var(--surface-alt); color: var(--text-muted);
-  border: none; border-radius: 0; font-size: 0.8rem; cursor: pointer; font-family: inherit;
-}
-.view-toggle button.active { background: var(--accent); color: var(--btn-text); font-weight: 600; }
-.view-toggle button:hover:not(.active) { background: var(--bg); color: var(--accent); }
+/* ── Layout ── */
+#main{display:flex;flex:1;overflow:hidden;}
 
-/* ── Nav bar ── */
-#nav {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 6px 14px; background: var(--surface); border-bottom: 1px solid var(--border-lt); flex-shrink: 0;
-}
-#nav label { font-size: 0.75rem; color: var(--text-sec); font-weight: 500; }
-#nav select {
-  padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px;
-  font-size: 0.82rem; background: var(--surface); color: var(--text); max-width: 260px;
-  font-family: inherit;
-}
-#stats { font-size: 0.74rem; color: var(--text-muted); margin-left: auto; }
+/* ── Tree pane ── */
+#treePane{display:flex;flex-direction:column;width:300px;min-width:160px;max-width:600px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);overflow:hidden;}
+#treeTop{display:flex;flex-direction:column;gap:5px;padding:7px 8px;border-bottom:1px solid var(--border-lt);flex-shrink:0;}
+#treeNav{display:flex;gap:5px;}
+#treeNav select{flex:1;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:0.78rem;font-family:inherit;background:var(--bg);color:var(--text);min-width:0;}
+#treeNav select:focus{outline:none;border-color:var(--accent);}
+#treeSearch{display:flex;gap:6px;}
+#treeQ{flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.78rem;font-family:inherit;background:var(--bg);color:var(--text);}
+#treeQ:focus{outline:none;border-color:var(--accent);}
+#revFilter{padding:3px 7px;border:1px solid var(--border-lt);border-radius:4px;background:var(--surface-alt);color:var(--text-muted);font-size:0.72rem;white-space:nowrap;flex-shrink:0;}
+#revFilter.on{background:var(--red-bg);color:var(--red);border-color:rgba(192,48,32,.3);}
+#treeScroll{flex:1;overflow-y:auto;}
+#treeBody,#treeFlat{padding:4px 0;}
+#treeFlat{display:none;}
 
-/* ── Edit view ── */
-#editArea { display: flex; flex: 1; overflow: hidden; }
+/* kanda */
+.tk-hdr{display:flex;align-items:center;gap:6px;padding:8px 10px 6px;cursor:pointer;user-select:none;}
+.tk-hdr:hover{background:var(--surface-alt);}
+.t-arrow{font-size:0.58rem;color:var(--text-muted);width:10px;flex-shrink:0;display:inline-block;}
+.tk-name{font-weight:700;font-size:0.82rem;color:var(--accent);}
+.tk-sub{font-size:0.72rem;color:var(--text-muted);}
 
-#padaList {
-  width: 210px; flex-shrink: 0; overflow-y: auto;
-  background: var(--surface); border-right: 1px solid var(--border-lt); padding: 6px 0;
-}
-.pada-item {
-  padding: 7px 12px; cursor: pointer; font-size: 0.82rem;
-  border-left: 3px solid transparent;
-}
-.pada-item:hover { background: var(--surface-alt); }
-.pada-item.active { background: var(--surface-alt); border-left-color: var(--accent); }
-.pada-item .pid { font-weight: 600; font-size: 0.78rem; color: var(--text); }
-.pada-item.active .pid { color: var(--accent); }
-.pada-item .ppreview {
-  color: var(--text-muted); font-size: 0.74rem; margin-top: 1px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 182px;
-}
-.pada-item.has-text .ppreview { color: var(--text-sec); }
+/* varga */
+.tv-hdr{display:flex;align-items:center;gap:6px;padding:5px 10px 4px 22px;cursor:pointer;user-select:none;}
+.tv-hdr:hover{background:var(--surface-alt);}
+.tv-id{font-size:0.75rem;font-weight:600;color:var(--text-sec);min-width:28px;flex-shrink:0;}
+.tv-name{font-size:0.8rem;color:var(--text);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.tv-count{font-size:0.66rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;}
+.tv-addsec{display:block;width:100%;padding:4px 10px 4px 34px;border:none;background:transparent;text-align:left;font-size:0.7rem;color:var(--text-muted);cursor:pointer;font-family:inherit;}
+.tv-addsec:hover{color:var(--accent);background:var(--surface-alt);}
 
-#editPanel { flex: 1; overflow-y: auto; background: var(--bg); }
-#emptyState {
-  display: flex; align-items: center; justify-content: center;
-  height: 100%; color: var(--text-muted); font-size: 0.9rem; font-style: italic;
-}
-#editorContent { display: none; padding: 16px; }
+/* section */
+.ts-hdr{display:flex;align-items:center;gap:5px;padding:4px 8px 3px 34px;cursor:pointer;user-select:none;position:relative;}
+.ts-hdr:hover{background:var(--surface-alt);}
+.ts-hdr:hover .ts-acts{display:flex;}
+.ts-id{font-size:0.7rem;font-weight:600;color:var(--text-muted);flex-shrink:0;}
+.ts-title{font-size:0.78rem;color:var(--text-sec);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.ts-count{font-size:0.65rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;}
+.ts-acts{display:none;gap:1px;flex-shrink:0;}
+.ts-act{padding:1px 5px;border:none;border-radius:3px;background:transparent;color:var(--text-muted);font-size:0.7rem;}
+.ts-act:hover{background:var(--bg);color:var(--accent);}
+.ts-act.danger:hover{color:var(--red);}
+.ts-addpada{display:block;padding:3px 10px 3px 48px;font-size:0.68rem;color:var(--text-muted);cursor:pointer;user-select:none;}
+.ts-addpada:hover{color:var(--accent);background:var(--surface-alt);}
 
-.info-bar {
-  display: flex; gap: 14px; flex-wrap: wrap;
-  padding: 7px 12px; background: var(--surface); border: 1px solid var(--border-lt);
-  border-radius: 6px; margin-bottom: 14px; font-size: 0.78rem; color: var(--text-sec);
-}
-.info-bar strong { color: var(--accent); }
+/* pada tree item */
+.tp-item{display:flex;align-items:center;gap:5px;padding:3px 8px 3px 48px;cursor:pointer;user-select:none;border-left:3px solid transparent;}
+.tp-item:hover{background:var(--surface-alt);}
+.tp-item.sel{background:var(--surface-alt);border-left-color:var(--accent);}
+.tp-item.in-sel{background:color-mix(in srgb,var(--accent) 12%,var(--bg));}
+.tp-item.in-sel:hover{background:color-mix(in srgb,var(--accent) 18%,var(--bg));}
+.tp-cb{opacity:0;width:13px;height:13px;cursor:pointer;flex-shrink:0;accent-color:var(--accent);margin-right:2px;}
+.tp-item:hover .tp-cb,.tp-item.in-sel .tp-cb{opacity:1;}
+.tp-ab{font-size:0.62rem;font-weight:700;color:var(--text-muted);width:10px;flex-shrink:0;}
+.tp-id{font-size:0.7rem;font-weight:600;color:var(--accent);flex-shrink:0;min-width:42px;}
+.tp-text{font-size:0.75rem;color:var(--text-sec);flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.tp-notext{color:var(--border);font-style:italic;}
+.tp-acts{display:none;gap:1px;margin-left:auto;flex-shrink:0;}
+.tp-item:hover .tp-acts{display:flex;}
+.tp-act{padding:1px 5px;border:none;border-radius:3px;background:transparent;color:var(--text-muted);font-size:0.7rem;line-height:1.4;}
+.tp-act:hover:not(:disabled){background:var(--bg);color:var(--accent);}
+.tp-act:disabled{opacity:.3;cursor:default;}
+.rdot{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0;}
 
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-.field-group { margin-bottom: 12px; }
-.field-group label {
-  display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
-}
-.field-group textarea, .field-group input[type=text] {
-  width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px;
-  font-size: 1rem; font-family: inherit; background: var(--surface); color: var(--text); resize: vertical;
-}
-.field-group textarea:focus, .field-group input[type=text]:focus {
-  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(122,58,16,.12);
-}
-.dev-textarea { font-family: 'Tiro Devanagari Sanskrit', serif !important; font-size: 1.15rem !important; }
+/* flat results */
+.tf-item{display:flex;align-items:center;gap:7px;padding:6px 10px;cursor:pointer;border-bottom:1px solid var(--border-lt);}
+.tf-item:hover{background:var(--surface-alt);}
+.tf-item.sel{background:var(--surface-alt);border-left:3px solid var(--accent);padding-left:7px;}
+.tf-id{font-size:0.72rem;font-weight:600;color:var(--accent);flex-shrink:0;min-width:50px;}
+.tf-text{flex:1;font-size:0.8rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.tf-loc{font-size:0.68rem;color:var(--text-muted);white-space:nowrap;}
 
-hr.divider { border: none; border-top: 1px solid var(--border-lt); margin: 12px 0; }
+/* ── Pane resizer ── */
+#paneResizer{width:4px;background:var(--border-lt);cursor:col-resize;flex-shrink:0;transition:background .1s;}
+#paneResizer:hover,#paneResizer.drag{background:var(--accent);}
 
-.words-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.words-header h2 { font-size: 0.85rem; font-weight: 700; color: var(--accent); }
-#btnAddWord {
-  padding: 4px 11px; background: var(--btn-bg); color: var(--btn-text);
-  border: none; border-radius: 4px; cursor: pointer; font-size: 0.78rem; font-weight: 500; font-family: inherit;
-}
-#btnAddWord:hover { background: var(--accent-lt); }
+/* ── Editor pane ── */
+#editorPane{flex:1;overflow-y:auto;background:var(--bg);}
+#editorEmpty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:0.9rem;font-style:italic;padding:20px;text-align:center;}
+#editorContent{padding:20px;max-width:860px;display:none;}
 
-.word-table-wrap { overflow-x: auto; border: 1px solid var(--border-lt); border-radius: 6px; }
-#wordTable {
-  width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 860px;
-}
-#wordTable th {
-  background: var(--surface-alt); padding: 6px 7px; text-align: left; white-space: nowrap;
-  font-size: 0.68rem; color: var(--text-sec); text-transform: uppercase; letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--border-lt);
-}
-#wordTable td { padding: 3px 4px; border-bottom: 1px solid var(--border-lt); vertical-align: middle; }
-#wordTable tr:last-child td { border-bottom: none; }
-#wordTable tr:hover td { background: var(--surface-alt); }
-#wordTable input[type=text] {
-  width: 100%; padding: 4px 6px; border: 1px solid transparent;
-  border-radius: 3px; font-size: 0.78rem; font-family: inherit; background: transparent; color: var(--text);
-}
-#wordTable input[type=text]:hover { border-color: var(--border); background: var(--surface); }
-#wordTable input[type=text]:focus {
-  outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 2px rgba(122,58,16,.1);
-}
-.dev-input { font-family: 'Tiro Devanagari Sanskrit', serif !important; font-size: 0.95rem !important; }
-.word-num { text-align: center; color: var(--text-muted); font-size: 0.72rem; padding: 0 6px !important; }
-.word-actions { white-space: nowrap; padding: 0 4px !important; }
-.word-actions button {
-  padding: 2px 5px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.72rem; margin: 1px; font-family: inherit;
-}
-.btn-move { background: var(--surface-alt); color: var(--text-sec); border: 1px solid var(--border-lt); }
-.btn-move:hover:not(:disabled) { background: var(--bg); color: var(--accent); }
-.btn-move:disabled { opacity: 0.35; cursor: default; }
-.btn-delete { background: var(--red-bg); color: var(--red); border: 1px solid rgba(192,48,32,.2); }
-.btn-delete:hover { background: rgba(192,48,32,.15); }
+#breadcrumb{font-size:0.72rem;color:var(--text-muted);margin-bottom:8px;}
+#padaTitle{font-size:1.5rem;font-weight:700;color:var(--accent);margin-bottom:18px;}
 
-/* ── Tree view ── */
-#treeView {
-  display: none; flex: 1; overflow-y: auto;
-  padding: 10px 14px; background: var(--bg);
-}
-#treeInner { max-width: 820px; }
-#treeEmpty { color: var(--text-muted); font-size: 0.88rem; padding: 40px; text-align: center; font-style: italic; }
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:0.67rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.fg textarea,.fg input[type=text]{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-size:1rem;font-family:inherit;background:var(--surface);color:var(--text);resize:vertical;}
+.fg textarea:focus,.fg input[type=text]:focus{outline:none;border-color:var(--accent);}
+.dev-ta{font-family:'Tiro Devanagari Sanskrit',serif !important;font-size:1.15rem !important;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+hr.dv{border:none;border-top:1px solid var(--border-lt);margin:14px 0;}
 
-/* Section drop zone */
-.sec-drop-zone {
-  height: 4px; border-radius: 2px; margin: 1px 0; transition: all 0.1s;
-}
-.sec-drop-zone.dz-over { height: 8px; background: var(--accent); border-radius: 3px; }
+/* section move row */
+.sec-row{display:flex;align-items:center;gap:8px;}
+.sec-row select{flex:1;padding:6px 8px;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;font-family:inherit;background:var(--surface);color:var(--text);}
+.sec-row select:focus{outline:none;border-color:var(--accent);}
+.sec-row .sbtn{padding:5px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface-alt);color:var(--text-sec);font-size:0.78rem;}
+.sec-row .sbtn:hover{background:var(--bg);color:var(--accent);border-color:var(--accent);}
 
-/* Section block */
-.tree-sec {
-  background: var(--surface); border: 1px solid var(--border-lt); border-radius: 6px;
-  margin-bottom: 3px; overflow: hidden;
-}
-.tree-sec.dz-over-header { border-color: var(--accent); background: var(--surface-alt); }
-.tree-sec.dragging { opacity: 0.35; }
+/* review */
+.rv-field{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:6px;margin-bottom:14px;border:1px solid var(--border-lt);background:var(--surface);}
+.rv-field.flagged{background:var(--red-bg);border-color:rgba(192,48,32,.3);}
+.rv-row{display:flex;align-items:center;gap:8px;}
+.rv-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--red);cursor:pointer;flex-shrink:0;}
+.rv-row span{font-size:0.85rem;cursor:pointer;}
+.rv-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-left:2px;}
+#rvCmtWrap{display:none;}
+#fRvCmt{width:100%;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;font-family:inherit;background:var(--surface);color:var(--text);}
+#fRvCmt:focus{outline:none;border-color:var(--red);}
+#fRvCmt::placeholder{color:var(--text-muted);font-style:italic;}
 
-.sec-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; cursor: pointer; user-select: none;
-  background: var(--surface);
-}
-.sec-header:hover { background: var(--surface-alt); }
-.sec-handle {
-  cursor: grab; color: var(--border); font-size: 1rem; padding: 0 2px; flex-shrink: 0;
-}
-.sec-handle:hover { color: var(--text-muted); }
-.sec-arrow { font-size: 0.68rem; color: var(--text-muted); width: 12px; flex-shrink: 0; transition: transform 0.15s; }
-.sec-arrow.collapsed { transform: rotate(-90deg); }
-.sec-id   { font-weight: 700; font-size: 0.78rem; color: var(--accent); flex-shrink: 0; }
-.sec-title { font-size: 0.8rem; color: var(--text-sec); flex: 1;
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.sec-count { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+/* words */
+.words-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.words-hdr h2{font-size:0.88rem;font-weight:700;color:var(--accent);}
+.words-hdr button{padding:4px 11px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:4px;font-size:0.78rem;font-weight:500;}
+.words-hdr button:hover{background:var(--accent-lt);}
+.wt-wrap{overflow-x:auto;border:1px solid var(--border-lt);border-radius:6px;margin-bottom:20px;}
+#wordTable{width:100%;border-collapse:collapse;font-size:0.78rem;min-width:860px;}
+#wordTable th{background:var(--surface-alt);padding:6px 7px;text-align:left;white-space:nowrap;font-size:0.67rem;color:var(--text-sec);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border-lt);}
+#wordTable td{padding:3px 4px;border-bottom:1px solid var(--border-lt);vertical-align:middle;}
+#wordTable tr:last-child td{border-bottom:none;}
+#wordTable tr:hover td{background:var(--surface-alt);}
+#wordTable input[type=text]{width:100%;padding:4px 6px;border:1px solid transparent;border-radius:3px;font-size:0.78rem;font-family:inherit;background:transparent;color:var(--text);}
+#wordTable input[type=text]:hover{border-color:var(--border);background:var(--surface);}
+#wordTable input[type=text]:focus{outline:none;border-color:var(--accent);background:var(--surface);}
+.dev-inp{font-family:'Tiro Devanagari Sanskrit',serif !important;font-size:0.95rem !important;}
+.wnum{text-align:center;color:var(--text-muted);font-size:0.72rem;padding:0 6px !important;}
+.wact button{padding:2px 5px;border:none;border-radius:3px;font-size:0.72rem;margin:1px;}
+.bmv{background:var(--surface-alt);color:var(--text-sec);border:1px solid var(--border-lt);}
+.bmv:hover:not(:disabled){background:var(--bg);color:var(--accent);}
+.bmv:disabled{opacity:.35;cursor:default;}
+.bdel{background:var(--red-bg);color:var(--red);border:1px solid rgba(192,48,32,.2);}
+.bdel:hover{background:rgba(192,48,32,.15);}
 
-/* Pada list within section */
-.sec-padas { padding: 0 0 4px 32px; background: var(--surface); }
+/* ── Selection bar ── */
+#selBar{display:none;flex-shrink:0;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:color-mix(in srgb,var(--accent) 10%,var(--surface));border-top:2px solid var(--accent);}
+#selBar.on{display:flex;}
+#selCount{font-size:0.75rem;font-weight:600;color:var(--accent);white-space:nowrap;}
+#selSecSel{flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:0.78rem;font-family:inherit;background:var(--bg);color:var(--text);}
+.sel-btn{padding:4px 11px;border:1px solid var(--border);border-radius:4px;font-size:0.78rem;white-space:nowrap;}
+.sel-move{background:var(--btn-bg);color:var(--btn-text);border-color:var(--accent);}
+.sel-move:hover{background:var(--accent-lt);}
+.sel-new{background:var(--surface-alt);color:var(--text-sec);}
+.sel-new:hover{color:var(--accent);}
+.sel-ud{background:var(--surface-alt);color:var(--text-sec);font-size:0.88rem;padding:3px 9px;}
+.sel-ud:hover{color:var(--accent);}
+.sel-clear{background:transparent;color:var(--text-muted);border-color:transparent;font-size:0.85rem;padding:2px 6px;}
+.sel-clear:hover{color:var(--red);}
 
-/* Pada drop zone */
-.pada-drop-zone {
-  height: 4px; border-radius: 2px; margin: 1px 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: height 0.12s;
-}
-.pada-drop-zone:not(.dz-over):hover { height: 22px; }
-.pada-drop-zone.dz-over { height: 6px; background: var(--accent); border-radius: 3px; }
-
-.dz-insert-btn {
-  display: none; padding: 1px 9px; font-size: 0.65rem; cursor: pointer;
-  color: var(--accent); background: var(--surface); border: 1px dashed var(--border); border-radius: 3px;
-  white-space: nowrap; font-family: inherit;
-}
-.pada-drop-zone:not(.dz-over):hover .dz-insert-btn { display: block; }
-
-/* Delete button on pada rows */
-.pada-del {
-  padding: 1px 5px; font-size: 0.7rem; background: none; border: none;
-  color: var(--border); cursor: pointer; border-radius: 3px; margin-left: 4px; flex-shrink: 0;
-  visibility: hidden;
-}
-.tree-pada:hover .pada-del { visibility: visible; }
-.pada-del:hover { background: var(--red-bg); color: var(--red); }
-
-/* Pada row */
-.tree-pada {
-  display: flex; align-items: center; gap: 7px;
-  padding: 4px 8px; border-radius: 4px; cursor: default;
-}
-.tree-pada:hover { background: var(--surface-alt); }
-.tree-pada.dragging { opacity: 0.35; }
-
-.pada-handle {
-  cursor: grab; color: var(--border-lt); font-size: 0.85rem; flex-shrink: 0;
-}
-.pada-handle:hover { color: var(--border); }
-.pada-ab  { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); width: 14px; flex-shrink: 0; }
-.pada-ref { font-size: 0.8rem; font-weight: 600; color: var(--accent); min-width: 68px; flex-shrink: 0; }
-.pada-preview {
-  font-size: 0.8rem; color: var(--text); flex: 1;
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-}
-.pada-preview.no-text { color: var(--border); font-style: italic; }
+/* ── Search modal ── */
+#searchModal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;padding-top:80px;z-index:100;}
+#searchModal.open{display:flex;}
+#searchBox{background:var(--surface);border-radius:8px;width:580px;max-width:92vw;box-shadow:0 8px 40px rgba(0,0,0,.3);overflow:hidden;}
+#searchInput{display:block;width:100%;padding:14px 16px;border:none;border-bottom:1px solid var(--border-lt);font-size:1.05rem;font-family:inherit;background:var(--surface);color:var(--text);}
+#searchInput:focus{outline:none;}
+#searchResults{max-height:420px;overflow-y:auto;}
+.sr-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;border-bottom:1px solid var(--border-lt);}
+.sr-item:hover,.sr-item.focused{background:var(--surface-alt);}
+.sr-id{font-size:0.78rem;font-weight:700;color:var(--accent);min-width:52px;flex-shrink:0;}
+.sr-text{flex:1;font-size:0.88rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.sr-loc{font-size:0.68rem;color:var(--text-muted);white-space:nowrap;flex-shrink:0;}
+.sr-empty{padding:20px;text-align:center;color:var(--text-muted);font-style:italic;}
 </style>
 </head>
 <body>
 
-<div id="header">
-  <h1>Amarakosha JSON Editor</h1>
-  <span id="dirtyBadge">Unsaved changes</span>
+<div id="hdr">
+  <h1>Amarakosha Editor</h1>
+  <span id="dirtyBadge">Unsaved</span>
   <input type="file" id="fileInput" accept=".json" style="display:none">
-  <button id="btnLoad" onclick="document.getElementById('fileInput').click()">Load JSON</button>
-  <button id="btnExport" disabled onclick="exportJson()">Export JSON</button>
-  <div class="view-toggle">
-    <button id="btnViewEdit" class="active" onclick="showEditView()">Edit</button>
-    <button id="btnViewTree" onclick="showTreeView()">Tree</button>
-  </div>
+  <button class="hbtn" onclick="document.getElementById('fileInput').click()">Load JSON</button>
+  <button class="hbtn" id="btnExport" disabled onclick="exportJson()">Export JSON</button>
+  <div class="spacer"></div>
+  <button class="hbtn" onclick="openSearch()" title="Ctrl+K">⌕ Search</button>
   <div class="theme-picker">
-    <button class="theme-dot" data-theme="parchment" style="background:#7A3A10" title="Parchment"></button>
-    <button class="theme-dot" data-theme="night"     style="background:#E8A840" title="Night"></button>
-    <button class="theme-dot" data-theme="slate"     style="background:#2C5898" title="Slate"></button>
-    <button class="theme-dot" data-theme="minimal"   style="background:#4F46E5" title="Minimal"></button>
-    <button class="theme-dot" data-theme="forest"    style="background:#3A6820" title="Forest"></button>
+    <button class="tdot" data-theme="parchment" style="background:#7A3A10" title="Parchment"></button>
+    <button class="tdot" data-theme="night"     style="background:#E8A840" title="Night"></button>
+    <button class="tdot" data-theme="slate"     style="background:#2C5898" title="Slate"></button>
+    <button class="tdot" data-theme="minimal"   style="background:#4F46E5" title="Minimal"></button>
+    <button class="tdot" data-theme="forest"    style="background:#3A6820" title="Forest"></button>
   </div>
 </div>
 
-<div id="nav">
-  <label>Kanda</label>
-  <select id="kandaSel" onchange="onKandaChange()"></select>
-  <label>Varga</label>
-  <select id="vargaSel" onchange="onVargaChange()"></select>
-  <span id="sectionWrap" style="display:contents">
-    <label>Section</label>
-    <select id="sectionSel" onchange="onSectionChange()"></select>
-  </span>
-  <div id="stats"></div>
-</div>
-
-<!-- ── Edit view ── -->
-<div id="editArea">
-  <div id="padaList">
-    <div style="padding:20px; color:var(--text-muted); font-size:0.82rem; text-align:center; font-style:italic;">
-      Load a JSON file to begin.
+<div id="main">
+  <div id="treePane">
+    <div id="treeTop">
+      <div id="treeNav">
+        <select id="kandaSel" onchange="onKandaChange()"></select>
+        <select id="vargaSel" onchange="onVargaChange()"></select>
+      </div>
+      <div id="treeSearch">
+        <input id="treeQ" type="search" placeholder="Filter pādas in varga…" autocomplete="off">
+        <button id="revFilter" onclick="toggleRevFilter()" title="Show only pādas flagged for review">⚑</button>
+      </div>
+    </div>
+    <div id="treeScroll">
+      <div id="treeBody"></div>
+      <div id="treeFlat"></div>
+    </div>
+    <div id="selBar">
+      <span id="selCount"></span>
+      <button class="sel-btn sel-ud" onclick="moveSelUp()" title="Move selected pādas up">↑</button>
+      <button class="sel-btn sel-ud" onclick="moveSelDown()" title="Move selected pādas down">↓</button>
+      <select id="selSecSel"></select>
+      <button class="sel-btn sel-move" onclick="assignSelection()">Move to section</button>
+      <button class="sel-btn sel-new"  onclick="assignSelectionToNew()">＋ New section</button>
+      <button class="sel-btn sel-clear" onclick="clearSelection()" title="Clear selection">✕</button>
     </div>
   </div>
-  <div id="editPanel">
-    <div id="emptyState">← Select a pada to edit</div>
+
+  <div id="paneResizer"></div>
+
+  <div id="editorPane">
+    <div id="editorEmpty">← Load a JSON file, then select a pāda from the tree</div>
     <div id="editorContent">
-      <div class="info-bar" id="infoBar"></div>
-      <div class="field-group">
-        <label>Section Title (English)</label>
-        <input type="text" id="sectionTitle" oninput="onSectionTitleChange()">
+
+      <div id="breadcrumb"></div>
+      <div id="padaTitle"></div>
+
+      <div class="fg">
+        <label>Section <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.68rem;color:var(--text-muted);">— change to move this pāda</span></label>
+        <div class="sec-row">
+          <select id="secSel" onchange="movePadaToSection(+this.value)"></select>
+          <button class="sbtn" onclick="addSectionAndMove()">＋ New section</button>
+          <button class="sbtn" onclick="renameCurrentSection()">✎ Rename</button>
+        </div>
       </div>
-      <hr class="divider">
+
       <div class="row2">
-        <div class="field-group">
-          <label>Text — Devanagari</label>
-          <textarea id="textDev" rows="2" class="dev-textarea" oninput="onPadaFieldChange('text_dev', this.value)"></textarea>
+        <div class="fg">
+          <label>Devanagari</label>
+          <textarea id="fDev" rows="2" class="dev-ta" oninput="fieldChange('text_dev',this.value)"></textarea>
         </div>
-        <div class="field-group">
-          <label>Text — IAST</label>
-          <textarea id="textIast" rows="2" oninput="onPadaFieldChange('text_iast', this.value)"></textarea>
+
+      </div>
+
+      <hr class="dv">
+
+      <div class="rv-field" id="rvField">
+        <div class="rv-row">
+          <input type="checkbox" id="fRv" onchange="rvFlagChange()">
+          <span onclick="document.getElementById('fRv').click()">Needs review</span>
+          <span class="rv-dot" id="rvDot" style="display:none"></span>
+        </div>
+        <div id="rvCmtWrap">
+          <input type="text" id="fRvCmt" placeholder="Optional note — what needs reviewing?"
+                 oninput="rvCommentChange()">
         </div>
       </div>
-      <div class="words-header">
-        <h2>Words</h2>
-        <button id="btnAddWord" onclick="addWord()">+ Add Word</button>
+
+      <hr class="dv">
+
+      <div class="words-hdr">
+        <h2>Words (<span id="wordCount">0</span>)</h2>
+        <button onclick="addWord()">+ Add Word</button>
       </div>
-      <div class="word-table-wrap">
+      <div class="wt-wrap">
         <table id="wordTable">
-          <thead>
-            <tr>
-              <th style="width:28px">#</th>
-              <th style="min-width:80px">w (Dev)</th>
-              <th style="min-width:130px">artha</th>
-              <th style="min-width:65px">linga</th>
-              <th style="min-width:45px">vibh.</th>
-              <th style="min-width:55px">vacana</th>
-              <th style="min-width:95px">stem_iast</th>
-              <th style="min-width:95px">form_iast</th>
-              <th style="min-width:150px">case_en</th>
-              <th style="min-width:85px">form_note</th>
-              <th style="width:88px">Actions</th>
-            </tr>
-          </thead>
+          <thead><tr>
+            <th style="width:28px">#</th>
+            <th style="min-width:80px">w (Dev)</th>
+            <th style="min-width:120px">artha</th>
+            <th style="min-width:60px">linga</th>
+            <th style="min-width:45px">vibh.</th>
+            <th style="min-width:55px">vacana</th>
+            <th style="min-width:90px">stem_iast</th>
+            <th style="min-width:90px">form_iast</th>
+            <th style="min-width:140px">case_en</th>
+            <th style="min-width:80px">form_note</th>
+            <th style="width:88px">Actions</th>
+          </tr></thead>
           <tbody id="wordTbody"></tbody>
         </table>
       </div>
@@ -370,630 +354,719 @@ hr.divider { border: none; border-top: 1px solid var(--border-lt); margin: 12px 
   </div>
 </div>
 
-<!-- ── Tree view ── -->
-<div id="treeView">
-  <div id="treeInner">
-    <div id="treeEmpty">Load a JSON file to begin.</div>
+<div id="searchModal" onclick="if(event.target===this)closeSearch()">
+  <div id="searchBox">
+    <input id="searchInput" placeholder="Search by ID, Devanagari, or IAST…" autocomplete="off"
+           oninput="runSearch(this.value)" onkeydown="searchKey(event)">
+    <div id="searchResults"></div>
   </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════════════════════════
-// State
-// ════════════════════════════════════════════════════════════════════════════
-let data = null;
-let dirty = false;
-let currentView = 'edit';   // 'edit' | 'tree'
-let currentSection = null;
-let currentPadaIdx = null;
-const collapsedSecs = new Set();
+// ── State ────────────────────────────────────────────────────
+let data = null, dirty = false;
+let cur = null; // { ki, vi, si, pi }
+let idx = null; // search index
+let revOn = false;
+let srFocus = -1;
+const cols = new Set(); // collapsed section keys
+const selSet = new Set(); // "si:pi" keys of selected padas
+let selAnchor = -1;       // flat index of last checkbox-clicked pada
+const WFIELDS = ['w','artha','linga','vibhakti','vacana','stem_iast','form_iast','case_en','form_note'];
 
-const WORD_FIELDS = ['w','artha','linga','vibhakti','vacana','stem_iast','form_iast','case_en','form_note'];
-
-// ════════════════════════════════════════════════════════════════════════════
-// File I/O
-// ════════════════════════════════════════════════════════════════════════════
+// ── File I/O ─────────────────────────────────────────────────
 document.getElementById('fileInput').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
     try {
       data = JSON.parse(ev.target.result);
-      collapsedSecs.clear();
-      initEditor();
-    } catch (err) {
-      alert('Failed to parse JSON:\n' + err.message);
-    }
+      idx = null; cur = null;
+      cols.clear();
+      document.getElementById('btnExport').disabled = false;
+      document.getElementById('editorContent').style.display = 'none';
+      document.getElementById('editorEmpty').style.display = '';
+      dirty = false; updateDirty();
+      populateKandas();
+    } catch(err) { alert('Failed to parse JSON:\n' + err.message); }
   };
-  reader.readAsText(file);
-  this.value = '';
+  r.readAsText(file); this.value = '';
 });
-
-function initEditor() {
-  document.getElementById('btnExport').disabled = false;
-  dirty = false;
-  updateDirty();
-  populateKandas();
-  if (currentView === 'tree') renderTree();
-}
 
 function exportJson() {
   if (!data) return;
-  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'amarakosha_v3.json';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
+  const a = mk('a'); a.href = url; a.download = 'amarakosha_v3.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
   dirty = false; updateDirty();
 }
-
 function markDirty() { dirty = true; updateDirty(); }
-function updateDirty() {
-  document.getElementById('dirtyBadge').style.display = dirty ? 'inline' : 'none';
+function updateDirty() { document.getElementById('dirtyBadge').style.display = dirty?'inline':'none'; }
+
+// ── Search index ─────────────────────────────────────────────
+function buildIdx() {
+  idx = [];
+  if (!data) return;
+  data.kandas.forEach((k,ki) => k.vargas.forEach((v,vi) => v.sections.forEach((s,si) => s.padas.forEach((p,pi) => {
+    idx.push({ki,vi,si,pi,id:p.id,pn:p.pada_num,dev:p.text_dev||'',rv:!!p.review});
+  }))));
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// View switching
-// ════════════════════════════════════════════════════════════════════════════
-function showEditView() {
-  currentView = 'edit';
-  document.getElementById('editArea').style.display = 'flex';
-  document.getElementById('treeView').style.display = 'none';
-  document.getElementById('sectionWrap').style.display = 'contents';
-  document.getElementById('btnViewEdit').classList.add('active');
-  document.getElementById('btnViewTree').classList.remove('active');
-  if (data) {
-    populateSections();   // sections may have been reordered in tree view
-    currentPadaIdx = null;
-    renderPadaList();
-    showEmpty();
-  }
-}
+// ── Nav dropdowns ────────────────────────────────────────────
+function getCurKi() { return +(document.getElementById('kandaSel')?.value||0); }
+function getCurVi() { return +(document.getElementById('vargaSel')?.value||0); }
 
-function showTreeView() {
-  currentView = 'tree';
-  document.getElementById('editArea').style.display = 'none';
-  document.getElementById('treeView').style.display = 'flex';
-  document.getElementById('sectionWrap').style.display = 'none';
-  document.getElementById('btnViewTree').classList.add('active');
-  document.getElementById('btnViewEdit').classList.remove('active');
-  if (data) renderTree();
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Navigation dropdowns
-// ════════════════════════════════════════════════════════════════════════════
 function populateKandas() {
-  const sel = document.getElementById('kandaSel');
-  sel.innerHTML = '';
-  (data.kandas || []).forEach((k, i) =>
-    sel.appendChild(new Option(`${k.num}. ${k.name_dev}  (${k.name_en})`, i)));
-  sel.value = 0;
+  const sel = document.getElementById('kandaSel'); sel.innerHTML='';
+  (data.kandas||[]).forEach((k,i) => sel.appendChild(new Option(`${k.num}. ${k.name_en}`, i)));
+  sel.value = cur ? cur.ki : 0;
   populateVargas();
 }
-function onKandaChange() { collapsedSecs.clear(); populateVargas(); }
-
+function onKandaChange() { populateVargas(); }
 function populateVargas() {
-  const kIdx = +document.getElementById('kandaSel').value;
-  const sel = document.getElementById('vargaSel');
-  sel.innerHTML = '';
-  (data.kandas[kIdx].vargas || []).forEach((v, i) =>
-    sel.appendChild(new Option(`${v.id}  ${v.name_dev}`, i)));
-  sel.value = 0;
-  populateSections();
+  const ki = getCurKi();
+  const sel = document.getElementById('vargaSel'); sel.innerHTML='';
+  (data.kandas[ki].vargas||[]).forEach((v,i) => sel.appendChild(new Option(`${v.id} — ${v.name_dev}`, i)));
+  sel.value = (cur && cur.ki===ki) ? cur.vi : 0;
+  cols.clear();
+  renderTree();
 }
-function onVargaChange() { collapsedSecs.clear(); populateSections(); }
+function onVargaChange() { cols.clear(); selSet.clear(); selAnchor=-1; document.getElementById('selBar').classList.remove('on'); renderTree(); }
 
-function populateSections() {
-  const varga = getCurrentVarga();
-  const sel = document.getElementById('sectionSel');
-  sel.innerHTML = '';
-  (varga?.sections || []).forEach((s, i) =>
-    sel.appendChild(new Option(`${s.id} — ${s.title_en || '(no title)'}`, i)));
-  sel.value = 0;
-  onSectionChange();
-}
-function onSectionChange() {
-  const kIdx = +document.getElementById('kandaSel').value;
-  const vIdx = +document.getElementById('vargaSel').value;
-  const sIdx = +document.getElementById('sectionSel').value;
-  currentSection = data.kandas[kIdx].vargas[vIdx].sections[sIdx];
-  currentPadaIdx = null;
-  renderPadaList();
-  showEmpty();
-  updateStats();
-}
-function updateStats() {
-  if (!currentSection) { document.getElementById('stats').textContent = ''; return; }
-  const padas = currentSection.padas || [];
-  const withText = padas.filter(p => hasText(p)).length;
-  document.getElementById('stats').textContent =
-    `${padas.length} padas · ${withText} with text`;
-}
-function hasText(p) { return p.text_dev && !p.text_dev.startsWith('['); }
-
-// ════════════════════════════════════════════════════════════════════════════
-// Edit view — pada list
-// ════════════════════════════════════════════════════════════════════════════
-function renderPadaList() {
-  const container = document.getElementById('padaList');
-  container.innerHTML = '';
-  if (!currentSection) return;
-  (currentSection.padas || []).forEach((pada, idx) => {
-    const div = document.createElement('div');
-    div.className = 'pada-item' + (hasText(pada) ? ' has-text' : '') + (idx === currentPadaIdx ? ' active' : '');
-    const pid = document.createElement('div'); pid.className = 'pid';
-    pid.textContent = pada.id + (pada.pada_num === 1 ? ' A' : ' B');
-    const pre = document.createElement('div'); pre.className = 'ppreview';
-    pre.textContent = pada.text_dev || '(no text)';
-    div.appendChild(pid); div.appendChild(pre);
-    div.onclick = () => selectPada(idx);
-    container.appendChild(div);
-  });
-}
-
-function selectPada(idx) {
-  currentPadaIdx = idx;
-  document.querySelectorAll('.pada-item').forEach((el, i) =>
-    el.classList.toggle('active', i === idx));
-  renderEditPanel();
-}
-
-function showEmpty() {
-  document.getElementById('emptyState').style.display = 'flex';
-  document.getElementById('editorContent').style.display = 'none';
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Edit view — edit panel
-// ════════════════════════════════════════════════════════════════════════════
-function renderEditPanel() {
-  if (!currentSection || currentPadaIdx === null) { showEmpty(); return; }
-  const pada = currentSection.padas[currentPadaIdx];
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('editorContent').style.display = 'block';
-
-  document.getElementById('infoBar').innerHTML =
-    `<span><strong>ID:</strong> ${pada.id}</span>` +
-    `<span><strong>Pada:</strong> ${pada.pada_num === 1 ? 'A' : 'B'}</span>` +
-    `<span><strong>Shloka:</strong> ${pada.shloka_id}</span>` +
-    `<span><strong>Seq:</strong> ${pada.seq}</span>` +
-    `<span><strong>Legacy:</strong> ${pada.legacy_id || '—'}</span>`;
-
-  document.getElementById('sectionTitle').value = currentSection.title_en || '';
-  document.getElementById('textDev').value   = pada.text_dev  || '';
-  document.getElementById('textIast').value  = pada.text_iast || '';
-  renderWordTable(pada.words || []);
-}
-
-function onPadaFieldChange(field, value) {
-  if (!currentSection || currentPadaIdx === null) return;
-  const pada = currentSection.padas[currentPadaIdx];
-  pada[field] = value;
-  if (field === 'text_dev') {
-    const items = document.querySelectorAll('.pada-item');
-    if (items[currentPadaIdx]) {
-      items[currentPadaIdx].querySelector('.ppreview').textContent = value || '(no text)';
-      items[currentPadaIdx].classList.toggle('has-text', hasText(pada));
-    }
-  }
-  markDirty();
-}
-
-function onSectionTitleChange() {
-  if (!currentSection) return;
-  currentSection.title_en = document.getElementById('sectionTitle').value;
-  const sel = document.getElementById('sectionSel');
-  sel.options[sel.selectedIndex].text = `${currentSection.id} — ${currentSection.title_en || '(no title)'}`;
-  markDirty();
-}
-
-function onWordFieldChange(idx, field, value) {
-  if (!currentSection || currentPadaIdx === null) return;
-  const words = currentSection.padas[currentPadaIdx].words;
-  if (words[idx] !== undefined) { words[idx][field] = value; markDirty(); }
-}
-
-function renderWordTable(words) {
-  const tbody = document.getElementById('wordTbody');
-  tbody.innerHTML = '';
-  words.forEach((word, idx) => tbody.appendChild(makeWordRow(word, idx, words.length)));
-}
-
-function makeWordRow(word, idx, total) {
-  const tr = document.createElement('tr');
-  const numTd = document.createElement('td');
-  numTd.className = 'word-num'; numTd.textContent = idx + 1;
-  tr.appendChild(numTd);
-  WORD_FIELDS.forEach(field => {
-    const td = document.createElement('td');
-    const inp = document.createElement('input'); inp.type = 'text';
-    if (field === 'w' || field === 'linga') inp.className = 'dev-input';
-    inp.value = word[field] || '';
-    inp.addEventListener('input', () => onWordFieldChange(idx, field, inp.value));
-    td.appendChild(inp); tr.appendChild(td);
-  });
-  const actTd = document.createElement('td'); actTd.className = 'word-actions';
-  const up = document.createElement('button'); up.className = 'btn-move'; up.textContent = '↑'; up.disabled = idx === 0; up.onclick = () => moveWordInTable(idx, -1);
-  const dn = document.createElement('button'); dn.className = 'btn-move'; dn.textContent = '↓'; dn.disabled = idx === total-1; dn.onclick = () => moveWordInTable(idx, 1);
-  const del = document.createElement('button'); del.className = 'btn-delete'; del.textContent = '×'; del.onclick = () => deleteWord(idx);
-  actTd.appendChild(up); actTd.appendChild(dn); actTd.appendChild(del);
-  tr.appendChild(actTd);
-  return tr;
-}
-
-function addWord() {
-  if (!currentSection || currentPadaIdx === null) return;
-  const words = currentSection.padas[currentPadaIdx].words;
-  words.push({ w:'', artha:'', linga:'', vibhakti:'', vacana:'', stem_iast:'', form_iast:'', case_en:'', form_note:'' });
-  renderWordTable(words); markDirty();
-}
-function deleteWord(idx) {
-  if (!currentSection || currentPadaIdx === null) return;
-  if (!confirm('Delete word ' + (idx + 1) + '?')) return;
-  const words = currentSection.padas[currentPadaIdx].words;
-  words.splice(idx, 1); renderWordTable(words); markDirty();
-}
-function moveWordInTable(idx, dir) {
-  if (!currentSection || currentPadaIdx === null) return;
-  const words = currentSection.padas[currentPadaIdx].words;
-  const to = idx + dir;
-  if (to < 0 || to >= words.length) return;
-  [words[idx], words[to]] = [words[to], words[idx]];
-  renderWordTable(words); markDirty();
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Tree view
-// ════════════════════════════════════════════════════════════════════════════
-function getCurrentVarga() {
-  if (!data) return null;
-  const kIdx = +document.getElementById('kandaSel').value;
-  const vIdx = +document.getElementById('vargaSel').value;
-  return data.kandas[kIdx]?.vargas[vIdx];
-}
-function getCurrentVargaSections() {
-  return getCurrentVarga()?.sections || [];
-}
-
-function recalcSeqs() {
-  getCurrentVargaSections().forEach((s, si) => {
-    s.seq = si + 1;
-    s.padas.forEach((p, pi) => { p.seq = pi + 1; });
-  });
-}
-
+// ── Tree rendering ───────────────────────────────────────────
 function renderTree() {
-  const inner = document.getElementById('treeInner');
-  inner.innerHTML = '';
-  const sections = getCurrentVargaSections();
-  if (!sections.length) {
-    inner.innerHTML = '<div id="treeEmpty">No sections. Load a JSON file and select a Varga.</div>';
-    return;
-  }
-
-  // Section drop zone before first section
-  inner.appendChild(makeSectionDropZone(0));
-
-  sections.forEach((sec, sIdx) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'tree-sec';
-    wrap.dataset.sIdx = sIdx;
-
-    // Section header
-    const hdr = document.createElement('div');
-    hdr.className = 'sec-header';
-
-    const handle = document.createElement('span');
-    handle.className = 'sec-handle'; handle.textContent = '⠿';
-    handle.title = 'Drag to reorder section';
-    handle.setAttribute('draggable', 'true');
-    handle.addEventListener('dragstart', e => {
-      e.stopPropagation();
-      dragState = { type: 'section', fromSec: sIdx };
-      e.dataTransfer.effectAllowed = 'move';
-      wrap.classList.add('dragging');
-      e.dataTransfer.setDragImage(wrap, 0, 0);
-    });
-    handle.addEventListener('dragend', () => {
-      wrap.classList.remove('dragging');
-      dragState = null;
-      clearDzHighlights();
-    });
-
-    const arrow = document.createElement('span');
-    arrow.className = 'sec-arrow' + (collapsedSecs.has(sIdx) ? ' collapsed' : '');
-    arrow.textContent = '▼';
-
-    const idSpan = document.createElement('span');
-    idSpan.className = 'sec-id'; idSpan.textContent = sec.id;
-
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'sec-title'; titleSpan.textContent = sec.title_en || '(no title)';
-
-    const countSpan = document.createElement('span');
-    countSpan.className = 'sec-count'; countSpan.textContent = (sec.padas || []).length + ' padas';
-
-    hdr.appendChild(handle); hdr.appendChild(arrow); hdr.appendChild(idSpan);
-    hdr.appendChild(titleSpan); hdr.appendChild(countSpan);
-
-    // Click header (not handle) to collapse
-    hdr.addEventListener('click', e => {
-      if (e.target === handle) return;
-      collapsedSecs.has(sIdx) ? collapsedSecs.delete(sIdx) : collapsedSecs.add(sIdx);
-      arrow.classList.toggle('collapsed', collapsedSecs.has(sIdx));
-      padas.style.display = collapsedSecs.has(sIdx) ? 'none' : '';
-    });
-
-    // Header is a drop target for PADAS (append to section)
-    hdr.addEventListener('dragover', e => {
-      if (!dragState || dragState.type !== 'pada') return;
-      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-      wrap.classList.add('dz-over-header');
-    });
-    hdr.addEventListener('dragleave', e => {
-      if (!e.currentTarget.contains(e.relatedTarget)) wrap.classList.remove('dz-over-header');
-    });
-    hdr.addEventListener('drop', e => {
-      if (!dragState || dragState.type !== 'pada') return;
-      e.preventDefault(); wrap.classList.remove('dz-over-header');
-      const { fromSec, fromPada } = dragState;
-      movePada(fromSec, fromPada, sIdx, -1); // -1 = append
-    });
-
-    wrap.appendChild(hdr);
-
-    // Pada list
-    const padas = document.createElement('div');
-    padas.className = 'sec-padas';
-    if (collapsedSecs.has(sIdx)) padas.style.display = 'none';
-
-    padas.appendChild(makePadaDropZone(sIdx, 0));
-    (sec.padas || []).forEach((pada, pIdx) => {
-      padas.appendChild(makePadaRow(pada, sIdx, pIdx));
-      padas.appendChild(makePadaDropZone(sIdx, pIdx + 1));
-    });
-    wrap.appendChild(padas);
-    inner.appendChild(wrap);
-    inner.appendChild(makeSectionDropZone(sIdx + 1));
-  });
+  const body = document.getElementById('treeBody'); body.innerHTML='';
+  if (!data) return;
+  const ki=getCurKi(), vi=getCurVi();
+  const varga = data.kandas[ki]?.vargas[vi]; if (!varga) return;
+  const frag = document.createDocumentFragment();
+  (varga.sections||[]).forEach((s,si) => frag.appendChild(makeSection(s,si,vi,ki)));
+  const addbtn = mk('button','tv-addsec','＋ Add section');
+  addbtn.addEventListener('click', () => addSection(ki,vi));
+  frag.appendChild(addbtn);
+  body.appendChild(frag);
 }
 
-// ── Drop zone factories ───────────────────────────────────────────────────────
-function makeSectionDropZone(zoneIdx) {
-  const dz = document.createElement('div');
-  dz.className = 'sec-drop-zone';
-  dz.addEventListener('dragover', e => {
-    if (!dragState || dragState.type !== 'section') return;
-    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-    dz.classList.add('dz-over');
-  });
-  dz.addEventListener('dragleave', () => dz.classList.remove('dz-over'));
-  dz.addEventListener('drop', e => {
-    if (!dragState || dragState.type !== 'section') return;
-    e.preventDefault(); dz.classList.remove('dz-over');
-    moveSection(dragState.fromSec, zoneIdx);
-  });
-  return dz;
-}
-
-function makePadaDropZone(secIdx, zoneIdx) {
-  const dz = document.createElement('div');
-  dz.className = 'pada-drop-zone';
-
-  const btn = document.createElement('button');
-  btn.className = 'dz-insert-btn';
-  btn.textContent = '+ insert';
-  btn.onclick = e => {
+function makeSection(s, si, vi, ki) {
+  const key = `${ki}:${vi}:${si}`;
+  const wrap = mk('div');
+  const isColl = cols.has(key);
+  const hdr = mk('div','ts-hdr');
+  const arrow = mk('span','t-arrow', isColl?'▶':'▼');
+  hdr.appendChild(arrow);
+  const idSpan = mk('span','ts-id', String(si + 1));
+  hdr.appendChild(idSpan);
+  const titleSpan = mk('span','ts-title', s.title_en||'(untitled)');
+  titleSpan.title = 'Double-click to edit title (clear to remove)';
+  titleSpan.addEventListener('dblclick', e => {
     e.stopPropagation();
-    const ans = prompt('Insert how many padas here? (2 = full shloka)', '2');
-    if (!ans) return;
-    const n = parseInt(ans);
-    if (!n || n < 1) return;
-    insertPadas(secIdx, zoneIdx, n);
-  };
-  dz.appendChild(btn);
-
-  dz.addEventListener('dragover', e => {
-    if (!dragState || dragState.type !== 'pada') return;
-    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
-    dz.classList.add('dz-over');
+    const v = prompt('Section title (English) — leave blank to clear:', s.title_en||'');
+    if (v === null) return;
+    s.title_en = v.trim(); markDirty(); renderTree();
+    if (cur && cur.ki===ki && cur.vi===vi) populateSecSel();
   });
-  dz.addEventListener('dragleave', () => dz.classList.remove('dz-over'));
-  dz.addEventListener('drop', e => {
-    if (!dragState || dragState.type !== 'pada') return;
-    e.preventDefault(); dz.classList.remove('dz-over');
-    movePada(dragState.fromSec, dragState.fromPada, secIdx, zoneIdx);
+  hdr.appendChild(titleSpan);
+  const fc = (s.padas||[]).filter(p=>p.review).length;
+  const cntEl = mk('span','ts-count', `${(s.padas||[]).length}${fc?' · '+fc+' ⚑':''}`);
+  if (fc) cntEl.style.color='var(--red)';
+  hdr.appendChild(cntEl);
+  // action buttons
+  const acts = mk('div','ts-acts');
+  const bren = mk('button','ts-act','✎'); bren.title='Rename section';
+  bren.addEventListener('click', e=>{e.stopPropagation(); renameSection(ki,vi,si);});
+  const bins = mk('button','ts-act','＋'); bins.title='Insert new section after this one';
+  bins.addEventListener('click', e=>{e.stopPropagation(); insertSectionAfter(ki,vi,si);});
+  const bdel = mk('button','ts-act danger','×'); bdel.title='Delete section';
+  bdel.addEventListener('click', e=>{e.stopPropagation(); deleteSection(ki,vi,si);});
+  acts.appendChild(bren); acts.appendChild(bins); acts.appendChild(bdel);
+  hdr.appendChild(acts);
+  const ch = mk('div'); ch.style.display = isColl?'none':'';
+  hdr.addEventListener('click', () => {
+    toggle(cols,key); const c = cols.has(key);
+    arrow.textContent = c?'▶':'▼'; ch.style.display = c?'none':'';
   });
-  return dz;
+  wrap.appendChild(hdr);
+  (s.padas||[]).forEach((p,pi) => ch.appendChild(makePadaItem(p,pi,si,vi,ki)));
+  const addp = mk('div','ts-addpada','＋ add pāda');
+  addp.addEventListener('click', () => insertPada(ki,vi,si));
+  ch.appendChild(addp);
+  wrap.appendChild(ch);
+  return wrap;
 }
 
-function makePadaRow(pada, sIdx, pIdx) {
-  const row = document.createElement('div');
-  row.className = 'tree-pada';
-
-  const handle = document.createElement('span');
-  handle.className = 'pada-handle'; handle.textContent = '⠿';
-  handle.title = 'Drag to move to a different section';
-  handle.setAttribute('draggable', 'true');
-  handle.addEventListener('dragstart', e => {
-    e.stopPropagation();
-    dragState = { type: 'pada', fromSec: sIdx, fromPada: pIdx };
-    e.dataTransfer.effectAllowed = 'move';
-    row.classList.add('dragging');
-  });
-  handle.addEventListener('dragend', () => {
-    row.classList.remove('dragging');
-    dragState = null;
-    clearDzHighlights();
-  });
-
-  const ab   = document.createElement('span'); ab.className = 'pada-ab';
-  ab.textContent = pada.pada_num === 1 ? 'A' : 'B';
-
-  const ref  = document.createElement('span'); ref.className = 'pada-ref';
-  ref.textContent = pada.id;
-
-  const prev = document.createElement('span');
-  prev.className = 'pada-preview' + (hasText(pada) ? '' : ' no-text');
-  prev.textContent = hasText(pada) ? pada.text_dev : '(no text)';
-
-  const del = document.createElement('button');
-  del.className = 'pada-del'; del.textContent = '×';
-  del.title = 'Delete — renumbers subsequent padas';
-  del.onclick = e => {
-    e.stopPropagation();
-    const p = getCurrentVargaSections()[sIdx]?.padas[pIdx];
-    const label = p ? p.id : `sec${sIdx} pos${pIdx}`;
-    if (!confirm(`Delete pada ${label}?\n\nAll subsequent padas in this varga will be renumbered.`)) return;
-    deletePada(sIdx, pIdx);
-  };
-
-  row.appendChild(handle); row.appendChild(ab); row.appendChild(ref);
-  row.appendChild(prev); row.appendChild(del);
-  return row;
+function makePadaItem(p, pi, si, vi, ki) {
+  const total = data.kandas[ki].vargas[vi].sections[si].padas.length;
+  const flatIdx = getFlatIdx(si, pi);
+  const inSel = selSet.has(selKey(si, pi));
+  const item = mk('div','tp-item');
+  item.dataset.ki=ki; item.dataset.vi=vi; item.dataset.si=si; item.dataset.pi=pi;
+  if (cur&&cur.ki===ki&&cur.vi===vi&&cur.si===si&&cur.pi===pi) item.classList.add('sel');
+  if (inSel) item.classList.add('in-sel');
+  // Checkbox for multi-select
+  const cb = document.createElement('input'); cb.type='checkbox'; cb.className='tp-cb'; cb.checked=inSel;
+  cb.addEventListener('click', e => { e.stopPropagation(); togglePadaSel(si,pi,flatIdx,e.shiftKey); });
+  item.appendChild(cb);
+  item.appendChild(mk('span','tp-ab', p.pada_num===1?'A':'B'));
+  item.appendChild(mk('span','tp-id', p.id));
+  const txt = mk('span', p.text_dev?'tp-text':'tp-text tp-notext', p.text_dev||'(no text)');
+  item.appendChild(txt);
+  if (p.review) { const d=mk('span','rdot'); d.title=p.review_comment||'Needs review'; item.appendChild(d); }
+  // Move buttons (appear on hover)
+  const acts = mk('div','tp-acts');
+  const up = mk('button','tp-act','↑'); up.title='Move up'; up.disabled = pi===0;
+  up.addEventListener('click', e => { e.stopPropagation(); movePadaInSection(ki,vi,si,pi,-1); });
+  const dn = mk('button','tp-act','↓'); dn.title='Move down'; dn.disabled = pi===total-1;
+  dn.addEventListener('click', e => { e.stopPropagation(); movePadaInSection(ki,vi,si,pi,1); });
+  acts.appendChild(up); acts.appendChild(dn);
+  item.appendChild(acts);
+  item.addEventListener('click', () => selectPada(ki,vi,si,pi));
+  return item;
 }
 
-// ── Drag state & move operations ─────────────────────────────────────────────
-let dragState = null;
+function toggle(set, key) { set.has(key)?set.delete(key):set.add(key); }
 
-function clearDzHighlights() {
-  document.querySelectorAll('.dz-over').forEach(el => el.classList.remove('dz-over'));
-  document.querySelectorAll('.dz-over-header').forEach(el => el.classList.remove('dz-over-header'));
-}
-
-// Move a pada. toZone = -1 means append to end of target section.
-function movePada(fromSecIdx, fromPadaIdx, toSecIdx, toZone) {
-  const sections = getCurrentVargaSections();
-  const fromSec  = sections[fromSecIdx];
-  const toSec    = sections[toSecIdx];
-  const [pada]   = fromSec.padas.splice(fromPadaIdx, 1);
-
-  if (toZone < 0) {
-    toSec.padas.push(pada);
-  } else if (fromSecIdx === toSecIdx) {
-    // Same section: adjust for the removal
-    const insertAt = toZone > fromPadaIdx ? toZone - 1 : toZone;
-    fromSec.padas.splice(insertAt, 0, pada);
-  } else {
-    toSec.padas.splice(toZone, 0, pada);
-  }
-  recalcSeqs();
-  renderTree();
-  markDirty();
-}
-
-// Move a section. toZone is the drop-zone index (0 = before first section).
-function moveSection(fromIdx, toZone) {
-  if (toZone === fromIdx || toZone === fromIdx + 1) return; // no-op
-  const sections = getCurrentVargaSections();
-  const [sec] = sections.splice(fromIdx, 1);
-  const insertAt = toZone > fromIdx ? toZone - 1 : toZone;
-  sections.splice(insertAt, 0, sec);
-  recalcSeqs();
-  renderTree();
-  markDirty();
-}
-
-// ── Insert & delete padas (partial renumbering from affected point) ──────────
-
-// Extract the trailing number from a pada id, e.g. "1.1.12" → 12.
-function getIdNum(id) {
-  return parseInt(id.split('.').pop(), 10);
-}
-
-// Flat list of all padas across the current varga's sections (in order).
-function flatVargaPadas() {
-  return getCurrentVargaSections().flatMap(s => s.padas || []);
-}
-
-// Flat index of the pada at (secIdx, padaIdx).
-function flatPos(secIdx, padaIdx) {
-  const secs = getCurrentVargaSections();
-  let pos = 0;
-  for (let i = 0; i < secIdx; i++) pos += (secs[i].padas || []).length;
-  return pos + padaIdx;
-}
-
-// Shift id / shloka_id / pada_num / legacy_id of a single pada by delta.
-function shiftPadaId(p, vargaId, delta) {
-  const n       = getIdNum(p.id) + delta;
-  p.id          = `${vargaId}.${n}`;
-  p.shloka_id   = `${vargaId}.${Math.ceil(n / 2)}`;
-  p.pada_num    = n % 2 === 1 ? 1 : 2;
-  p.legacy_id   = `${p.shloka_id}.${p.pada_num}`;
-}
-
-function insertPadas(secIdx, zoneIdx, count) {
-  const varga    = getCurrentVarga();
-  const sections = getCurrentVargaSections();
-  const all      = flatVargaPadas();           // snapshot before insertion
-  const pos      = flatPos(secIdx, zoneIdx);
-
-  // ID number that the first new pada will take
-  const startNum = pos < all.length
-    ? getIdNum(all[pos].id)
-    : (all.length > 0 ? getIdNum(all[all.length - 1].id) + 1 : 1);
-
-  // Shift all existing padas from pos onwards
-  for (let i = pos; i < all.length; i++) shiftPadaId(all[i], varga.id, count);
-
-  // Build new blank padas with correct ids
-  const newPadas = Array.from({ length: count }, (_, k) => {
-    const n        = startNum + k;
-    const shlokaId = `${varga.id}.${Math.ceil(n / 2)}`;
-    const padaNum  = n % 2 === 1 ? 1 : 2;
-    return { id: `${varga.id}.${n}`, seq: 0,
-             shloka_id: shlokaId, pada_num: padaNum,
-             legacy_id: `${shlokaId}.${padaNum}`,
-             text_dev: '', text_iast: '', words: [] };
-  });
-
-  sections[secIdx].padas.splice(zoneIdx, 0, ...newPadas);
-  recalcSeqs();
-  renderTree();
-  markDirty();
-}
-
-function deletePada(secIdx, padaIdx) {
-  const varga    = getCurrentVarga();
-  const sections = getCurrentVargaSections();
-  const all      = flatVargaPadas();           // snapshot before deletion
-  const pos      = flatPos(secIdx, padaIdx);
-
-  sections[secIdx].padas.splice(padaIdx, 1);
-
-  // Shift all padas after pos by -1
-  for (let i = pos + 1; i < all.length; i++) shiftPadaId(all[i], varga.id, -1);
-
-  recalcSeqs();
-  renderTree();
-  markDirty();
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Theme
-// ════════════════════════════════════════════════════════════════════════════
-function applyTheme(id) {
-  document.documentElement.dataset.theme = id;
-  localStorage.setItem('amara-theme', id);
-  document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.theme === id));
-}
-document.querySelectorAll('.theme-dot').forEach(d => {
-  d.classList.toggle('active', d.dataset.theme === (localStorage.getItem('amara-theme') || 'parchment'));
-  d.addEventListener('click', () => applyTheme(d.dataset.theme));
+// ── Tree filter ──────────────────────────────────────────────
+let filterTimer = null;
+document.getElementById('treeQ').addEventListener('input', function() {
+  clearTimeout(filterTimer); filterTimer = setTimeout(applyFilter, 150);
 });
 
-// ════════════════════════════════════════════════════════════════════════════
-// Keyboard shortcut
-// ════════════════════════════════════════════════════════════════════════════
-document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    e.preventDefault();
-    if (!document.getElementById('btnExport').disabled) exportJson();
+function toggleRevFilter() {
+  revOn = !revOn;
+  document.getElementById('revFilter').classList.toggle('on', revOn);
+  applyFilter();
+}
+
+function applyFilter() {
+  const q = document.getElementById('treeQ').value.trim();
+  const body = document.getElementById('treeBody');
+  const flat = document.getElementById('treeFlat');
+  if (!q && !revOn) {
+    body.style.display = ''; flat.style.display = 'none'; return;
   }
+  body.style.display = 'none'; flat.style.display = '';
+  if (!data) { flat.innerHTML=''; return; }
+  if (!idx) buildIdx();
+  const ql = q.toLowerCase();
+  const matches = idx.filter(item => {
+    if (revOn && !item.rv) return false;
+    if (!q) return true;
+    return item.id.includes(q)||item.dev.includes(q);
+  });
+  flat.innerHTML = '';
+  if (!matches.length) {
+    flat.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-style:italic;">No results</div>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  matches.slice(0,300).forEach(item => {
+    const {ki,vi,si,pi} = item;
+    const s = data.kandas[ki].vargas[vi].sections[si];
+    const v = data.kandas[ki].vargas[vi];
+    const row = mk('div','tf-item');
+    row.dataset.ki=ki; row.dataset.vi=vi; row.dataset.si=si; row.dataset.pi=pi;
+    if (cur&&cur.ki===ki&&cur.vi===vi&&cur.si===si&&cur.pi===pi) row.classList.add('sel');
+    row.appendChild(mk('span','tf-id', item.id+(item.pn===1?' A':' B')));
+    const txt = mk('span','tf-text'+(item.dev?' dev':''));
+    txt.textContent = item.dev||'(no text)';
+    if (!item.dev) txt.style.cssText='color:var(--text-muted);font-style:italic;';
+    row.appendChild(txt);
+    row.appendChild(mk('span','tf-loc', `${v.id} · ${s.title_en||'Section '+(si+1)}`));
+    if (item.rv) row.appendChild(mk('span','rdot'));
+    row.addEventListener('click', () => selectPada(ki,vi,si,pi));
+    frag.appendChild(row);
+  });
+  if (matches.length>300) {
+    const more = mk('div'); more.style.cssText='padding:8px;text-align:center;font-size:0.72rem;color:var(--text-muted);';
+    more.textContent=`…and ${matches.length-300} more`;
+    frag.appendChild(more);
+  }
+  flat.appendChild(frag);
+}
+
+// ── Pada selection ───────────────────────────────────────────
+function selectPada(ki, vi, si, pi) {
+  cur = {ki, vi, si, pi};
+  idx = null;
+  cols.delete(`${ki}:${vi}:${si}`); // ensure target section is expanded
+  // Sync dropdowns if needed (triggers renderTree via onchange chain)
+  const curKi = getCurKi(), curVi = getCurVi();
+  if (ki !== curKi) {
+    document.getElementById('kandaSel').value = ki;
+    populateVargas(); // sets vargaSel and calls renderTree
+  } else if (vi !== curVi) {
+    document.getElementById('vargaSel').value = vi;
+    cols.clear(); renderTree();
+  } else {
+    renderTree();
+  }
+  applyFilter();
+  loadEditor();
+  // Scroll selected item into view
+  requestAnimationFrame(() => {
+    const item = document.querySelector(`.tp-item[data-ki="${ki}"][data-vi="${vi}"][data-si="${si}"][data-pi="${pi}"]`);
+    item?.scrollIntoView({block:'nearest'});
+  });
+}
+
+// ── Editor ───────────────────────────────────────────────────
+function loadEditor() {
+  if (!data||!cur) return;
+  const {ki,vi,si,pi} = cur;
+  const k=data.kandas[ki], v=k.vargas[vi], s=v.sections[si], p=s.padas[pi];
+
+  document.getElementById('editorEmpty').style.display='none';
+  document.getElementById('editorContent').style.display='block';
+
+  // Breadcrumb
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = '';
+  bc.appendChild(mk('span','',`${k.num}. ${k.name_en}`));
+  bc.appendChild(document.createTextNode(' › '));
+  const vn = mk('span','dev',v.name_dev); bc.appendChild(vn);
+  bc.appendChild(document.createTextNode(` (${v.id}) › `));
+  bc.appendChild(mk('span','',s.title_en||'Section '+(si+1)));
+
+  document.getElementById('padaTitle').textContent = `${p.id} ${p.pada_num===1?'A':'B'}`;
+
+  populateSecSel();
+
+  document.getElementById('fDev').value = p.text_dev||'';
+
+  // Review
+  const rv = !!p.review;
+  document.getElementById('rvField').classList.toggle('flagged',rv);
+  document.getElementById('fRv').checked = rv;
+  document.getElementById('rvDot').style.display = rv?'inline-block':'none';
+  document.getElementById('rvCmtWrap').style.display = rv?'':'none';
+  document.getElementById('fRvCmt').value = p.review_comment||'';
+
+  renderWordTable(p.words||[]);
+}
+
+function populateSecSel() {
+  if (!cur) return;
+  const {ki,vi,si} = cur;
+  const sel = document.getElementById('secSel');
+  sel.innerHTML='';
+  (data.kandas[ki].vargas[vi].sections||[]).forEach((s,i) => {
+    const o = new Option(`${i+1} — ${s.title_en||'(untitled)'}`, i);
+    if (i===si) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+function getPada() {
+  if (!cur||!data) return null;
+  return data.kandas[cur.ki].vargas[cur.vi].sections[cur.si].padas[cur.pi];
+}
+
+function fieldChange(field, val) {
+  const p = getPada(); if (!p) return;
+  if (val) p[field]=val; else delete p[field];
+  markDirty();
+  if (field==='text_dev') {
+    // update tree preview in place
+    const item = document.querySelector(`.tp-item[data-ki="${cur.ki}"][data-vi="${cur.vi}"][data-si="${cur.si}"][data-pi="${cur.pi}"] .tp-text`);
+    if (item) { item.textContent=val||'(no text)'; item.className='tp-text'+(val?'':' tp-notext'); }
+  }
+}
+
+function rvFlagChange() {
+  const p = getPada(); if (!p) return;
+  const checked = document.getElementById('fRv').checked;
+  if (checked) p.review=true; else { delete p.review; delete p.review_comment; }
+  markDirty();
+  document.getElementById('rvField').classList.toggle('flagged',checked);
+  document.getElementById('rvDot').style.display=checked?'inline-block':'none';
+  document.getElementById('rvCmtWrap').style.display=checked?'':'none';
+  if (!checked) document.getElementById('fRvCmt').value='';
+  // update tree dot without full re-render
+  const item = document.querySelector(`.tp-item[data-ki="${cur.ki}"][data-vi="${cur.vi}"][data-si="${cur.si}"][data-pi="${cur.pi}"]`);
+  if (item) {
+    const existing = item.querySelector('.rdot');
+    if (checked&&!existing) item.appendChild(mk('span','rdot'));
+    else if (!checked&&existing) existing.remove();
+  }
+}
+function rvCommentChange() {
+  const p = getPada(); if (!p) return;
+  const v = document.getElementById('fRvCmt').value;
+  if (v) p.review_comment=v; else delete p.review_comment;
+  markDirty();
+}
+
+// ── Multi-select ─────────────────────────────────────────────
+function selKey(si, pi) { return `${si}:${pi}`; }
+
+function getFlatIdx(si, pi) {
+  const ki=getCurKi(), vi=getCurVi();
+  let n = 0;
+  for (let s=0; s<si; s++) n += (data.kandas[ki].vargas[vi].sections[s].padas||[]).length;
+  return n + pi;
+}
+
+function getFlatPadas() {
+  const ki=getCurKi(), vi=getCurVi(), flat=[];
+  data.kandas[ki].vargas[vi].sections.forEach((s,si) => s.padas.forEach((p,pi) => flat.push({si,pi})));
+  return flat;
+}
+
+function togglePadaSel(si, pi, flatIdx, shiftHeld) {
+  if (shiftHeld && selAnchor >= 0) {
+    const flat = getFlatPadas();
+    const lo = Math.min(selAnchor, flatIdx), hi = Math.max(selAnchor, flatIdx);
+    for (let i=lo; i<=hi; i++) selSet.add(selKey(flat[i].si, flat[i].pi));
+  } else {
+    const k = selKey(si, pi);
+    selSet.has(k) ? selSet.delete(k) : selSet.add(k);
+    selAnchor = flatIdx;
+  }
+  updateSelBar();
+  renderTree();
+}
+
+function updateSelBar() {
+  const bar = document.getElementById('selBar');
+  const n = selSet.size;
+  if (n === 0) { bar.classList.remove('on'); return; }
+  bar.classList.add('on');
+  document.getElementById('selCount').textContent = `${n} pāda${n>1?'s':''} selected`;
+  populateSelSecSel();
+}
+
+function populateSelSecSel() {
+  const ki=getCurKi(), vi=getCurVi();
+  const sel=document.getElementById('selSecSel'); sel.innerHTML='';
+  (data.kandas[ki].vargas[vi].sections||[]).forEach((s,si) =>
+    sel.appendChild(new Option(`${si+1} — ${s.title_en||'(untitled)'}`, si))
+  );
+}
+
+function clearSelection() {
+  selSet.clear(); selAnchor=-1;
+  document.getElementById('selBar').classList.remove('on');
+  renderTree();
+}
+
+function assignSelection() {
+  if (!selSet.size || !data) return;
+  const ki=getCurKi(), vi=getCurVi();
+  const targetSi = +document.getElementById('selSecSel').value;
+  _doAssign(ki, vi, targetSi);
+}
+
+function assignSelectionToNew() {
+  if (!selSet.size || !data) return;
+  const title = prompt('New section title (English):', '');
+  if (title === null) return;
+  const ki=getCurKi(), vi=getCurVi();
+  const secs = data.kandas[ki].vargas[vi].sections;
+  secs.push({title_en:title.trim()||'(untitled)',title_dev:'',padas:[]});
+  _doAssign(ki, vi, secs.length - 1);
+}
+
+function _doAssign(ki, vi, targetSi) {
+  const secs = data.kandas[ki].vargas[vi].sections;
+  // Collect pada objects preserving corpus order
+  const bySection = {};
+  selSet.forEach(k => {
+    const [si,pi] = k.split(':').map(Number);
+    (bySection[si] = bySection[si]||[]).push(pi);
+  });
+  const toMove = [];
+  Object.entries(bySection).sort((a,b)=>+a[0]-(+b[0])).forEach(([siStr,pis]) => {
+    const si=+siStr;
+    pis.sort((a,b)=>a-b).forEach(pi => toMove.push(secs[si].padas[pi]));
+  });
+  // Remove from sources (descending index order to preserve positions)
+  Object.entries(bySection).forEach(([siStr,pis]) => {
+    const si=+siStr, padas=secs[si].padas;
+    pis.sort((a,b)=>b-a).forEach(pi => padas.splice(pi,1));
+  });
+  // Append to target
+  secs[targetSi].padas.push(...toMove);
+  // Clear cur if it pointed to a moved pada
+  if (cur && cur.ki===ki && cur.vi===vi && selSet.has(selKey(cur.si, cur.pi))) {
+    cur=null;
+    document.getElementById('editorContent').style.display='none';
+    document.getElementById('editorEmpty').style.display='';
+  }
+  clearSelection();
+  idx=null; markDirty(); renderTree();
+}
+
+function moveSelUp() {
+  if (!selSet.size) return;
+  const siSet = new Set([...selSet].map(k => +k.split(':')[0]));
+  if (siSet.size !== 1) return;
+  const ki = getCurKi(), vi = getCurVi(), si = +[...siSet][0];
+  const padas = data.kandas[ki].vargas[vi].sections[si].padas;
+  const selPis = new Set([...selSet].map(k => +k.split(':')[1]));
+  const n = padas.length;
+  const curPadaObj = (cur && cur.ki===ki && cur.vi===vi && cur.si===si) ? padas[cur.pi] : null;
+  // Bubble each selected item up past the nearest non-selected item above it (L→R pass)
+  const arr = padas.map((p, i) => ({p, sel: selPis.has(i)}));
+  let changed = false;
+  for (let i = 1; i < n; i++) {
+    if (arr[i].sel && !arr[i-1].sel) { [arr[i], arr[i-1]] = [arr[i-1], arr[i]]; changed = true; }
+  }
+  if (!changed) return;
+  padas.splice(0, n, ...arr.map(x => x.p));
+  selSet.clear();
+  arr.forEach(({sel}, i) => { if (sel) selSet.add(selKey(si, i)); });
+  if (selAnchor > 0) selAnchor--;
+  if (curPadaObj) { const newPi = padas.indexOf(curPadaObj); if (newPi !== -1) cur = {...cur, pi: newPi}; }
+  idx = null; markDirty(); renderTree(); updateSelBar();
+}
+
+function moveSelDown() {
+  if (!selSet.size) return;
+  const siSet = new Set([...selSet].map(k => +k.split(':')[0]));
+  if (siSet.size !== 1) return;
+  const ki = getCurKi(), vi = getCurVi(), si = +[...siSet][0];
+  const padas = data.kandas[ki].vargas[vi].sections[si].padas;
+  const selPis = new Set([...selSet].map(k => +k.split(':')[1]));
+  const n = padas.length;
+  const curPadaObj = (cur && cur.ki===ki && cur.vi===vi && cur.si===si) ? padas[cur.pi] : null;
+  // Bubble each selected item down past the nearest non-selected item below it (R→L pass)
+  const arr = padas.map((p, i) => ({p, sel: selPis.has(i)}));
+  let changed = false;
+  for (let i = n - 2; i >= 0; i--) {
+    if (arr[i].sel && !arr[i+1].sel) { [arr[i], arr[i+1]] = [arr[i+1], arr[i]]; changed = true; }
+  }
+  if (!changed) return;
+  padas.splice(0, n, ...arr.map(x => x.p));
+  selSet.clear();
+  arr.forEach(({sel}, i) => { if (sel) selSet.add(selKey(si, i)); });
+  selAnchor++;
+  if (curPadaObj) { const newPi = padas.indexOf(curPadaObj); if (newPi !== -1) cur = {...cur, pi: newPi}; }
+  idx = null; markDirty(); renderTree(); updateSelBar();
+}
+
+// ── Section management ───────────────────────────────────────
+function movePadaToSection(newSi) {
+  if (!cur||!data) return;
+  const {ki,vi,si,pi} = cur;
+  if (newSi===si) return;
+  const secs = data.kandas[ki].vargas[vi].sections;
+  const [p] = secs[si].padas.splice(pi,1);
+  secs[newSi].padas.push(p);
+  cur = {ki,vi,si:newSi,pi:secs[newSi].padas.length-1};
+  idx=null; markDirty();
+  renderTree();
+  loadEditor();
+  requestAnimationFrame(() => {
+    const item = document.querySelector(`.tp-item[data-ki="${ki}"][data-vi="${vi}"][data-si="${newSi}"]`);
+    item?.scrollIntoView({block:'nearest'});
+  });
+}
+
+function addSectionAndMove() {
+  if (!cur||!data) return;
+  const title = prompt('New section title (English):','');
+  if (title===null) return;
+  const {ki,vi,si,pi} = cur;
+  const secs = data.kandas[ki].vargas[vi].sections;
+  secs.push({title_en:title.trim()||'(untitled)',title_dev:'',padas:[]});
+  const newSi = secs.length-1;
+  const [p] = secs[si].padas.splice(pi,1);
+  secs[newSi].padas.push(p);
+  cur = {ki,vi,si:newSi,pi:0};
+  idx=null; markDirty();
+  renderTree(); loadEditor();
+}
+
+function movePadaInSection(ki, vi, si, pi, dir) {
+  const padas = data.kandas[ki].vargas[vi].sections[si].padas;
+  const j = pi + dir;
+  if (j < 0 || j >= padas.length) return;
+  [padas[pi], padas[j]] = [padas[j], padas[pi]];
+  // Keep selection tracking correct
+  if (cur && cur.ki===ki && cur.vi===vi && cur.si===si) {
+    if (cur.pi === pi) cur = {...cur, pi: j};
+    else if (cur.pi === j) cur = {...cur, pi: pi};
+  }
+  idx = null; markDirty(); renderTree();
+}
+
+function insertSectionAfter(ki, vi, si) {
+  if (!data) return;
+  const title = prompt('New section title (English):', '');
+  if (title === null) return;
+  const secs = data.kandas[ki].vargas[vi].sections;
+  secs.splice(si + 1, 0, {
+    title_en: title.trim() || '(untitled)',
+    title_dev: '', padas: []
+  });
+  idx = null; markDirty(); renderTree();
+  if (cur && cur.ki === ki && cur.vi === vi) populateSecSel();
+}
+
+function addSection(ki, vi) {
+  if (!data) return;
+  const title = prompt('New section title (English):','');
+  if (title===null) return;
+  const secs = data.kandas[ki].vargas[vi].sections||(data.kandas[ki].vargas[vi].sections=[]);
+  secs.push({title_en:title.trim()||'(untitled)',title_dev:'',padas:[]});
+  idx=null; markDirty(); renderTree();
+  if (cur&&cur.ki===ki&&cur.vi===vi) populateSecSel();
+}
+
+function renameCurrentSection() {
+  if (!cur) return;
+  renameSection(cur.ki,cur.vi,cur.si);
+}
+function renameSection(ki, vi, si) {
+  const sec = data.kandas[ki].vargas[vi].sections[si];
+  const v = prompt('Section title (English):',sec.title_en||'');
+  if (v===null) return;
+  sec.title_en=v; markDirty(); renderTree();
+  if (cur&&cur.ki===ki&&cur.vi===vi) populateSecSel();
+}
+
+function deleteSection(ki, vi, si) {
+  const sec = data.kandas[ki].vargas[vi].sections[si];
+  if ((sec.padas||[]).length>0) {
+    alert(`Cannot delete "${sec.title_en||'Section '+(si+1)}" — move its ${sec.padas.length} pāda(s) to another section first.`);
+    return;
+  }
+  if (!confirm(`Delete section "${sec.title_en||'Section '+(si+1)}"?`)) return;
+  data.kandas[ki].vargas[vi].sections.splice(si,1);
+  if (cur&&cur.ki===ki&&cur.vi===vi&&cur.si===si) {
+    cur=null;
+    document.getElementById('editorContent').style.display='none';
+    document.getElementById('editorEmpty').style.display='';
+  }
+  idx=null; markDirty(); renderTree();
+}
+
+function insertPada(ki, vi, si) {
+  const v = data.kandas[ki].vargas[vi];
+  let maxN = 0;
+  v.sections.forEach(s => s.padas.forEach(p => { const n=parseInt(p.id.split('.').pop()); if(n>maxN) maxN=n; }));
+  const n=maxN+1, sh=Math.ceil(n/2), pn=n%2===1?1:2;
+  const newP={id:`${v.id}.${n}`,seq:0,shloka_id:`${v.id}.${sh}`,pada_num:pn,legacy_id:`${v.id}.${sh}.${pn}`,text_dev:'',words:[]};
+  v.sections[si].padas.push(newP);
+  const pi=v.sections[si].padas.length-1;
+  idx=null; markDirty(); renderTree();
+  selectPada(ki,vi,si,pi);
+}
+
+// ── Word editing ─────────────────────────────────────────────
+function renderWordTable(words) {
+  document.getElementById('wordCount').textContent=words.length;
+  const tbody=document.getElementById('wordTbody'); tbody.innerHTML='';
+  words.forEach((w,i) => tbody.appendChild(makeWordRow(w,i,words.length)));
+}
+function makeWordRow(w, i, total) {
+  const tr=mk('tr');
+  const nt=mk('td','wnum',String(i+1)); tr.appendChild(nt);
+  WFIELDS.forEach(f => {
+    const td=mk('td'); const inp=mk('input'); inp.type='text';
+    if(f==='w') inp.classList.add('dev-inp');
+    inp.value=w[f]||'';
+    inp.addEventListener('input',()=>{w[f]=inp.value;markDirty();});
+    td.appendChild(inp); tr.appendChild(td);
+  });
+  const at=mk('td','wact');
+  const up=mk('button','bmv','↑'); up.disabled=i===0; up.addEventListener('click',()=>moveWord(i,-1)); at.appendChild(up);
+  const dn=mk('button','bmv','↓'); dn.disabled=i===total-1; dn.addEventListener('click',()=>moveWord(i,1)); at.appendChild(dn);
+  const dl=mk('button','bdel','×'); dl.addEventListener('click',()=>deleteWord(i)); at.appendChild(dl);
+  tr.appendChild(at);
+  return tr;
+}
+function addWord() { const p=getPada(); if(!p) return; if(!p.words) p.words=[]; p.words.push({w:'',artha:'',linga:'',vibhakti:'',vacana:'',stem_iast:'',form_iast:'',case_en:'',form_note:''}); markDirty(); renderWordTable(p.words); }
+function deleteWord(i) { const p=getPada(); if(!p) return; p.words.splice(i,1); markDirty(); renderWordTable(p.words); }
+function moveWord(i,d) { const p=getPada(); if(!p) return; const j=i+d; if(j<0||j>=p.words.length) return; [p.words[i],p.words[j]]=[p.words[j],p.words[i]]; markDirty(); renderWordTable(p.words); }
+
+// ── Global search modal ──────────────────────────────────────
+function openSearch() {
+  document.getElementById('searchModal').classList.add('open');
+  const inp=document.getElementById('searchInput'); inp.value='';
+  document.getElementById('searchResults').innerHTML='<div class="sr-empty">Start typing…</div>';
+  inp.focus(); srFocus=-1;
+}
+function closeSearch() { document.getElementById('searchModal').classList.remove('open'); }
+
+function runSearch(q) {
+  if(!data) return;
+  if(!idx) buildIdx();
+  const res=document.getElementById('searchResults'); srFocus=-1;
+  if(!q.trim()){res.innerHTML='<div class="sr-empty">Start typing…</div>';return;}
+  const ql=q.trim().toLowerCase();
+  const matches=idx.filter(item=>item.id.includes(q.trim())||item.dev.includes(q.trim())).slice(0,60);
+  if(!matches.length){res.innerHTML='<div class="sr-empty">No results</div>';return;}
+  res.innerHTML='';
+  const frag=document.createDocumentFragment();
+  matches.forEach((item,n) => {
+    const {ki,vi,si,pi}=item;
+    const s=data.kandas[ki].vargas[vi].sections[si];
+    const v=data.kandas[ki].vargas[vi];
+    const row=mk('div','sr-item'); row.dataset.n=n;
+    row.appendChild(mk('span','sr-id',item.id));
+    const txt=mk('span','sr-text'+(item.dev?' dev':''));
+    txt.textContent=item.dev||'(no text)';
+    if(!item.dev) txt.style.cssText='color:var(--text-muted);font-style:italic;';
+    row.appendChild(txt);
+    row.appendChild(mk('span','sr-loc',`${v.id} · ${s.title_en||s.id}`));
+    row.addEventListener('click',()=>{
+      closeSearch();
+      selectPada(ki,vi,si,pi);
+    });
+    frag.appendChild(row);
+  });
+  res.appendChild(frag);
+}
+function searchKey(e) {
+  const items=document.querySelectorAll('.sr-item');
+  if(e.key==='ArrowDown'){e.preventDefault();srFocus=Math.min(srFocus+1,items.length-1);items.forEach((r,i)=>r.classList.toggle('focused',i===srFocus));items[srFocus]?.scrollIntoView({block:'nearest'});}
+  else if(e.key==='ArrowUp'){e.preventDefault();srFocus=Math.max(srFocus-1,0);items.forEach((r,i)=>r.classList.toggle('focused',i===srFocus));items[srFocus]?.scrollIntoView({block:'nearest'});}
+  else if(e.key==='Enter'){if(srFocus>=0&&items[srFocus])items[srFocus].click();else if(items.length===1)items[0].click();}
+  else if(e.key==='Escape')closeSearch();
+}
+
+// ── Pane resize ──────────────────────────────────────────────
+(function(){
+  const r=document.getElementById('paneResizer');
+  const p=document.getElementById('treePane');
+  const saved=parseInt(localStorage.getItem('amara-ed-tree-w'));
+  if(saved) p.style.width=saved+'px';
+  r.addEventListener('mousedown',e=>{
+    e.preventDefault(); r.classList.add('drag');
+    document.body.style.cursor='col-resize'; document.body.style.userSelect='none';
+    const mv=ev=>{const w=Math.max(160,Math.min(ev.clientX,window.innerWidth-400));p.style.width=w+'px';};
+    const up=()=>{r.classList.remove('drag');document.body.style.cursor='';document.body.style.userSelect='';localStorage.setItem('amara-ed-tree-w',p.offsetWidth);document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);};
+    document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up);
+  });
+})();
+
+// ── Utilities ────────────────────────────────────────────────
+function mk(tag, cls, text) {
+  const e=document.createElement(tag);
+  if(cls) e.className=cls;
+  if(text!==undefined) e.textContent=text;
+  return e;
+}
+
+// ── Theme ────────────────────────────────────────────────────
+function applyTheme(id) {
+  document.documentElement.dataset.theme=id;
+  localStorage.setItem('amara-theme',id);
+  document.querySelectorAll('.tdot').forEach(d=>d.classList.toggle('active',d.dataset.theme===id));
+}
+document.querySelectorAll('.tdot').forEach(d=>{
+  d.classList.toggle('active',d.dataset.theme===(localStorage.getItem('amara-theme')||'parchment'));
+  d.addEventListener('click',()=>applyTheme(d.dataset.theme));
+});
+
+// ── Keyboard shortcuts ───────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(!document.getElementById('btnExport').disabled)exportJson();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openSearch();}
+  if(e.key==='Escape'&&document.getElementById('searchModal').classList.contains('open'))closeSearch();
 });
 </script>
 </body>

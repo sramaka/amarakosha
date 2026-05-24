@@ -365,7 +365,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   int get _sectionPadaCount => _currentSection?.padas.length ?? 1;
 
-  void _goTo(int kanda, int varga, int sec, int pada) {
+  void _goTo(int kanda, int varga, int sec, int pada, {bool autoPlay = false}) {
     setState(() {
       _selKandaNum    = kanda;
       _selVargaSeq    = varga;
@@ -374,6 +374,9 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _mobileTreeOpen = false;
     });
     _refreshPada();
+    if (autoPlay && !_setPlaying && AppSettings.instance.autoPlayBrowse && _pada != null) {
+      _audio.playPada(_pada!.id, speed: _speed, setId: _activeSetId);
+    }
   }
 
   void _prevPada() {
@@ -407,6 +410,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
     }
     return null;
   }
+
+  // Step through the flat corpus by [delta] padas and navigate there.
+  void _jumpFlat(int delta) {
+    if (_pada == null) return;
+    final flat = [for (final k in _kandas) for (final v in k.vargas) for (final s in v.sections) ...s.padas];
+    final cur = flat.indexWhere((p) => p.id == _pada!.id);
+    if (cur < 0) return;
+    final target = flat[(cur + delta).clamp(0, flat.length - 1)];
+    for (final k in _kandas) {
+      for (final v in k.vargas) {
+        for (final s in v.sections) {
+          for (int i = 0; i < s.padas.length; i++) {
+            if (s.padas[i].id == target.id) {
+              _goTo(k.num, v.seq, s.seq, i + 1, autoPlay: true);
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  void _prevPage() => _jumpFlat(-(1 + AppSettings.instance.contextBefore));
+  void _nextPage() => _jumpFlat(1 + AppSettings.instance.contextAfter);
 
   // ── Practice Set ──────────────────────────────────────────────────────────
   void _addSectionToSet(Section sec) {
@@ -526,7 +553,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       _goTo(int.tryParse(legParts[0]) ?? _selKandaNum,
             int.tryParse(legParts[1]) ?? _selVargaSeq,
             _currentSecSeqForPada(pada) ?? _selSecSeq,
-            pada.seq);
+            _padaNavSeq(pada));
     }
     _scrollToCurrentPlaylistPada();
 
@@ -607,6 +634,21 @@ class _PracticeScreenState extends State<PracticeScreen> {
       }
     }
     return null;
+  }
+
+  // Returns the 1-based array index of [pada] within its section.
+  // Safer than pada.seq, which can be stale after section rebuilds.
+  int _padaNavSeq(Pada pada) {
+    for (final k in _kandas) {
+      for (final v in k.vargas) {
+        for (final s in v.sections) {
+          for (int i = 0; i < s.padas.length; i++) {
+            if (s.padas[i].id == pada.id) return i + 1;
+          }
+        }
+      }
+    }
+    return pada.seq;
   }
 
   // ── Audio ─────────────────────────────────────────────────────────────────
@@ -866,7 +908,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final inSet = _setItems.any((i) => i.label == sec.titleEn);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       GestureDetector(
-        onTap:      () => _goTo(k.num, v.seq, sec.seq, 1),
+        onTap:      () => _goTo(k.num, v.seq, sec.seq, 1, autoPlay: true),
         onLongPress: () => _addSectionToSet(sec),
         child: Container(
           padding: EdgeInsets.fromLTRB(32, 6, 10, 6),
@@ -891,17 +933,17 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ]),
         ),
       ),
-      if (sel) ...sec.padas.map((p) => _buildPadaNode(k, v, sec, p)),
+      if (sel) ...sec.padas.asMap().entries.map((e) => _buildPadaNode(k, v, sec, e.value, e.key + 1)),
     ]);
   }
 
-  Widget _buildPadaNode(Kanda k, Varga v, Section sec, Pada p) {
-    final sel      = p.seq == _selPadaSeq && sec.seq == _selSecSeq
+  Widget _buildPadaNode(Kanda k, Varga v, Section sec, Pada p, int navSeq) {
+    final sel      = navSeq == _selPadaSeq && sec.seq == _selSecSeq
         && k.num == _selKandaNum && v.seq == _selVargaSeq;
     final inSet    = _setItems.any((i) => i.label == p.id);
     final hasAudio = AudioService.instance.hasAudio(p.id);
     return GestureDetector(
-      onTap:       () => _goTo(k.num, v.seq, sec.seq, p.seq),
+      onTap:       () => _goTo(k.num, v.seq, sec.seq, navSeq, autoPlay: true),
       onLongPress: () => _addPadaToSet(p),
       child: Container(
         padding: EdgeInsets.fromLTRB(44, 4, 10, 4),
@@ -1022,7 +1064,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AC.border))),
         child: Row(children: [
           Text('Practice Sets'.toUpperCase(),
-              style: AT.garamond(12, color: AC.textMuted, letterSpacing: 1.0)),
+              style: AT.garamond(12, color: AC.textSec, letterSpacing: 1.0)),
           Spacer(),
           if (_setItems.isNotEmpty)
             GestureDetector(
@@ -1091,7 +1133,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                       style: AT.garamond(13, color: AC.text),
                       overflow: TextOverflow.ellipsis),
                   subtitle: Text('${item.padas.length} pada${item.padas.length != 1 ? "s" : ""}',
-                      style: AT.garamond(12, color: AC.textMuted)),
+                      style: AT.garamond(12, color: AC.textSec)),
                   trailing: GestureDetector(
                     onTap: () => _removeFromSet(i),
                     child: Icon(Icons.close_rounded, size: 14, color: AC.textMuted),
@@ -1135,7 +1177,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Teacher plays', style: AT.garamond(13, color: AC.text)),
-                Text('model + student cycles', style: AT.garamond(11, color: AC.textSec)),
+                Text('model + student cycles', style: AT.garamond(12, color: AC.textSec)),
               ])),
               _SmallStepper(
                 value: _modelCount,
@@ -1147,7 +1189,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Student recites', style: AT.garamond(13, color: AC.text)),
-                Text('times per teacher play', style: AT.garamond(11, color: AC.textSec)),
+                Text('times per teacher play', style: AT.garamond(12, color: AC.textSec)),
               ])),
               _SmallStepper(
                 value: _reciteCount,
@@ -1169,7 +1211,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
           if (_setItems.isNotEmpty) ...[
             SizedBox(height: 4),
             Text('$_totalSetPadas total pādas',
-                style: AT.garamond(12, color: AC.textSec)),
+                style: AT.garamond(13, color: AC.textSec)),
           ],
           const SizedBox(height: 8),
           // Guided Practice toggle
@@ -1178,7 +1220,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
             child: Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Guided Practice', style: AT.garamond(13, color: AC.text)),
-                  Text('model plays, then student recites', style: AT.garamond(11, color: AC.textSec)),
+                  Text('model plays, then student recites', style: AT.garamond(12, color: AC.textSec)),
                 ])),
                 Container(
                   width: 36, height: 20,
@@ -1237,7 +1279,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
               child: Row(children: [
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Step through pādas', style: AT.garamond(13, color: AC.text)),
-                  Text('press Next to advance', style: AT.garamond(11, color: AC.textSec)),
+                  Text('press Next to advance', style: AT.garamond(12, color: AC.textSec)),
                 ])),
                 Container(
                   width: 36, height: 20,
@@ -1721,7 +1763,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
       child: Row(children: [
         GestureDetector(
-          onTap: _prevPada,
+          onTap: _prevPage,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
@@ -1736,7 +1778,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: _nextPada,
+          onTap: _nextPage,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
@@ -1764,6 +1806,17 @@ class _PracticeScreenState extends State<PracticeScreen> {
     final listChildren = <Widget>[];
     final ctxBefore = s.setPlaylistContextBefore;
     final ctxAfter  = s.setPlaylistContextAfter;
+
+    // Precompute IDs that will render as context entries around the active pada,
+    // so the main loop can skip their standalone rows and avoid double-rendering.
+    final contextIds = <String>{};
+    if (ctxBefore > 0 || ctxAfter > 0) {
+      for (final e in _buildBoxEntries(activePada,
+          ctxBeforeOverride: ctxBefore, ctxAfterOverride: ctxAfter)) {
+        if (!e.isActive && !e.isHeading && e.pada != null) contextIds.add(e.pada!.id);
+      }
+    }
+
     for (final item in _setItems) {
       if (item.label.isNotEmpty) {
         listChildren.add(Padding(
@@ -1789,6 +1842,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
               listChildren.add(_buildContextPadaInPlaylist(entry.pada!));
             }
           }
+        } else if (!isActive && contextIds.contains(p.id)) {
+          // Rendered as context entry around the active pada — skip standalone row
         } else {
           listChildren.add(_buildPlaylistPadaRow(p,
               isActive: isActive,
@@ -2249,49 +2304,49 @@ class _PracticeScreenState extends State<PracticeScreen> {
         const SizedBox(width: 6),
         IconButton(icon: Icon(Icons.skip_next_rounded),
             color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _nextPada),
-      ]),
-      const SizedBox(height: 4),
-      Padding(
-        padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-        child: Row(children: [
-          // Speed chips
-          ...[0.5, 0.75, 1.0, 1.25, 1.5].map((s) {
-            final active = _speed == s;
-            return GestureDetector(
-              onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
-              child: Container(
-                margin: EdgeInsets.only(right: 4),
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: active ? AC.trackFill.withOpacity(0.13) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(color: active ? AC.trackFill : AC.borderLight)),
-                child: Text('${s}x',
-                    style: AT.garamond(13, color: active ? AC.trackFill : AC.textMuted)),
-              ),
-            );
-          }),
-          const Spacer(),
-          // Auto-advance toggle
-          GestureDetector(
-            onTap: () => setState(() => _autoAdvance = !_autoAdvance),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: _autoAdvance ? AC.accent.withOpacity(0.10) : Colors.transparent,
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: _autoAdvance ? AC.accent : AC.borderLight)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.fast_forward_rounded, size: 12,
-                    color: _autoAdvance ? AC.accent : AC.textMuted),
-                SizedBox(width: 3),
-                Text('Auto', style: AT.garamond(12,
-                    color: _autoAdvance ? AC.accent : AC.textMuted)),
-              ]),
-            ),
+        const SizedBox(width: 6),
+        GestureDetector(
+          onTap: () => setState(() => _autoAdvance = !_autoAdvance),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _autoAdvance ? AC.accent.withOpacity(0.10) : Colors.transparent,
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: _autoAdvance ? AC.accent : AC.borderLight)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.fast_forward_rounded, size: 12,
+                  color: _autoAdvance ? AC.accent : AC.textMuted),
+              SizedBox(width: 3),
+              Text('Auto', style: AT.garamond(12,
+                  color: _autoAdvance ? AC.accent : AC.textMuted)),
+            ]),
           ),
-        ]),
-      ),
+        ),
+      ]),
+      if (AppSettings.instance.showSpeedButtons)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
+          child: Row(children: [
+            ...[0.5, 0.75, 1.0, 1.25, 1.5].map((s) {
+              final active = _speed == s;
+              return GestureDetector(
+                onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
+                child: Container(
+                  margin: EdgeInsets.only(right: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: active ? AC.trackFill.withOpacity(0.13) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(5),
+                    border: Border.all(color: active ? AC.trackFill : AC.borderLight)),
+                  child: Text('${s}x',
+                      style: AT.garamond(13, color: active ? AC.trackFill : AC.textMuted)),
+                ),
+              );
+            }),
+          ]),
+        )
+      else
+        const SizedBox(height: 10),
     ]),
   );
   }

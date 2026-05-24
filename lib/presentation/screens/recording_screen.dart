@@ -56,7 +56,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
       setState(() { _kandas = k; _loading = false; });
       // Find _secIdx matching session.section
       final secs = _allSections;
-      final idx = secs.indexWhere((s) => s.id == widget.session.section.id);
+      final idx = secs.indexWhere((s) => s.seq == widget.session.section.seq);
       if (idx >= 0) setState(() { _secIdx = idx; _padaIdx = 0; });
     });
     // Load any already-persisted recordings for this session into _paths

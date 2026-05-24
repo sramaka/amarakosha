@@ -47,7 +47,6 @@ class Pada {
   final String    shlokaId;  // parent shloka e.g. "1.1.6"
   final int       padaNum;   // 1 (A) or 2 (B)
   final String    textDev;   // Devanagari
-  final String    textIast;  // IAST
   final List<AWord> words;
 
   const Pada({
@@ -57,7 +56,6 @@ class Pada {
     required this.shlokaId,
     required this.padaNum,
     required this.textDev,
-    required this.textIast,
     required this.words,
   });
 
@@ -68,7 +66,6 @@ class Pada {
     shlokaId:  (j['shloka_id']  as String?) ?? '',
     padaNum:   (j['pada_num']   as int?)    ?? 1,
     textDev:   (j['text_dev']   as String?) ?? '',
-    textIast:  (j['text_iast']  as String?) ?? '',
     words: (j['words'] as List? ?? [])
         .map((w) => AWord.fromJson(w as Map<String, dynamic>))
         .toList(),
@@ -84,21 +81,18 @@ class Pada {
 // ─── Section ─────────────────────────────────────────────────────────────────
 // A semantic group of pādas within a Varga (from GRETIL ## ... ## markers)
 class Section {
-  final String     id;       // "k.v.seq" e.g. "1.1.2"
-  final int        seq;      // 1-based within varga
+  final int        seq;      // 1-based within varga (derived from array position)
   final String     titleEn;  // English section title from GRETIL
   final List<Pada> padas;
 
   const Section({
-    required this.id,
     required this.seq,
     required this.titleEn,
     required this.padas,
   });
 
-  factory Section.fromJson(Map<String, dynamic> j) => Section(
-    id:      (j['id']       as String?) ?? '',
-    seq:     (j['seq']      as int?)    ?? 0,
+  factory Section.fromJson(Map<String, dynamic> j, {required int seq}) => Section(
+    seq:     seq,
     titleEn: (j['title_en'] as String?) ?? '',
     padas: (j['padas'] as List? ?? [])
         .map((p) => Pada.fromJson(p as Map<String, dynamic>))
@@ -129,7 +123,9 @@ class Varga {
     seq:  (j['seq']      as int?)    ?? 0,
     name: (j['name_dev'] as String?) ?? '',
     sections: (j['sections'] as List? ?? [])
-        .map((s) => Section.fromJson(s as Map<String, dynamic>))
+        .asMap()
+        .entries
+        .map((e) => Section.fromJson(e.value as Map<String, dynamic>, seq: e.key + 1))
         .toList(),
   );
 

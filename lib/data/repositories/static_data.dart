@@ -39,7 +39,6 @@ const kBootstrapPada = Pada(
   id: '1.1.11', legacyId: '1.1.6.1',
   seq: 1, shlokaId: '1.1.6', padaNum: 1,
   textDev:  'स्वरव्ययं स्वर्गनाकत्रिदिवत्रिदशालयाः',
-  textIast: 'svaravyayaṃ svarganākatridivatridaśālayāḥ',
   words: [
     AWord(w:'स्वर्',    m:'heaven',        gender:'अव्य.', vibhakti:'0', vacana:'avyaya', stem:'svar',          note:'avyaya',   formIast:'svar',      caseEn:'avyaya'),
     AWord(w:'स्वर्ग',   m:'heaven',        gender:'पुं.',  vibhakti:'1', vacana:'pl',     stem:'svarga',         note:'nom.pl.m', formIast:'svargāḥ',   caseEn:'nominative plural masculine'),
@@ -50,7 +49,7 @@ const kBootstrapPada = Pada(
 );
 
 const kBootstrapSection = Section(
-  id: '1.1.1', seq: 1, titleEn: 'Heaven',
+  seq: 1, titleEn: 'Heaven',
   padas: [kBootstrapPada],
 );
 

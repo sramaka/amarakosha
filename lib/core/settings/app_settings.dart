@@ -17,6 +17,8 @@ class AppSettings extends ChangeNotifier {
   int    setPlaylistContextBefore = 1;    // context padas before active pada during set playback (0–5)
   int    setPlaylistContextAfter  = 1;    // context padas after active pada during set playback (0–5)
   int    reciteVolumePct          = 10;   // volume % for repeat plays in Recite mode (2–20, step 2)
+  bool   autoPlayBrowse           = true;  // auto-play audio when navigating in browse mode
+  bool   showSpeedButtons         = false; // show speed buttons in the audio player
   String themeId                  = 'parchment';
 
   AppColorScheme get colors => AppColorSchemes.byId(themeId);
@@ -31,6 +33,8 @@ class AppSettings extends ChangeNotifier {
   static const _kSetCtxBefore     = 'set_ctx_before';
   static const _kSetCtxAfter      = 'set_ctx_after';
   static const _kReciteVolume     = 'recite_volume_pct';
+  static const _kAutoPlayBrowse   = 'auto_play_browse';
+  static const _kShowSpeedButtons = 'show_speed_buttons';
   static const _kThemeId          = 'theme_id';
 
   FontWeight get fontWeight {
@@ -54,6 +58,8 @@ class AppSettings extends ChangeNotifier {
     setPlaylistContextBefore = p.getInt(_kSetCtxBefore)    ?? 1;
     setPlaylistContextAfter  = p.getInt(_kSetCtxAfter)     ?? 1;
     reciteVolumePct          = p.getInt(_kReciteVolume)    ?? 10;
+    autoPlayBrowse           = p.getBool(_kAutoPlayBrowse)   ?? true;
+    showSpeedButtons         = p.getBool(_kShowSpeedButtons) ?? false;
     themeId                  = p.getString(_kThemeId)      ?? 'parchment';
     notifyListeners();
   }
@@ -122,5 +128,17 @@ class AppSettings extends ChangeNotifier {
     reciteVolumePct = v.clamp(0, 20);
     notifyListeners();
     (await SharedPreferences.getInstance()).setInt(_kReciteVolume, reciteVolumePct);
+  }
+
+  Future<void> setAutoPlayBrowse(bool v) async {
+    autoPlayBrowse = v;
+    notifyListeners();
+    (await SharedPreferences.getInstance()).setBool(_kAutoPlayBrowse, autoPlayBrowse);
+  }
+
+  Future<void> setShowSpeedButtons(bool v) async {
+    showSpeedButtons = v;
+    notifyListeners();
+    (await SharedPreferences.getInstance()).setBool(_kShowSpeedButtons, showSpeedButtons);
   }
 }
