@@ -91,6 +91,16 @@
     .step-text { font-size: 14px; color: var(--text-sec); line-height: 1.55; }
     .step-text strong { color: var(--text); }
 
+    /* ── Feature chips ── */
+    .features { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .feature {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 13px; border-radius: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      font-size: 14px; color: var(--text-sec);
+    }
+    .feature-icon { font-size: 15px; line-height: 1; }
+
     /* ── Footer ── */
     footer {
       margin-top: 48px; padding-top: 14px; border-top: 1px solid var(--border-lt);
@@ -109,8 +119,14 @@
     <p>
       The <em>Nāmaliṅgānuśāsana</em> of Amarasiṃha — a Sanskrit thesaurus composed entirely in
       verse, organised by topic, and memorised by students for over a thousand years.
-      This site provides tools for listening to, reciting, and recording the pādas.
+      This site provides tools for reading, listening to, practising, and recording the pādas.
     </p>
+    <div class="features">
+      <span class="feature"><span class="feature-icon">📖</span> Read the Amarakosha</span>
+      <span class="feature"><span class="feature-icon">🔊</span> Listen to audio</span>
+      <span class="feature"><span class="feature-icon">📋</span> Build practice playlists</span>
+      <span class="feature"><span class="feature-icon">🎓</span> Guided Practice mode</span>
+    </div>
   </header>
 
   <div class="stats">

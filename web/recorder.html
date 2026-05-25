@@ -128,6 +128,14 @@
     .btn-dl    { border-color: var(--border); color: var(--text-muted); }
     .btn-circle:disabled { opacity: 0.3; cursor: default; }
 
+    /* ── Keyboard hint ── */
+    .kbd-hint { font-size: 12px; color: var(--text-muted); margin-top: 10px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .kbd-hint kbd {
+      font-family: inherit; font-size: 11px; padding: 1px 5px;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--surface-alt); color: var(--text-sec);
+    }
+
     /* ── Dots ── */
     .dots-label { font-size: 12px; color: var(--text-muted); margin-top: 14px; margin-bottom: 6px; }
     .dots { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -155,6 +163,40 @@
     }
     .dl-btn:disabled { opacity: 0.3; cursor: default; }
     .dl-btn span.count { font-size: 11px; background: var(--surface-alt); border-radius: 10px; padding: 1px 6px; }
+
+    /* ── Session recordings list ── */
+    .srec-header { display:flex; align-items:center; gap:8px; margin-top:20px; margin-bottom:8px; }
+    .srec-header-title { font-size:14px; color:var(--text-sec); font-weight:600; }
+    .srec-header-count {
+      font-size:11px; background:var(--surface-alt); border:1px solid var(--border-lt);
+      border-radius:10px; padding:1px 8px; color:var(--text-muted);
+    }
+    .srec-list {
+      border:1px solid var(--border); border-radius:10px; overflow:hidden;
+      max-height:300px; overflow-y:auto;
+    }
+    .srec-row {
+      display:flex; align-items:center; gap:10px; padding:8px 12px;
+      border-bottom:1px solid var(--border-lt); background:var(--surface);
+    }
+    .srec-row:last-child { border-bottom:none; }
+    .srec-row.srec-playing { background:var(--green-bg); }
+    .srec-row.srec-current { background:var(--surface-alt); }
+    .srec-id { font-size:12px; color:var(--text-muted); min-width:46px; flex-shrink:0; }
+    .srec-text {
+      font-family:'Tiro Devanagari Sanskrit',serif; font-size:15px; flex:1;
+      min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--text);
+    }
+    .srec-btns { display:flex; gap:5px; flex-shrink:0; }
+    .srec-btn {
+      width:28px; height:28px; border-radius:50%; border:1.5px solid; background:transparent;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-family:inherit;
+    }
+    .srec-btn-play { border-color:var(--green); color:var(--green); }
+    .srec-btn-play.active { background:var(--green-bg); }
+    .srec-btn-rec  { border-color:var(--rec); color:var(--rec); }
+    .srec-btn:disabled { opacity:0.3; cursor:default; }
 
     /* ── Error ── */
     #error { color: var(--rec); font-size: 14px; margin-top: 16px; display: none; }
@@ -244,12 +286,12 @@
   <div id="error"></div>
   <div id="content" style="display:none">
     <div class="pada-nav">
-      <button id="prevBtn" onclick="prevPada()">◀ Prev</button>
+      <button id="prevBtn" onclick="prevPada()" title="Previous pāda (←)">◀ Prev</button>
       <div class="pada-center">
         <div class="pada-id dev" id="padaId"></div>
         <div class="pada-pos" id="padaPos"></div>
       </div>
-      <button id="nextBtn" onclick="nextPada()">Next ▶</button>
+      <button id="nextBtn" onclick="nextPada()" title="Next pāda (→)">Next ▶</button>
     </div>
 
     <div class="pada-card">
@@ -261,12 +303,16 @@
         <div id="padaText" class="pada-text dev"></div>
         <div class="controls">
           <span class="status-text" id="statusText"></span>
-          <button class="btn-circle btn-rec" id="recBtn" onclick="toggleRec()" title="Record">⏺</button>
+          <button class="btn-circle btn-rec" id="recBtn" onclick="toggleRec()" title="Record / Stop (Space)">⏺</button>
           <div class="ctrl-secondary">
             <button class="btn-circle btn-play" id="playBtn" onclick="togglePlay()" disabled title="Play">▶</button>
             <button class="btn-circle btn-del"  id="delBtn"  onclick="deleteRec()"  disabled title="Delete">×</button>
             <button class="btn-circle btn-dl"   id="dlBtn"   onclick="downloadPada()" disabled title="Download">⬇</button>
           </div>
+        </div>
+        <div class="kbd-hint">
+          <span><kbd>Space</kbd> record / stop</span>
+          <span><kbd>←</kbd><kbd>→</kbd> prev / next</span>
         </div>
       </div>
     </div>
@@ -279,6 +325,14 @@
       <span id="progressCount" style="font-style:italic;color:var(--text-muted)"></span>
     </div>
     <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+
+    <div id="sessionRecSection" style="display:none">
+      <div class="srec-header">
+        <span class="srec-header-title">Session Recordings</span>
+        <span class="srec-header-count" id="sessionRecCount">0</span>
+      </div>
+      <div class="srec-list" id="sessionRecList"></div>
+    </div>
 
     <button class="dl-toggle" id="dlToggle" onclick="toggleDownloads()">
       Export &middot;&middot;&middot; <span class="dl-toggle-arrow">▾</span>
@@ -299,8 +353,10 @@ let recordings = {};   // padaId -> Uint8Array (WAV)
 let selKanda = 0, selVarga = 0, secIdx = 0, padaIdx = 0;
 let isRecording = false, isPlaying = false;
 let mediaRecorder = null, chunks = [], stream = null;
-let elapsed = 0, elTimer = null;
+let elapsed = 0, elTimer = null, autoStopTimer = null;
 let playAudio = null;
+let listPlayAudio = null, listPlayingId = null;
+let padaMap = {};   // padaId -> { ki, vi, si, pi, pada }
 
 // ── Data loading ───────────────────────────────────────────────────────────────
 async function init() {
@@ -311,6 +367,7 @@ async function init() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     kandas = json.kandas || json;
+    buildPadaMap();
     document.getElementById('loading').style.display = 'none';
     document.getElementById('content').style.display = 'block';
     populateKandaSelect();
@@ -341,6 +398,21 @@ function populateVargaSelect() {
   render();
 }
 
+// ── Pada map ───────────────────────────────────────────────────────────────────
+function buildPadaMap() {
+  padaMap = {};
+  for (let ki = 0; ki < kandas.length; ki++) {
+    for (let vi = 0; vi < (kandas[ki].vargas||[]).length; vi++) {
+      for (let si = 0; si < (kandas[ki].vargas[vi].sections||[]).length; si++) {
+        for (let pi = 0; pi < (kandas[ki].vargas[vi].sections[si].padas||[]).length; pi++) {
+          const p = kandas[ki].vargas[vi].sections[si].padas[pi];
+          padaMap[p.id] = { ki, vi, si, pi, pada: p };
+        }
+      }
+    }
+  }
+}
+
 // ── Navigation helpers ─────────────────────────────────────────────────────────
 function getCurrentVarga() { return kandas[selKanda]?.vargas?.[selVarga]; }
 function getAllSections()   { return getCurrentVarga()?.sections || []; }
@@ -361,11 +433,14 @@ function prevPada() {
   else if (secIdx > 0) { secIdx--; padaIdx = (getCurrentSection()?.padas?.length || 1) - 1; }
   render();
 }
-function nextPada() {
+async function nextPada() {
+  const wasRecording = isRecording;
+  if (wasRecording) await stopRec(true);
   const sec = getCurrentSection();
   if (sec && padaIdx < sec.padas.length - 1) { padaIdx++; }
   else if (secIdx < getAllSections().length - 1) { secIdx++; padaIdx = 0; }
   render();
+  if (wasRecording) await startRec();
 }
 function jumpTo(si, pi) { secIdx = si; padaIdx = pi; render(); }
 
@@ -376,9 +451,11 @@ async function toggleRec() {
 
 async function startRec() {
   stopPlayback();
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch(e) { alert('Microphone permission denied.'); return; }
+  if (!stream || stream.getTracks().some(t => t.readyState === 'ended')) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch(e) { alert('Microphone permission denied.'); return; }
+  }
   const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
     ? 'audio/webm;codecs=opus' : 'audio/mp4';
   mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
@@ -387,20 +464,21 @@ async function startRec() {
   mediaRecorder.start(100);
   isRecording = true; elapsed = 0;
   elTimer = setInterval(() => { elapsed++; updateStatus(); }, 1000);
-  // Auto-stop at 30 s
-  setTimeout(() => { if (isRecording) stopRec(); }, 30000);
+  if (autoStopTimer) clearTimeout(autoStopTimer);
+  autoStopTimer = setTimeout(() => { if (isRecording) stopRec(); }, 30000);
   updateStatus();
 }
 
-async function stopRec() {
+async function stopRec(keepStream = false) {
   if (!isRecording || !mediaRecorder) return;
   clearInterval(elTimer); elTimer = null;
+  if (autoStopTimer) { clearTimeout(autoStopTimer); autoStopTimer = null; }
   isRecording = false;
   await new Promise(resolve => {
     mediaRecorder.onstop = resolve;
     mediaRecorder.stop();
   });
-  stream.getTracks().forEach(t => t.stop()); stream = null;
+  if (!keepStream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
   const buf  = await blob.arrayBuffer();
   const wav  = await blobToWav(buf);
@@ -436,6 +514,7 @@ function togglePlay() {
 function startPlayback() {
   const pada = getCurrentPada();
   if (!pada || !recordings[pada.id]) return;
+  stopListPlayback();
   stopPlayback();
   const blob = new Blob([recordings[pada.id]], { type: 'audio/wav' });
   const url  = URL.createObjectURL(blob);
@@ -541,6 +620,89 @@ function downloadAll() {
   triggerDownload(buildZip(files), 'amara_all_recordings.zip');
 }
 
+// ── Session recording list ─────────────────────────────────────────────────────
+function playListItem(padaId) {
+  if (listPlayingId === padaId) { stopListPlayback(); return; }
+  stopListPlayback();
+  stopPlayback();
+  const data = recordings[padaId];
+  if (!data) return;
+  const blob = new Blob([data], { type: 'audio/wav' });
+  const url  = URL.createObjectURL(blob);
+  listPlayAudio = new Audio(url);
+  listPlayingId = padaId;
+  listPlayAudio.onended = () => { listPlayingId = null; URL.revokeObjectURL(url); renderSessionList(); };
+  listPlayAudio.play();
+  renderSessionList();
+}
+
+function stopListPlayback() {
+  if (listPlayAudio) { listPlayAudio.pause(); listPlayAudio = null; }
+  listPlayingId = null;
+}
+
+async function reRecord(padaId) {
+  const coords = padaMap[padaId];
+  if (!coords) return;
+  stopListPlayback();
+  if (isRecording) await stopRec(true);
+  selKanda = coords.ki; selVarga = coords.vi; secIdx = coords.si; padaIdx = coords.pi;
+  document.getElementById('kandaSelect').value = selKanda;
+  populateVargaSelect();
+  await startRec();
+}
+
+function renderSessionList() {
+  const ids = Object.keys(recordings);
+  const section = document.getElementById('sessionRecSection');
+  if (!ids.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  document.getElementById('sessionRecCount').textContent = ids.length;
+
+  const sorted = [...ids].sort((a, b) => {
+    const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+    for (let i = 0; i < 3; i++) if ((pa[i]||0) !== (pb[i]||0)) return (pa[i]||0) - (pb[i]||0);
+    return 0;
+  });
+
+  const currentId = getCurrentPada()?.id;
+  const list = document.getElementById('sessionRecList');
+  list.innerHTML = '';
+  for (const id of sorted) {
+    const pada = padaMap[id]?.pada;
+    const playing = listPlayingId === id;
+    const current = id === currentId;
+    const row = document.createElement('div');
+    row.className = 'srec-row' + (playing ? ' srec-playing' : current ? ' srec-current' : '');
+
+    const idEl = document.createElement('span');
+    idEl.className = 'srec-id';
+    idEl.textContent = id;
+
+    const textEl = document.createElement('span');
+    textEl.className = 'srec-text';
+    textEl.textContent = pada?.text_dev || `[${id}]`;
+
+    const playBtn = document.createElement('button');
+    playBtn.className = 'srec-btn srec-btn-play' + (playing ? ' active' : '');
+    playBtn.title = playing ? 'Pause' : 'Play';
+    playBtn.textContent = playing ? '⏸' : '▶';
+    playBtn.onclick = () => playListItem(id);
+
+    const recBtn = document.createElement('button');
+    recBtn.className = 'srec-btn srec-btn-rec';
+    recBtn.title = 'Re-record';
+    recBtn.textContent = '⏺';
+    recBtn.onclick = () => reRecord(id);
+
+    const btns = document.createElement('div');
+    btns.className = 'srec-btns';
+    btns.append(playBtn, recBtn);
+    row.append(idEl, textEl, btns);
+    list.appendChild(row);
+  }
+}
+
 // ── Render ─────────────────────────────────────────────────────────────────────
 function updateStatus() {
   const pada   = getCurrentPada();
@@ -642,6 +804,7 @@ function render() {
   document.getElementById('dlPada').disabled    = !hasRec;
 
   updateStatus();
+  renderSessionList();
 }
 
 // ── Downloads toggle ───────────────────────────────────────────────────────────
@@ -661,6 +824,21 @@ function applyTheme(id) {
 document.querySelectorAll('.theme-dot').forEach(d => {
   d.classList.toggle('active', d.dataset.theme === (localStorage.getItem('amara-theme') || 'parchment'));
   d.addEventListener('click', () => applyTheme(d.dataset.theme));
+});
+
+// ── Keyboard shortcuts ─────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'SELECT') return;
+  if (e.key === ' ') {
+    e.preventDefault();
+    toggleRec();
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    if (!document.getElementById('nextBtn').disabled) nextPada();
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    if (!document.getElementById('prevBtn').disabled) prevPada();
+  }
 });
 
 // ── Boot ───────────────────────────────────────────────────────────────────────

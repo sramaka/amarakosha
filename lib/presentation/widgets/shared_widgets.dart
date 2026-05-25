@@ -546,6 +546,7 @@ void showDisplaySettingsSheet(BuildContext context) {
             SettingRow(
               label: 'Auto-play on navigation',
               sub: 'Play audio when selecting a pāda',
+              last: true,
               trailing: GestureDetector(
                 onTap: () => s.setAutoPlayBrowse(!s.autoPlayBrowse),
                 child: Container(
@@ -556,31 +557,6 @@ void showDisplaySettingsSheet(BuildContext context) {
                   child: AnimatedAlign(
                     duration: const Duration(milliseconds: 150),
                     alignment: s.autoPlayBrowse
-                        ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: 16, height: 16,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: const BoxDecoration(
-                          color: Colors.white, shape: BoxShape.circle),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SettingRow(
-              label: 'Show speed controls',
-              sub: 'Speed buttons in the audio player',
-              last: true,
-              trailing: GestureDetector(
-                onTap: () => s.setShowSpeedButtons(!s.showSpeedButtons),
-                child: Container(
-                  width: 36, height: 20,
-                  decoration: BoxDecoration(
-                    color: s.showSpeedButtons ? AC.accent : AC.border,
-                    borderRadius: BorderRadius.circular(10)),
-                  child: AnimatedAlign(
-                    duration: const Duration(milliseconds: 150),
-                    alignment: s.showSpeedButtons
                         ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
                       width: 16, height: 16,

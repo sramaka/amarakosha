@@ -82,11 +82,17 @@ def main():
         if not pid or pid in seen_ids:
             continue
         seen_ids.add(pid)
+        try:
+            pada_num = int(r.get("pada_num") or 1)
+        except (ValueError, TypeError):
+            pada_num = 1
         sheet_padas.append({
             "pada_id":          pid,
             "varga_id":         _str(r.get("varga_id")),
             "text_dev":         _str(r.get("text_dev")),
             "section_title_en": _str(r.get("section_title_en")),
+            "pada_num":         pada_num,
+            "shloka_id":        _str(r.get("shloka_id")),
             "review":           _str(r.get("review")).lower() in ("yes", "true", "1"),
             "review_comment":   _str(r.get("review_comment")),
         })
@@ -142,14 +148,40 @@ def main():
     shutil.copy(JSON_PATH, backup)
     print(f"Backup -> {backup.name}")
 
-    # ── Apply pada-level updates (text, review, words) ────────────────────────
+    # ── Apply pada-level updates (text, review, words); insert new padas ────────
     updated_text = 0
     updated_words = 0
+    inserted_padas = 0
+    new_pada_vids: set[str] = set()  # vargas where new padas were added
 
     for row in sheet_padas:
         pid = row["pada_id"]
         if pid not in pada_obj:
-            print(f"  WARNING: pada_id '{pid}' not found in JSON -- skipped.")
+            vid = row["varga_id"]
+            if not vid or vid not in varga_obj:
+                print(f"  WARNING: pada_id '{pid}' not in JSON and varga_id '{vid}' unknown -- skipped.")
+                continue
+            # Create a new pada object; seq=0 will be renumbered in section rebuild.
+            new_p: dict = {
+                "id":        pid,
+                "seq":       0,
+                "pada_num":  row["pada_num"],
+                "shloka_id": row["shloka_id"],
+                "legacyId":  "",
+                "text_dev":  row["text_dev"],
+                "words":     [],
+            }
+            if row["review"]:
+                new_p["review"] = True
+                if row["review_comment"]:
+                    new_p["review_comment"] = row["review_comment"]
+            pada_obj[pid] = new_p
+            new_pada_vids.add(vid)
+            inserted_padas += 1
+            print(f"  New pada: {pid} (varga {vid})")
+            if pid in word_updates:
+                new_p["words"] = word_updates[pid]
+                updated_words += len(word_updates[pid])
             continue
 
         p = pada_obj[pid]
@@ -193,8 +225,8 @@ def main():
         if v is None:
             continue
 
-        # Check if any pada in this varga has a different title than its current section.
-        needs_rebuild = any(
+        # Rebuild if section titles changed OR if new padas were added to this varga.
+        needs_rebuild = (vid in new_pada_vids) or any(
             desired_title.get(row["pada_id"]) != pada_section.get(row["pada_id"], {}).get("title_en", "")
             for row in xlsx_rows
             if row["pada_id"] in pada_obj
@@ -202,15 +234,27 @@ def main():
         if not needs_rebuild:
             continue
 
-        # Collect all pada_ids in this varga in their current JSON order.
-        all_pids = [p["id"] for s in v["sections"] for p in s["padas"]]
+        # Use xlsx row order so new padas land in the position the editor intended.
+        # Any JSON pada not present in the xlsx is appended at the end (safety net).
+        seen: set[str] = set()
+        all_pids: list[str] = []
+        for row in xlsx_rows:
+            rpid = row["pada_id"]
+            if rpid in pada_obj and rpid not in seen:
+                all_pids.append(rpid)
+                seen.add(rpid)
+        for s in v["sections"]:
+            for p in s["padas"]:
+                if p["id"] not in seen:
+                    all_pids.append(p["id"])
+                    seen.add(p["id"])
 
         # Assign each pada its new section title (xlsx wins; fall back to current).
         new_sections: list[dict] = []
         cur_title: str | None = None
         cur_sec: dict | None = None
         for pid in all_pids:
-            title = desired_title.get(pid) or pada_section[pid].get("title_en", "")
+            title = desired_title.get(pid) or pada_section.get(pid, {}).get("title_en", "")
             if title != cur_title:
                 cur_sec = {"title_en": title, "padas": []}
                 new_sections.append(cur_sec)
@@ -234,6 +278,7 @@ def main():
     )
 
     print(f"Written JSON     : {JSON_PATH.resolve()}")
+    print(f"Inserted padas   : {inserted_padas} new")
     print(f"Text updates     : {updated_text} padas")
     print(f"Section updates  : {updated_sections} sections")
     print(f"Word updates     : {updated_words} words across {len(word_updates)} padas")

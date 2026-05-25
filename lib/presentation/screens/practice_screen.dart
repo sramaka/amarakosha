@@ -76,12 +76,14 @@ class _PracticeScreenState extends State<PracticeScreen> {
   final AudioService _audio = AudioService.instance;
 
   bool _showWords      = false;
+  bool _wordsSide      = true;  // desktop: show words in side panel
   bool _reciteMode     = false; // Guided Practice: model at full vol, then student recites
   int  _modelCount     = 1;    // how many times the model plays per pada (cycles)
   int  _reciteCount    = 1;    // how many times the student recites per model play
   int  _reciteGapSec   = 1;    // pause (seconds) between consecutive student recitations
   bool _stepMode       = false; // pause between padas; student presses Next to advance
   bool _waitingForStep = false; // true after a pada's repeats complete in step mode
+  bool _isStudentTurn  = false; // true during student recitation slot in guided mode
 
   // ── Practice Sets ─────────────────────────────────────────────────────────
   List<_NamedSet> _practiceSets = [_NamedSet('Set 1')];
@@ -413,23 +415,22 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   // Step through the flat corpus by [delta] padas and navigate there.
   void _jumpFlat(int delta) {
-    if (_pada == null) return;
-    final flat = [for (final k in _kandas) for (final v in k.vargas) for (final s in v.sections) ...s.padas];
-    final cur = flat.indexWhere((p) => p.id == _pada!.id);
+    // Build a flat ordered list with navigation coordinates.
+    final records = <({int kNum, int vSeq, int sSeq, int navSeq})>[];
+    for (final k in _kandas)
+      for (final v in k.vargas)
+        for (final s in v.sections)
+          for (int i = 0; i < s.padas.length; i++)
+            records.add((kNum: k.num, vSeq: v.seq, sSeq: s.seq, navSeq: i + 1));
+
+    // Locate current pada by selection state (always up-to-date after _goTo).
+    final cur = records.indexWhere((r) =>
+        r.kNum == _selKandaNum && r.vSeq == _selVargaSeq &&
+        r.sSeq == _selSecSeq   && r.navSeq == _selPadaSeq);
     if (cur < 0) return;
-    final target = flat[(cur + delta).clamp(0, flat.length - 1)];
-    for (final k in _kandas) {
-      for (final v in k.vargas) {
-        for (final s in v.sections) {
-          for (int i = 0; i < s.padas.length; i++) {
-            if (s.padas[i].id == target.id) {
-              _goTo(k.num, v.seq, s.seq, i + 1, autoPlay: true);
-              return;
-            }
-          }
-        }
-      }
-    }
+
+    final t = records[(cur + delta).clamp(0, records.length - 1)];
+    _goTo(t.kNum, t.vSeq, t.sSeq, t.navSeq, autoPlay: true);
   }
 
   void _prevPage() => _jumpFlat(-(1 + AppSettings.instance.contextBefore));
@@ -524,7 +525,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     _setCompletionSub?.cancel();
     _setCompletionSub = null;
     _audio.stop();
-    setState(() { _setPlaying = false; _waitingForStep = false; });
+    setState(() { _setPlaying = false; _waitingForStep = false; _isStudentTurn = false; });
   }
 
   void _playCurrentSetPada() async {
@@ -560,6 +561,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
     // cycle position within [model, student×_reciteCount]: 0 = model, 1.._reciteCount = student
     final cyclePos = _reciteMode ? _setCurPadaRep % (1 + _reciteCount) : 0;
     final isRepeatPlay = _reciteMode && cyclePos > 0;
+    setState(() => _isStudentTurn = isRepeatPlay);
     final vol = isRepeatPlay ? AppSettings.instance.reciteVolumePct / 100.0 : 1.0;
     final hasAudio = await _audio.playPada(pada.id,
         speed: _speed, volume: vol, setId: _activeSetId);
@@ -1745,6 +1747,28 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
     if (_setPlaying || _waitingForStep) return _buildSetPlaylistView(pada);
 
+    final showSide = !_isMobile && _wordsSide && pada.words.isNotEmpty;
+
+    if (showSide) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 44),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                _buildProgress(pada),
+                _buildPadaBox(pada),
+                _buildPrevNext(),
+                _buildPlayer(),
+              ]),
+            ),
+          ),
+          _buildWordSidePanel(pada),
+        ],
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 44),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -1754,6 +1778,58 @@ class _PracticeScreenState extends State<PracticeScreen> {
         _buildWordChips(pada),
         _buildPlayer(),
       ]),
+    );
+  }
+
+  Widget _buildWordSidePanel(Pada pada) {
+    return SizedBox(
+      width: 210,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(4, 8, 14, 44),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text('WORDS  ${pada.words.length}',
+                style: AT.garamond(11, color: AC.textMuted, letterSpacing: 0.7)),
+            const Spacer(),
+            GestureDetector(
+              onTap: () => setState(() => _wordsSide = false),
+              child: Tooltip(
+                message: 'Move words below',
+                child: Icon(Icons.vertical_split_rounded, size: 15, color: AC.textMuted),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 8),
+          ...pada.words.map((w) => GestureDetector(
+            onTap: () => GrammarSheet.show(context, w),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
+              decoration: BoxDecoration(
+                color: AC.chipBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AC.border),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min, children: [
+                Text(w.w, style: AT.devanagari(
+                    (AppSettings.instance.devFontSize * 0.75).roundToDouble(),
+                    color: AC.text, height: 1.35,
+                    family: AppSettings.instance.devFontFamily)),
+                if (w.m.isNotEmpty)
+                  Text(w.m, style: AT.garamond(
+                      AppSettings.instance.uiFontSize.toDouble() - 1,
+                      color: AC.textSec)),
+                if (w.formIast.isNotEmpty)
+                  Text(w.formIast, style: AT.garamond(
+                      AppSettings.instance.uiFontSize.toDouble() - 1,
+                      color: AC.textSec, italic: true)),
+              ]),
+            ),
+          )),
+        ]),
+      ),
     );
   }
 
@@ -1897,6 +1973,18 @@ class _PracticeScreenState extends State<PracticeScreen> {
           ],
         ]),
       ),
+      // Student-turn banner
+      if (_reciteMode && _isStudentTurn)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          color: AC.accent.withValues(alpha: 0.10),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.mic_rounded, size: 14, color: AC.accent),
+            const SizedBox(width: 6),
+            Text('Your turn to recite', style: AT.garamond(13, color: AC.accent)),
+          ]),
+        ),
       // Scrollable pada list
       Expanded(child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
@@ -2183,19 +2271,31 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        GestureDetector(
-          onTap: () => setState(() => _showWords = !_showWords),
-          child: Row(children: [
-            Text('Words'.toUpperCase(),
-                style: AT.garamond(11, color: AC.textMuted, letterSpacing: 0.7)),
-            SizedBox(width: 3),
-            Text('${pada.words.length}',
-                style: AT.garamond(11, color: AC.textMuted)),
-            SizedBox(width: 2),
-            Icon(_showWords ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                size: 13, color: AC.textMuted),
-          ]),
-        ),
+        Row(children: [
+          GestureDetector(
+            onTap: () => setState(() => _showWords = !_showWords),
+            child: Row(children: [
+              Text('Words'.toUpperCase(),
+                  style: AT.garamond(11, color: AC.textMuted, letterSpacing: 0.7)),
+              SizedBox(width: 3),
+              Text('${pada.words.length}',
+                  style: AT.garamond(11, color: AC.textMuted)),
+              SizedBox(width: 2),
+              Icon(_showWords ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                  size: 13, color: AC.textMuted),
+            ]),
+          ),
+          if (!_isMobile) ...[
+            const Spacer(),
+            GestureDetector(
+              onTap: () => setState(() { _wordsSide = true; _showWords = false; }),
+              child: Tooltip(
+                message: 'Move words to side',
+                child: Icon(Icons.vertical_split_rounded, size: 15, color: AC.textMuted),
+              ),
+            ),
+          ],
+        ]),
         if (_showWords) ...[
           const SizedBox(height: 8),
           Wrap(spacing: 6, runSpacing: 6, children: pada.words.map((w) {
@@ -2230,6 +2330,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   Widget _buildPlayer() {
     final mob = _isMobile;
+    final controlsEnabled = _playing || (_pada != null && AudioService.instance.hasAudio(_pada!.id));
     return Container(
     margin: const EdgeInsets.fromLTRB(14, 10, 14, 0),
     decoration: AD.card(radius: 14),
@@ -2285,68 +2386,71 @@ class _PracticeScreenState extends State<PracticeScreen> {
         ),
       ),
       const SizedBox(height: 4),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        IconButton(icon: Icon(Icons.skip_previous_rounded),
-            color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _prevPada),
-        GestureDetector(onTap: _stopPlay, child: Container(
-          width: mob ? 36 : 32, height: mob ? 36 : 32,
-          decoration: BoxDecoration(color: AC.surfaceAlt, shape: BoxShape.circle,
-              border: Border.all(color: AC.border)),
-          child: Icon(Icons.stop_rounded, color: AC.textSec, size: mob ? 16 : 14))),
-        SizedBox(width: 6),
-        GestureDetector(onTap: _togglePlay, child: Container(
-          width: mob ? 50 : 46, height: mob ? 50 : 46,
-          decoration: BoxDecoration(color: AC.btnBg, shape: BoxShape.circle,
-            boxShadow: [BoxShadow(color: AC.trackFill.withOpacity(0.33),
-                blurRadius: 10, offset: Offset(0, 3))]),
-          child: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-              color: AC.btnText, size: mob ? 24 : 22))),
-        const SizedBox(width: 6),
-        IconButton(icon: Icon(Icons.skip_next_rounded),
-            color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _nextPada),
-        const SizedBox(width: 6),
-        GestureDetector(
-          onTap: () => setState(() => _autoAdvance = !_autoAdvance),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: _autoAdvance ? AC.accent.withOpacity(0.10) : Colors.transparent,
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(color: _autoAdvance ? AC.accent : AC.borderLight)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.fast_forward_rounded, size: 12,
-                  color: _autoAdvance ? AC.accent : AC.textMuted),
-              SizedBox(width: 3),
-              Text('Auto', style: AT.garamond(12,
-                  color: _autoAdvance ? AC.accent : AC.textMuted)),
-            ]),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(10, 2, 10, 10),
+        child: Row(children: [
+          IconButton(icon: Icon(Icons.skip_previous_rounded),
+              color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _prevPada),
+          Opacity(
+            opacity: controlsEnabled ? 1.0 : 0.35,
+            child: GestureDetector(onTap: controlsEnabled ? _stopPlay : null, child: Container(
+              width: mob ? 36 : 32, height: mob ? 36 : 32,
+              decoration: BoxDecoration(color: AC.surfaceAlt, shape: BoxShape.circle,
+                  border: Border.all(color: AC.border)),
+              child: Icon(Icons.stop_rounded, color: AC.textSec, size: mob ? 16 : 14)))),
+          const SizedBox(width: 6),
+          Opacity(
+            opacity: controlsEnabled ? 1.0 : 0.35,
+            child: GestureDetector(onTap: controlsEnabled ? _togglePlay : null, child: Container(
+              width: mob ? 50 : 46, height: mob ? 50 : 46,
+              decoration: BoxDecoration(color: AC.btnBg, shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: AC.trackFill.withValues(alpha: 0.33),
+                    blurRadius: 10, offset: const Offset(0, 3))]),
+              child: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                  color: AC.btnText, size: mob ? 24 : 22)))),
+          const SizedBox(width: 6),
+          IconButton(icon: Icon(Icons.skip_next_rounded),
+              color: AC.textSec, iconSize: mob ? 26.0 : 20.0, onPressed: _nextPada),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: () => setState(() => _autoAdvance = !_autoAdvance),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _autoAdvance ? AC.accent.withValues(alpha: 0.10) : Colors.transparent,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(color: _autoAdvance ? AC.accent : AC.borderLight)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.fast_forward_rounded, size: 12,
+                    color: _autoAdvance ? AC.accent : AC.textMuted),
+                SizedBox(width: 3),
+                Text('Auto', style: AT.garamond(12,
+                    color: _autoAdvance ? AC.accent : AC.textMuted)),
+              ]),
+            ),
           ),
-        ),
-      ]),
-      if (AppSettings.instance.showSpeedButtons)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 6, 14, 12),
-          child: Row(children: [
-            ...[0.5, 0.75, 1.0, 1.25, 1.5].map((s) {
-              final active = _speed == s;
-              return GestureDetector(
-                onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
-                child: Container(
-                  margin: EdgeInsets.only(right: 4),
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: active ? AC.trackFill.withOpacity(0.13) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: active ? AC.trackFill : AC.borderLight)),
-                  child: Text('${s}x',
-                      style: AT.garamond(13, color: active ? AC.trackFill : AC.textMuted)),
-                ),
-              );
-            }),
-          ]),
-        )
-      else
-        const SizedBox(height: 10),
+          const SizedBox(width: 6),
+          Container(width: 1, height: 20, color: AC.borderLight),
+          const SizedBox(width: 6),
+          ...[0.5, 0.75, 0.9, 1.0, 1.25, 1.5].map((s) {
+            final active = _speed == s;
+            return GestureDetector(
+              onTap: () { setState(() => _speed = s); _audio.player.setSpeed(s); },
+              child: Container(
+                margin: const EdgeInsets.only(right: 4),
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: active ? AC.trackFill.withValues(alpha: 0.13) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: active ? AC.trackFill : AC.borderLight)),
+                child: Text('${s}x',
+                    style: AT.garamond(13, color: active ? AC.trackFill : AC.textMuted)),
+              ),
+            );
+          }),
+        ]),
+      ),
     ]),
   );
   }
