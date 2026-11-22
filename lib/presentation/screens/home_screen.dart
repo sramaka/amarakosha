@@ -73,6 +73,26 @@ class HomeScreen extends StatelessWidget {
           ]),
         ),
 
+        // ── App description ───────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              'The Nāmaliṅgānuśāsana of Amarasiṃha — a Sanskrit thesaurus in '
+              'verse, organised by topic and memorised by students for over a '
+              'thousand years.',
+              style: AT.garamond((fs - 1).clamp(10, 99), color: AC.textSec, height: 1.65),
+            ),
+            const SizedBox(height: 10),
+            const Wrap(spacing: 8, runSpacing: 6, children: [
+              _FeatureChip('📖', 'Read the text'),
+              _FeatureChip('🔊', 'Listen to audio'),
+              _FeatureChip('📋', 'Build practice playlists'),
+              _FeatureChip('🎓', 'Guided Practice mode'),
+            ]),
+          ]),
+        ),
+
         // ── Action tiles ──────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -120,6 +140,20 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(width: 10),
             _StatCard(label: 'Vargas',       value: kTotalVargas,   sub: 'to practise'),
           ]),
+        ),
+
+        // ── Bug report link ───────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+          child: Center(
+            child: GestureDetector(
+              onTap: () => _openUrl('feedback.html'),
+              child: Text(
+                'Report a bug or error',
+                style: AT.garamond(12, color: AC.textMuted, italic: true),
+              ),
+            ),
+          ),
         ),
 
         const SizedBox(height: 32),
@@ -307,6 +341,30 @@ class _StatCard extends StatelessWidget {
               color: AC.textMuted, italic: true)),
         ]),
       ),
+    );
+  }
+}
+
+// ─── Feature chip ─────────────────────────────────────────────────────────────
+class _FeatureChip extends StatelessWidget {
+  final String emoji, label;
+  const _FeatureChip(this.emoji, this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    final fs = AppSettings.instance.uiFontSize.toDouble();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+      decoration: BoxDecoration(
+        color: AC.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AC.border),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(emoji, style: const TextStyle(fontSize: 13)),
+        const SizedBox(width: 6),
+        Text(label, style: AT.garamond((fs - 2).clamp(10, 99), color: AC.textSec)),
+      ]),
     );
   }
 }

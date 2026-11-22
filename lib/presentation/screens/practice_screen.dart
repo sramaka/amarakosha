@@ -12,6 +12,8 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:js_interop';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart' hide LoopMode;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +25,12 @@ import '../../domain/entities/entities.dart';
 import '../sheets/grammar_sheet.dart';
 import '../widgets/shared_widgets.dart';
 import '../../core/settings/app_settings.dart';
+
+@JS('open')
+external void _jsOpenPs(JSString url, JSString target);
+void _openUrlPs(String url) {
+  if (kIsWeb) _jsOpenPs(url.toJS, '_blank'.toJS);
+}
 
 // ─── Practice Set item ────────────────────────────────────────────────────────
 class _SetItem {
@@ -793,19 +801,19 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 ? _showMobileSetSheet
                 : () => setState(() => _showSetPanel = !_showSetPanel),
             child: Container(
-              margin: EdgeInsets.only(right: 8),
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: (!isMobile && _showSetPanel) ? AC.accent.withOpacity(0.10) : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: (!isMobile && _showSetPanel) ? AC.accent : AC.border)),
+                color: (!isMobile && _showSetPanel) ? AC.accent : AC.accent.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AC.accent)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.playlist_play_rounded, size: 14,
-                    color: (!isMobile && _showSetPanel) ? AC.accent : AC.textSec),
-                SizedBox(width: 4),
-                Text('Set${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
-                    style: AT.garamond(12,
-                        color: (!isMobile && _showSetPanel) ? AC.accent : AC.textSec)),
+                Icon(Icons.playlist_play_rounded, size: 15,
+                    color: (!isMobile && _showSetPanel) ? AC.btnText : AC.accent),
+                SizedBox(width: 5),
+                Text('Practice Sets${_setItems.isEmpty ? "" : " (${_setItems.length})"}',
+                    style: AT.garamond(13, weight: FontWeight.w600,
+                        color: (!isMobile && _showSetPanel) ? AC.btnText : AC.accent)),
               ]),
             ),
           ),
@@ -1761,6 +1769,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
                 _buildPadaBox(pada),
                 _buildPrevNext(),
                 _buildPlayer(),
+                _buildReportLink(),
               ]),
             ),
           ),
@@ -1777,6 +1786,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         _buildPrevNext(),
         _buildWordChips(pada),
         _buildPlayer(),
+        _buildReportLink(),
       ]),
     );
   }
@@ -2327,6 +2337,17 @@ class _PracticeScreenState extends State<PracticeScreen> {
       ]),
     );
   }
+
+  Widget _buildReportLink() => Padding(
+    padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
+    child: Center(
+      child: GestureDetector(
+        onTap: () => _openUrlPs('feedback.html'),
+        child: Text('Report a bug or error',
+            style: AT.garamond(12, color: AC.textMuted, italic: true)),
+      ),
+    ),
+  );
 
   Widget _buildPlayer() {
     final mob = _isMobile;

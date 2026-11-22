@@ -146,6 +146,15 @@ Sanskrit text always uses `TiroDevanagarSanskrit` (bundled TTF) or `NotoSerifDev
 - `tools/update_kanda1.py` — rebuilds Kanda 1 pādas in the JSON from `amarfin1.pdf` (see below)
 - `tools/dryrun_align.py` — dry-run of the Kanda 1 alignment without writing the JSON
 
+### Feedback & bug reporting
+
+Bug reports and improvement suggestions are collected via the GitHub Issues tracker at `https://github.com/sramaka/amarakosha/issues`. There are two entry points in the app:
+
+- **Home screen** (`lib/presentation/screens/home_screen.dart`) — "Report a bug or error" link at the bottom of the page (small italic text, opens GitHub Issues in a new tab).
+- **Help page** (`web/help.html`) — "Feedback & Bug Reports" section near the bottom with a direct link.
+
+Both open the GitHub Issues URL. When editing the home screen or help page, preserve these links.
+
 ### Responsive layout
 
 `_isMobile` is `MediaQuery.of(context).size.width <= 768`. On mobile, the tree pane becomes a slide-in overlay (`_buildMobileTreeOverlay`) and the Practice Set panel becomes a modal bottom sheet accessed via a tray at the bottom of the practice screen.
