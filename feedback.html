@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="parchment">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Report a Bug — Amarakosha</title>
+  <script>document.documentElement.dataset.theme=localStorage.getItem('amara-theme')||'parchment';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    html[data-theme="parchment"] {
+      --bg:#EDE0C0; --surface:#F8F2E4; --surface-alt:#EAD9B2;
+      --text:#1E1208; --text-sec:#6A4618; --text-muted:#7A5428;
+      --accent:#7A3A10; --border:#C4A060; --border-lt:#DEC890;
+      --btn-bg:#7A3A10; --btn-text:#FFF4E4;
+      --green:#4A6A30; --green-bg:#E8F0D8; --red:#C03020;
+    }
+    html[data-theme="night"] {
+      --bg:#1A1208; --surface:#221810; --surface-alt:#2C1E10;
+      --text:#F0E4C8; --text-sec:#C8A068; --text-muted:#8A6840;
+      --accent:#E8A840; --border:#4A3018; --border-lt:#3A2410;
+      --btn-bg:#E8A840; --btn-text:#1A1208;
+      --green:#60A040; --green-bg:#243018; --red:#E04030;
+    }
+    html[data-theme="slate"] {
+      --bg:#E2E6EC; --surface:#ECEEF2; --surface-alt:#D6DAE0;
+      --text:#1A1C20; --text-sec:#3C4450; --text-muted:#68727E;
+      --accent:#2C5898; --border:#A8B0BC; --border-lt:#BEC8D4;
+      --btn-bg:#2C5898; --btn-text:#F0F4F8;
+      --green:#2A7840; --green-bg:#D0E8D8; --red:#C02820;
+    }
+    html[data-theme="minimal"] {
+      --bg:#F4F4F5; --surface:#FFFFFF; --surface-alt:#EFEFF1;
+      --text:#18181B; --text-sec:#52525B; --text-muted:#A1A1AA;
+      --accent:#4F46E5; --border:#D4D4D8; --border-lt:#E4E4E7;
+      --btn-bg:#4F46E5; --btn-text:#FFFFFF;
+      --green:#059669; --green-bg:#D1FAE5; --red:#DC2626;
+    }
+    html[data-theme="forest"] {
+      --bg:#E4EADE; --surface:#EEF3E8; --surface-alt:#D8E4D0;
+      --text:#1C2418; --text-sec:#3A5030; --text-muted:#6A8058;
+      --accent:#3A6820; --border:#A0BA88; --border-lt:#BBCFA8;
+      --btn-bg:#3A6820; --btn-text:#F0F5EB;
+      --green:#5A9040; --green-bg:#D0EAC0; --red:#B03020;
+    }
+    .theme-picker { display:flex; gap:5px; align-items:center; margin-left:auto; }
+    .theme-dot { width:16px; height:16px; border-radius:50%; border:2px solid transparent; cursor:pointer; padding:0; }
+    .theme-dot.active { border-color:var(--text); box-shadow:0 0 0 1px var(--bg); }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif;
+      min-height: 100vh; font-size: 16px; line-height: 1.7;
+    }
+    .dev { font-family: 'Tiro Devanagari Sanskrit', serif; }
+    a { color: var(--accent); }
+    a:hover { text-decoration: underline; }
+
+    #wrap { max-width: 580px; margin: 0 auto; padding: 36px 24px 80px; }
+
+    .topnav {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 32px;
+      font-size: 14px;
+    }
+    .topnav a { color: var(--text-muted); text-decoration: none; }
+    .topnav a:hover { color: var(--accent); }
+    .topnav .sep { color: var(--border); }
+
+    h1 { font-size: 26px; color: var(--accent); margin-bottom: 6px; line-height: 1.2; }
+    .subtitle { font-size: 15px; color: var(--text-muted); margin-bottom: 32px; font-style: italic; }
+
+    .form-group { margin-bottom: 22px; }
+    .field-label {
+      display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--text-muted); margin-bottom: 7px;
+    }
+    input[type=text], select, textarea {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif; font-size: 16px;
+      outline: none; transition: border-color 0.15s;
+      appearance: none; -webkit-appearance: none;
+    }
+    input[type=text]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+      padding-right: 36px;
+    }
+    textarea { min-height: 130px; resize: vertical; line-height: 1.6; }
+
+    /* ── Pada search ── */
+    .search-wrap { position: relative; }
+    #padaResults {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      max-height: 230px; overflow-y: auto; display: none;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+    }
+    .result-item {
+      padding: 9px 14px; cursor: pointer;
+      border-bottom: 1px solid var(--border-lt);
+      display: flex; align-items: baseline; gap: 10px;
+    }
+    .result-item:last-child { border-bottom: none; }
+    .result-item:hover { background: var(--surface-alt); }
+    .result-id { font-size: 12px; color: var(--text-muted); flex-shrink: 0; min-width: 52px; }
+    .result-dev { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 16px; }
+    .no-results { padding: 10px 14px; font-size: 14px; color: var(--text-muted); font-style: italic; }
+
+    .selected-pada {
+      margin-top: 8px; padding: 10px 14px;
+      background: var(--surface-alt); border: 1px solid var(--border);
+      border-radius: 8px; display: none; align-items: center; gap: 10px;
+    }
+    .sel-id  { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+    .sel-dev { font-family: 'Tiro Devanagari Sanskrit', serif; font-size: 17px; flex: 1; }
+    .sel-clear {
+      cursor: pointer; color: var(--text-muted); font-size: 20px;
+      line-height: 1; padding: 0 2px; user-select: none;
+    }
+    .sel-clear:hover { color: var(--red); }
+
+    /* ── Send ── */
+    .btn-send {
+      display: inline-block; padding: 11px 30px; border-radius: 8px;
+      background: var(--btn-bg); color: var(--btn-text); border: none;
+      font-family: 'EB Garamond', Georgia, serif; font-size: 17px;
+      cursor: pointer; letter-spacing: 0.3px;
+    }
+    .btn-send:hover { opacity: 0.88; }
+    .send-note {
+      margin-top: 10px; font-size: 13px; color: var(--text-muted); font-style: italic;
+    }
+    .error-msg { color: var(--red); font-size: 14px; margin-top: 6px; display: none; }
+
+    hr { border: none; border-top: 1px solid var(--border-lt); margin: 40px 0 20px; }
+    footer { font-size: 14px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div id="wrap">
+
+  <div class="topnav">
+    <a href="index.html">← Practice App</a>
+    <span class="sep">·</span>
+    <a href="landing.html">Home</a>
+    <div class="theme-picker">
+      <button class="theme-dot" data-theme="parchment" style="background:#7A3A10" title="Parchment"></button>
+      <button class="theme-dot" data-theme="night"     style="background:#E8A840" title="Night"></button>
+      <button class="theme-dot" data-theme="slate"     style="background:#2C5898" title="Slate"></button>
+      <button class="theme-dot" data-theme="minimal"   style="background:#4F46E5" title="Minimal"></button>
+      <button class="theme-dot" data-theme="forest"    style="background:#3A6820" title="Forest"></button>
+    </div>
+  </div>
+
+  <h1>Report a Bug or Error</h1>
+  <p class="subtitle">Found a mistake in the text, an audio problem, or a bug in the app? Describe it below and it will be emailed directly to the developer.</p>
+
+  <form id="reportForm" novalidate>
+
+    <!-- Pada selector -->
+    <div class="form-group">
+      <label class="field-label">Pāda <span style="font-style:italic;text-transform:none;letter-spacing:0;font-size:11px">(optional — select the pāda the issue relates to)</span></label>
+      <div class="search-wrap">
+        <input type="text" id="padaSearch"
+               placeholder="Search by ID (e.g. 1.1.4) or Devanāgarī text…"
+               autocomplete="off" spellcheck="false">
+        <div id="padaResults"></div>
+      </div>
+      <div class="selected-pada" id="selectedPadaBox">
+        <span class="sel-id"  id="selId"></span>
+        <span class="sel-dev" id="selDev"></span>
+        <span class="sel-clear" title="Clear selection" onclick="clearPada()">×</span>
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div class="form-group">
+      <label class="field-label" for="category">Category</label>
+      <select id="category">
+        <option value="Text error">Text error — incorrect or missing Devanāgarī</option>
+        <option value="Audio issue">Audio issue — missing, wrong, or poor-quality audio</option>
+        <option value="Word data">Word data — grammar chip is wrong or missing</option>
+        <option value="App bug">App bug — incorrect behaviour or crash</option>
+        <option value="Suggestion">Suggestion — feature request or improvement</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label class="field-label" for="description">
+        Description <span style="color:var(--red)">*</span>
+      </label>
+      <textarea id="description"
+        placeholder="Describe the issue. For text errors, paste the correct text if you know it."></textarea>
+      <div class="error-msg" id="descError">Please enter a description before sending.</div>
+    </div>
+
+    <button type="button" class="btn-send" onclick="sendReport()">Send Report</button>
+    <p class="send-note">
+      Clicking Send opens your email client with the report pre-filled.<br>
+      Or write directly to <a href="mailto:sramaka@gmail.com">sramaka@gmail.com</a>.
+    </p>
+
+  </form>
+
+  <hr>
+  <footer><a href="index.html">← Back to Practice App</a></footer>
+
+</div>
+<script>
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function applyTheme(id) {
+  document.documentElement.dataset.theme = id;
+  localStorage.setItem('amara-theme', id);
+  document.querySelectorAll('.theme-dot').forEach(d =>
+    d.classList.toggle('active', d.dataset.theme === id));
+}
+document.querySelectorAll('.theme-dot').forEach(d => {
+  d.classList.toggle('active', d.dataset.theme === (localStorage.getItem('amara-theme') || 'parchment'));
+  d.addEventListener('click', () => applyTheme(d.dataset.theme));
+});
+
+// ── Pada data ─────────────────────────────────────────────────────────────────
+let allPadas = [];
+let selectedPada = null;
+
+fetch('../assets/data/amarakosha_v3.json')
+  .then(r => r.json())
+  .then(data => {
+    for (const k of data.kandas)
+      for (const v of k.vargas)
+        for (const s of v.sections)
+          for (const p of s.padas)
+            allPadas.push({ id: p.id, text: p.text_dev || '' });
+  })
+  .catch(() => {});
+
+// ── Search ────────────────────────────────────────────────────────────────────
+const padaSearch  = document.getElementById('padaSearch');
+const padaResults = document.getElementById('padaResults');
+const selBox      = document.getElementById('selectedPadaBox');
+
+padaSearch.addEventListener('input', () => {
+  const q = padaSearch.value.trim().toLowerCase();
+  padaResults.style.display = 'none';
+  padaResults.innerHTML = '';
+  if (!q) return;
+
+  const hits = allPadas.filter(p =>
+    p.id.startsWith(q) || p.id.includes(q) || p.text.toLowerCase().includes(q)
+  ).slice(0, 25);
+
+  if (!hits.length) {
+    padaResults.innerHTML = '<div class="no-results">No pādas found</div>';
+  } else {
+    hits.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'result-item';
+      div.innerHTML =
+        `<span class="result-id">${p.id}</span>` +
+        `<span class="result-dev">${p.text || '<em style="color:var(--text-muted)">—</em>'}</span>`;
+      div.addEventListener('mousedown', e => { e.preventDefault(); choosePada(p); });
+      padaResults.appendChild(div);
+    });
+  }
+  padaResults.style.display = 'block';
+});
+
+padaSearch.addEventListener('blur', () => {
+  setTimeout(() => { padaResults.style.display = 'none'; }, 200);
+});
+
+function choosePada(p) {
+  selectedPada = p;
+  padaSearch.value = '';
+  padaResults.style.display = 'none';
+  document.getElementById('selId').textContent  = p.id;
+  document.getElementById('selDev').textContent = p.text;
+  selBox.style.display = 'flex';
+}
+
+function clearPada() {
+  selectedPada = null;
+  selBox.style.display = 'none';
+  padaSearch.value = '';
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+function sendReport() {
+  const desc  = document.getElementById('description').value.trim();
+  const errEl = document.getElementById('descError');
+  if (!desc) { errEl.style.display = 'block'; document.getElementById('description').focus(); return; }
+  errEl.style.display = 'none';
+
+  const cat = document.getElementById('category').value;
+
+  let body = '';
+  if (selectedPada) body += `Pāda: ${selectedPada.id}   ${selectedPada.text}\n`;
+  body += `Category: ${cat}\n\n${desc}`;
+
+  const subject = selectedPada
+    ? `Amarakosha [${cat}] — pāda ${selectedPada.id}`
+    : `Amarakosha [${cat}]`;
+
+  window.location.href =
+    'mailto:sramaka@gmail.com' +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body='    + encodeURIComponent(body);
+}
+</script>
+</body>
+</html>

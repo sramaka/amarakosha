@@ -1,0 +1,12 @@
+{
+  "name": "अमरकोश — Amarakosha Practice",
+  "short_name": "अमरकोश",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EDE0C0",
+  "theme_color": "#7A3A10",
+  "icons": [
+    { "src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/Icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

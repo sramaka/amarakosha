@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recording Studio Help — Amarakosha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Sanskrit&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #EDE0C0; --surface: #F8F2E4; --surface-alt: #EAD9B2;
+      --text: #1E1208; --text-sec: #6A4618; --text-muted: #9C7848;
+      --accent: #7A3A10; --border: #C4A060; --border-lt: #DEC890;
+      --btn-bg: #7A3A10; --btn-text: #FFF4E4;
+      --green: #4A6A30; --green-bg: #E8F0D8;
+      --red: #C03020;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'EB Garamond', Georgia, serif;
+      min-height: 100vh; font-size: 16px; line-height: 1.7;
+    }
+    .dev { font-family: 'Tiro Devanagari Sanskrit', serif; }
+    a { color: var(--accent); }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ── */
+    #outer { display: flex; min-height: 100vh; }
+
+    /* Sidebar TOC */
+    #toc {
+      width: 220px; flex-shrink: 0;
+      background: var(--surface); border-right: 1px solid var(--border);
+      padding: 28px 0 40px; position: sticky; top: 0; height: 100vh;
+      overflow-y: auto; font-size: 14px;
+    }
+    #toc .toc-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--text-muted); padding: 0 18px 12px; display: block;
+    }
+    #toc a {
+      display: block; padding: 5px 18px; color: var(--text-sec); text-decoration: none;
+      border-left: 2px solid transparent;
+    }
+    #toc a:hover { color: var(--accent); background: var(--surface-alt); }
+    #toc a.sub { padding-left: 30px; font-size: 13px; color: var(--text-muted); }
+    #toc .toc-section { margin-top: 10px; }
+
+    /* Main content */
+    #main { flex: 1; max-width: 680px; padding: 36px 36px 80px; }
+    @media (max-width: 680px) { #toc { display: none; } #main { padding: 24px 18px 60px; } }
+
+    /* ── Nav bar ── */
+    .topnav {
+      display: flex; align-items: center; gap: 16px; margin-bottom: 32px;
+      font-size: 14px; color: var(--text-muted);
+    }
+    .topnav a { color: var(--text-muted); text-decoration: none; }
+    .topnav a:hover { color: var(--accent); }
+    .topnav .sep { color: var(--border); }
+
+    /* ── Typography ── */
+    h1 { font-size: 28px; color: var(--accent); margin-bottom: 6px; line-height: 1.2; }
+    .subtitle { font-size: 15px; color: var(--text-muted); margin-bottom: 32px; font-style: italic; }
+    h2 {
+      font-size: 20px; color: var(--accent); margin: 40px 0 12px;
+      padding-bottom: 6px; border-bottom: 1px solid var(--border-lt);
+    }
+    h3 { font-size: 17px; color: var(--text-sec); margin: 22px 0 8px; }
+    p  { margin-bottom: 12px; color: var(--text-sec); }
+    ul, ol { padding-left: 22px; margin-bottom: 12px; color: var(--text-sec); }
+    li { margin-bottom: 4px; }
+    strong { color: var(--text); }
+    em { font-style: italic; }
+    code {
+      font-family: monospace; font-size: 13px; background: var(--surface-alt);
+      border: 1px solid var(--border-lt); border-radius: 4px; padding: 1px 5px;
+      color: var(--text);
+    }
+
+    /* ── Callout boxes ── */
+    .note {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px; padding: 12px 16px; margin: 16px 0;
+      font-size: 15px; color: var(--text-sec);
+    }
+    .tip {
+      background: var(--green-bg); border: 1px solid rgba(74,106,48,.3);
+      border-left: 3px solid var(--green);
+      border-radius: 8px; padding: 12px 16px; margin: 16px 0;
+      font-size: 15px; color: #2E4A20;
+    }
+    .warn {
+      background: #FDF0E8; border: 1px solid rgba(192,48,32,.25);
+      border-left: 3px solid var(--red);
+      border-radius: 8px; padding: 12px 16px; margin: 16px 0;
+      font-size: 15px; color: #6A2010;
+    }
+
+    /* ── Status chips ── */
+    .status-row { display: flex; gap: 12px; margin: 12px 0 16px; flex-wrap: wrap; }
+    .status {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px; font-size: 14px; border: 1px solid;
+    }
+    .s-none      { border-color: var(--border); color: var(--text-muted); background: var(--surface); }
+    .s-recording { border-color: var(--red); color: var(--red); background: #FDF0E8; }
+    .s-recorded  { border-color: rgba(74,106,48,.4); color: var(--green); background: var(--green-bg); }
+
+    /* ── Button mock-ups ── */
+    .btn-mock {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 50%; font-size: 14px;
+      border: 2px solid; vertical-align: middle;
+    }
+    .btn-rec  { border-color: var(--red);   color: var(--red); }
+    .btn-play { border-color: var(--green);  color: var(--green); background: var(--green-bg); }
+    .btn-del  { border-color: var(--border); color: var(--text-muted); }
+    .btn-dl   { border-color: var(--border); color: var(--text-muted); }
+    .btn-rec.active { background: var(--red); color: white; }
+
+    /* ── Dot examples ── */
+    .dot-row { display: flex; gap: 5px; margin: 10px 0; flex-wrap: wrap; }
+    .dot {
+      width: 34px; height: 26px; border-radius: 5px; font-size: 11px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid; cursor: default;
+    }
+    .d-none     { background: var(--surface-alt); color: var(--text-muted); border-color: var(--border); }
+    .d-active   { background: var(--btn-bg); color: var(--btn-text); border-color: var(--accent); }
+    .d-recorded { background: var(--green-bg); color: var(--green); border-color: rgba(74,106,48,.4); }
+
+    /* ── Download buttons mock ── */
+    .dl-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+    .dl-btn {
+      font-family: inherit; font-size: 13px; color: var(--accent);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 12px; display: inline-flex;
+      align-items: center; gap: 5px; cursor: default;
+    }
+    .count {
+      font-size: 11px; background: var(--surface-alt); border-radius: 10px;
+      padding: 1px 6px; color: var(--text-muted);
+    }
+
+    hr { border: none; border-top: 1px solid var(--border-lt); margin: 36px 0; }
+  </style>
+</head>
+<body>
+<div id="outer">
+
+  <!-- Table of Contents -->
+  <nav id="toc">
+    <span class="toc-title">Recording Studio Help</span>
+    <div class="toc-section">
+      <a href="#overview">Overview</a>
+      <a href="#selecting">Selecting Content</a>
+      <a href="#navigating">Navigating Pādas</a>
+      <a href="#recording">Recording</a>
+      <a href="#playback">Playback &amp; Review</a>
+      <a href="#deleting">Deleting a Recording</a>
+      <a href="#progress">Progress Tracking</a>
+      <a href="#downloads">Downloading</a>
+      <a class="sub" href="#dl-pada">This Pāda</a>
+      <a class="sub" href="#dl-section">Section ZIP</a>
+      <a class="sub" href="#dl-varga">Varga ZIP</a>
+      <a class="sub" href="#dl-all">All Recorded ZIP</a>
+      <a href="#sharing">Sharing with Students</a>
+      <a href="#mobile">Mobile Tips</a>
+      <a href="#tips">Tips &amp; Limits</a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main id="main">
+
+    <div class="topnav">
+      <a href="landing.html">← Home</a>
+      <span class="sep">·</span>
+      <a href="help.html">Practice App Help</a>
+    </div>
+
+    <h1>Recording Studio Help</h1>
+    <p class="subtitle">Record pādas of the Amarakosha and export them for distribution to students.</p>
+
+    <!-- ── Overview ── -->
+    <h2 id="overview">Overview</h2>
+    <p>
+      The Recording Studio is a standalone web page designed for teachers and
+      advanced students who want to create audio recordings of Amarakosha pādas.
+      Recordings can be exported as ZIP files and imported into the
+      <a href="index.html">Practice App</a> by students as named
+      <strong>Audio Sets</strong>.
+    </p>
+    <p>
+      The studio shows one pāda at a time — its Devanagari text, section label,
+      and position within the Varga. You record, review, and export entirely within
+      the browser; no account or server upload is required.
+    </p>
+
+    <div class="warn">
+      <strong>Important:</strong> Recordings are held in memory for the current browser session only.
+      They are <em>not</em> saved to disk automatically. <strong>Export a ZIP before closing or
+      refreshing the page</strong>, or your recordings will be lost.
+    </div>
+
+    <!-- ── Selecting Content ── -->
+    <h2 id="selecting">Selecting Content</h2>
+    <p>
+      Two dropdown menus at the top of the page let you navigate the text:
+    </p>
+    <ul>
+      <li><strong>Kāṇḍa</strong> — one of the three main chapters
+          (<em>Svargakāṇḍa, Bhūmikāṇḍa, Sāmānyakāṇḍa</em>).</li>
+      <li><strong>Varga</strong> — a topical group within the selected Kāṇḍa
+          (e.g. "Gods", "Trees", "Animals"). Changing the Kāṇḍa resets the Varga selection.</li>
+    </ul>
+    <p>After selecting a Varga, the studio loads its first pāda automatically.</p>
+
+    <!-- ── Navigating ── -->
+    <h2 id="navigating">Navigating Pādas</h2>
+    <p>Three navigation methods are available:</p>
+    <ul>
+      <li><strong>◀ Prev / Next ▶</strong> buttons — move one pāda at a time through all sections.</li>
+      <li><strong>Pāda dot strip</strong> — a row of small tiles showing all pādas in the current
+          section. Click any tile to jump directly to that pāda.
+          <div class="dot-row">
+            <div class="dot d-recorded">1A</div>
+            <div class="dot d-recorded">1B</div>
+            <div class="dot d-active">2A</div>
+            <div class="dot d-none">2B</div>
+            <div class="dot d-none">3A</div>
+            <div class="dot d-none">3B</div>
+          </div>
+          Green tiles = recorded · Dark tile = current pāda · Grey tiles = not yet recorded.
+      </li>
+    </ul>
+    <p>
+      The pāda header shows the <strong>GRETIL ID</strong> (e.g. <code>1.1.5</code>), the section
+      name, and the pāda badge (<em>Pāda A</em> or <em>Pāda B</em>) with its śloka reference.
+    </p>
+
+    <!-- ── Recording ── -->
+    <h2 id="recording">Recording</h2>
+    <p>
+      The large red circle button (<span class="btn-mock btn-rec">⏺</span>) controls recording.
+    </p>
+    <ol>
+      <li>Navigate to the pāda you want to record.</li>
+      <li>Tap the red button. Your browser will request <strong>microphone permission</strong>
+          the first time — grant it.</li>
+      <li>The button turns solid red (<span class="btn-mock btn-rec active">⏹</span>) and a
+          timer counts up while recording. Speak the pāda clearly.</li>
+      <li>Tap the button again to <strong>stop</strong>. The recording is processed and saved
+          immediately (converted to WAV for precise timing).</li>
+    </ol>
+
+    <div class="status-row">
+      <span class="status s-none">Not recorded</span>
+      <span class="status s-recording">⏺ Recording… 0:08</span>
+      <span class="status s-recorded">Recorded</span>
+    </div>
+
+    <ul>
+      <li>Recording <strong>auto-stops after 30 seconds</strong> to prevent accidentally long files.</li>
+      <li>Recording a pāda that already has a recording <strong>overwrites</strong> it.</li>
+      <li>You can re-record as many times as needed — only the latest take is kept.</li>
+    </ul>
+
+    <!-- ── Playback ── -->
+    <h2 id="playback">Playback &amp; Review</h2>
+    <p>
+      After recording, the play button (<span class="btn-mock btn-play">▶</span>) becomes active.
+      Tap it to hear the recording. Tap again (while playing) to pause.
+    </p>
+    <p>
+      Use playback to verify the quality and completeness of each recording before moving on.
+      If unsatisfied, simply record again — the new recording replaces the old one.
+    </p>
+
+    <!-- ── Deleting ── -->
+    <h2 id="deleting">Deleting a Recording</h2>
+    <p>
+      Tap the × button (<span class="btn-mock btn-del" style="font-size:18px">×</span>) to delete
+      the recording for the current pāda. The status returns to "Not recorded" and the pāda's dot
+      returns to grey. This cannot be undone.
+    </p>
+
+    <!-- ── Progress ── -->
+    <h2 id="progress">Progress Tracking</h2>
+    <p>
+      A progress bar and counter below the dot strip show how many pādas in the current Varga
+      have been recorded:
+    </p>
+    <ul>
+      <li><strong>Varga progress</strong> label with a <em>N / M recorded</em> count.</li>
+      <li>A green fill bar showing the percentage of Varga pādas covered.</li>
+      <li>The Download buttons show counts of recorded pādas for the current section, varga, and total.</li>
+    </ul>
+
+    <!-- ── Downloads ── -->
+    <h2 id="downloads">Downloading Recordings</h2>
+    <p>
+      The <strong>Export</strong> section (tap the "Export ···" toggle on mobile) offers four
+      download buttons:
+    </p>
+    <div class="dl-row">
+      <div class="dl-btn">⬇ This pāda</div>
+      <div class="dl-btn">⬇ Section <span class="count">4</span></div>
+      <div class="dl-btn">⬇ Varga ZIP <span class="count">12</span></div>
+      <div class="dl-btn">⬇ All recorded <span class="count">18</span></div>
+    </div>
+
+    <h3 id="dl-pada">This Pāda</h3>
+    <p>
+      Downloads the current pāda's recording as a single <code>.wav</code> file named
+      after the GRETIL ID (e.g. <code>1.1.5.wav</code>). Only active if the current pāda
+      has been recorded.
+    </p>
+
+    <h3 id="dl-section">Section ZIP</h3>
+    <p>
+      Downloads a ZIP containing WAV files for all recorded pādas in the <strong>current section</strong>.
+      The number badge shows how many pādas in the section have recordings.
+      Disabled if no pādas in the section have been recorded.
+    </p>
+
+    <h3 id="dl-varga">Varga ZIP</h3>
+    <p>
+      Downloads a ZIP containing WAV files for all recorded pādas in the <strong>current Varga</strong>
+      (across all sections). This is the format expected by the Practice App's import feature.
+      The number badge shows how many Varga pādas have recordings.
+    </p>
+
+    <h3 id="dl-all">All Recorded ZIP</h3>
+    <p>
+      Downloads a ZIP containing every recording made in the current session, regardless of
+      which Varga they belong to. Useful for a session spanning multiple Vargas.
+      The number badge shows the total recording count.
+    </p>
+
+    <div class="note">
+      All ZIP files use the <strong>STORE</strong> (uncompressed) format so that the Practice App
+      can parse them without a decompression library. File sizes are slightly larger than compressed
+      ZIPs but open reliably across all platforms.
+    </div>
+
+    <!-- ── Sharing ── -->
+    <h2 id="sharing">Sharing with Students</h2>
+    <p>
+      The typical workflow for distributing recordings:
+    </p>
+    <ol>
+      <li>Record pādas for one or more Vargas in the Recording Studio.</li>
+      <li>Download the <strong>Varga ZIP</strong> (or <strong>All recorded ZIP</strong> for
+          multi-varga sessions). Name the file something recognisable, e.g. <code>amara_varga1_sharma.zip</code>.</li>
+      <li>Share the ZIP with students via email, WhatsApp, or any file-sharing service.</li>
+      <li>Students open the <a href="index.html">Practice App</a>, navigate to any pāda, and tap
+          <strong>+ Import</strong> in the Audio card.</li>
+      <li>Students select the ZIP, give the set a name (e.g. "Pandit Sharma"), and tap
+          <strong>Import</strong>. The recordings are available immediately as a selectable Audio Set.</li>
+    </ol>
+
+    <div class="tip">
+      <strong>Tip:</strong> WAV files inside the ZIP must be named with the GRETIL ID
+      (e.g. <code>1.1.5.wav</code>). Files exported by the Recording Studio use this naming
+      automatically. Hand-prepared ZIPs must follow the same convention.
+    </div>
+
+    <!-- ── Mobile ── -->
+    <h2 id="mobile">Mobile Tips</h2>
+    <p>On small screens the layout adapts for easier recording:</p>
+    <ul>
+      <li>The Kāṇḍa and Varga selectors stack vertically and take full width.</li>
+      <li>The record button is larger (64 px) and centred for comfortable one-thumb tapping.</li>
+      <li>The Play and Delete buttons appear below the record button as a secondary row.</li>
+      <li>The single-pāda download button (⬇) is hidden; use the <strong>Export ···</strong>
+          toggle instead to access all download options.</li>
+      <li>The pāda dot strip becomes a horizontal scrolling tab bar — swipe left/right to
+          see all pādas in the current section.</li>
+    </ul>
+
+    <!-- ── Tips ── -->
+    <h2 id="tips">Tips &amp; Limits</h2>
+    <ul>
+      <li><strong>Recording quality:</strong> Record in a quiet environment. The studio captures
+          mono audio and converts to 16-bit PCM WAV at the device's native sample rate
+          (typically 44.1 kHz or 48 kHz).</li>
+      <li><strong>Session-only storage:</strong> Recordings live only in the current browser tab.
+          Do not refresh or navigate away without exporting first.</li>
+      <li><strong>30-second limit per pāda:</strong> Each recording is capped at 30 seconds.
+          Longer pādas should be re-read more quickly, or recorded in separate sessions and
+          merged offline.</li>
+      <li><strong>Microphone permission:</strong> The browser asks for permission on the first
+          recording attempt. If you accidentally deny it, reset permissions in your browser settings
+          (usually via the 🔒 icon in the address bar).</li>
+      <li><strong>Browser compatibility:</strong> Works in any modern browser supporting the
+          MediaRecorder API — Chrome, Edge, Firefox, and Safari 14.1+. Safari may use MP4 instead
+          of WebM; both are converted to WAV transparently.</li>
+      <li><strong>File naming:</strong> Downloaded WAV files are named by GRETIL ID
+          (e.g. <code>1.1.5.wav</code>). ZIP files are named by Varga ID and optional section
+          sequence (e.g. <code>amara_1-1.zip</code>).</li>
+    </ul>
+
+    <hr>
+    <p style="font-size:14px;color:var(--text-muted)">
+      <a href="landing.html">← Back to Home</a>
+      &nbsp;·&nbsp;
+      <a href="help.html">Practice App Help →</a>
+    </p>
+
+  </main>
+</div>
+</body>
+</html>
